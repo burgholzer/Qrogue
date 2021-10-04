@@ -5,7 +5,7 @@ from enum import Enum
 import py_cui
 
 from game.actors.boss import Boss as BossActor
-from game.actors.enemy import Enemy as EnemyActor
+from game.actors.factory import EnemyFactory
 from game.actors.player import Player as PlayerActor
 from game.callbacks import OnWalkCallback
 from game.map.navigation import Direction
@@ -179,11 +179,11 @@ class _EnemyState(Enum):
     DEAD = 3
     FLED = 4
 class Enemy(WalkTriggerTile):
-    def __init__(self, enemy: EnemyActor, on_walk_callback: OnWalkCallback, get_entangled_tiles,
+    def __init__(self, factory: EnemyFactory, get_entangled_tiles,
                  id: int = 0, amplitude: float = 0.5):
-        super().__init__(TileCode.Enemy, on_walk_callback)
+        super().__init__(TileCode.Enemy, factory.callback)
+        self.__factory = factory
         self.__state = _EnemyState.UNDECIDED
-        self.__enemy = enemy
         self.__get_entangled_tiles = get_entangled_tiles
         self.__id = id
         self.__amplitude = amplitude
@@ -192,12 +192,14 @@ class Enemy(WalkTriggerTile):
         if isinstance(actor, PlayerActor):
             if self.__state == _EnemyState.UNDECIDED:
                 if self.measure():
-                    self._on_walk_callback(actor, self.enemy, direction)
+                    enemy = self.__factory.get_enemy()
+                    self._on_walk_callback(actor, enemy, direction)
                     self.__state = _EnemyState.DEAD
                 else:
                     self.__state = _EnemyState.FLED
             elif self.__state == _EnemyState.FIGHT:
-                self._on_walk_callback(actor, self.enemy, direction)
+                enemy = self.__factory.get_enemy()
+                self._on_walk_callback(actor, enemy, direction)
                 self.__state = _EnemyState.DEAD
             elif self.__state == _EnemyState.FREE:
                 self.__state = _EnemyState.FLED
@@ -212,10 +214,6 @@ class Enemy(WalkTriggerTile):
 
     def is_walkable(self, direction: Direction, actor):
         return True
-
-    @property
-    def enemy(self):
-        return self.__enemy
 
     @property
     def amplitude(self):

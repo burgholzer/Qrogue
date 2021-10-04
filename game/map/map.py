@@ -3,6 +3,7 @@ import random
 
 import game.map.tiles as tiles
 from game.actors.boss import DummyBoss
+from game.actors.factory import EnemyFactory
 from game.map.navigation import Coordinate, Direction
 from game.map.rooms import Room, SpawnRoom, BossRoom, WildRoom
 from util.config import MapConfig
@@ -13,11 +14,12 @@ class Map:
     WIDTH = 5
     HEIGHT = 5
 
-    def __init__(self, seed: int, width: int, height: int, player: tiles.Player, fight_callback):
+    def __init__(self, seed: int, width: int, height: int, player: tiles.Player, start_fight_callback):
         rand = random.Random()
         rand.seed(seed)
         self.__player = player  # TODO save player_pos in player?
-        self.__fight_callback = fight_callback
+        self.__start_fight_callback = start_fight_callback
+        self.__enemy_factory = EnemyFactory(self.__start_fight_callback)
 
         if MapConfig.create_random():
             for y in range(height):
@@ -42,8 +44,8 @@ class Map:
 
         self.rooms = [[None for x in range(Map.WIDTH)] for y in range(Map.HEIGHT)]
         self.rooms[spawn_x][spawn_y] = spawn
-        self.rooms[0][1] = BossRoom(tiles.Door(Direction.West), tiles.Boss(DummyBoss(), self.__fight_callback))
-        self.rooms[1][0] = WildRoom(tiles=None, doors=[tiles.Door(Direction.North)])
+        self.rooms[0][1] = BossRoom(tiles.Door(Direction.West), tiles.Boss(DummyBoss(), self.__start_fight_callback))
+        self.rooms[1][0] = WildRoom(self.__enemy_factory, tiles=None, doors=[tiles.Door(Direction.North)])
 
         self.__cur_room = spawn
         self.__player_pos = Map.__calculate_pos(Coordinate(spawn_x, spawn_y), Coordinate(Room.MID_X, Room.MID_Y))
@@ -98,7 +100,7 @@ class Map:
         return self.__player_pos
 
     @property
-    def player(self):
+    def player(self) -> tiles.Player:
         return self.__player
 
     def move(self, direction: Direction):

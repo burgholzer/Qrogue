@@ -1,17 +1,21 @@
-from abc import abstractmethod
+from abc import abstractmethod, ABC
 
 import py_cui
 from py_cui.widget_set import WidgetSet
 
 from game.actors.enemy import Enemy
+from game.actors.player import Player as PlayerActor
+from game.actors.player import DummyPlayer
+from game.map import tiles
 from game.map.map import Map
+from game.map.navigation import Direction
 from game.map.tiles import Player as PlayerTile
 from util.logger import Logger
 from widgets.color_rules import ColorRules
-from widgets.my_widgets import SelectionWidget, StateVectorWidget, CircuitWidget, MapWidget
+from widgets.my_widgets import SelectionWidget, StateVectorWidget, CircuitWidget, MapWidget, SimpleWidget
 
 
-class MyWidgetSet(WidgetSet):
+class MyWidgetSet(WidgetSet, ABC):
     def __init__(self, num_rows, num_cols, logger):
         super().__init__(num_rows, num_cols, logger)
         self.init_widgets()
@@ -25,10 +29,6 @@ class MyWidgetSet(WidgetSet):
         pass
 
     @abstractmethod
-    def activate_logger(self):
-        pass
-
-    @abstractmethod
     def get_widget_list(self) -> "list of Widgets":
         pass
 
@@ -41,14 +41,72 @@ class MyWidgetSet(WidgetSet):
         pass
 
 
+_ascii_art = """
+ Qrogue
+"""
+class MenuWidgetSet(MyWidgetSet):
+    __NUM_OF_ROWS = 8
+    __NUM_OF_COLS = 9
+    __MAP_WIDTH = 50
+    __MAP_HEIGHT = 14
+
+    def __init__(self, logger, start_gameplay_callback: "void(Map, tiles.Player)", start_fight_callback: "void(Enemy)"):
+        super().__init__(self.__NUM_OF_ROWS, self.__NUM_OF_COLS, logger)
+        self.__start_gameplay_callback = start_gameplay_callback
+
+        self.__seed = 7
+        self.__start_fight_callback = start_fight_callback
+
+    def init_widgets(self):
+        title = self.add_block_label("Qrogue", 0, 0, row_span=6, column_span=self.__NUM_OF_COLS, center=True)
+        self.__title = SimpleWidget(title)
+        self.__title.set_data(_ascii_art)
+
+        selection = self.add_block_label("", 6, 0, row_span=2, column_span=self.__NUM_OF_COLS, center=True)
+        self.__selection = SelectionWidget(selection, 4)
+        self.__selection.set_data(data=(
+            ["PLAY", "TUTORIAL", "OPTIONS", "EXIT"],
+            [self.__play, self.__tutorial, self.__options, self.__exit]
+        ))
+
+    def get_widget_list(self) -> "list of Widgets":
+        return [
+            self.__title,
+            self.__selection
+        ]
+
+    def get_main_widget(self) -> py_cui.widgets.Widget:
+        return self.__selection.widget
+
+    def reset(self):
+        self.__selection.render_reset()
+
+    @property
+    def selection(self):
+        return self.__selection
+
+    def __play(self):
+        player_tile = tiles.Player(DummyPlayer())
+        map = Map(self.__seed, self.__MAP_WIDTH, self.__MAP_HEIGHT, player_tile, self.__start_fight_callback)
+        self.__start_gameplay_callback(map)
+
+    def __tutorial(self):
+        print("Tutorial")
+
+    def __options(self):
+        print("todo")
+
+    def __exit(self):
+        #GameHandler.instance().stop()
+        exit()
+
+
 class ExploreWidgetSet(MyWidgetSet):
     __NUM_OF_ROWS = 8
     __NUM_OF_COLS = 9
 
     def __init__(self, logger):
         super().__init__(self.__NUM_OF_ROWS, self.__NUM_OF_COLS, logger)
-        self.__map = None
-        self.__player_tile = None
         self.__first_row = self.add_block_label('first line (metadata like playtime, floor, ...?)', 0, 0,
                                          column_span=self.__NUM_OF_COLS)
         self.__first_row.toggle_border()
@@ -58,16 +116,11 @@ class ExploreWidgetSet(MyWidgetSet):
         self.__map_widget = MapWidget(map_widget)
 
         ColorRules.apply_map_rules(self.__map_widget)
-
-    def activate_logger(self):
-        Logger.instance().set_label(self.__first_row)
-
+    
     def get_main_widget(self) -> py_cui.widgets.Widget:
         return self.__map_widget.widget
 
     def set_data(self, map: Map, player_tile: PlayerTile):
-        self.__map = map
-        self.__player_tile = player_tile
         self.__map_widget.set_data(map)
 
     def get_widget_list(self) -> "list of Widgets":
@@ -78,6 +131,21 @@ class ExploreWidgetSet(MyWidgetSet):
     def reset(self):
         self.__map_widget.widget.set_title("")
 
+    def move_up(self):
+        if self.__map_widget.move(Direction.Up):
+            self.render()
+
+    def move_right(self):
+        if self.__map_widget.move(Direction.Right):
+            self.render()
+
+    def move_down(self):
+        if self.__map_widget.move(Direction.Down):
+            self.render()
+
+    def move_left(self):
+        if self.__map_widget.move(Direction.Left):
+            self.render()
 
 class FightWidgetSet(MyWidgetSet):
     __NUM_OF_ROWS = 9
@@ -125,19 +193,16 @@ class FightWidgetSet(MyWidgetSet):
         ColorRules.apply_selection_rules(self.__choices)
         ColorRules.apply_selection_rules(self.__details)
 
-    def activate_logger(self):
-        Logger.instance().set_label(self.__logger_row)
-
     def get_main_widget(self) -> py_cui.widgets.Widget:
         return self.__choices.widget
 
-    def set_data(self, player_tile: PlayerTile, enemy: Enemy):
-        self.__player = player_tile.player
+    def set_data(self, player: PlayerActor, enemy: Enemy):
+        self.__player = player
         self.__enemy = enemy
 
-        self.__circuit.set_data(player_tile)
+        self.__circuit.set_data(player)
 
-        p_stv = player_tile.player.state_vector
+        p_stv = player.state_vector
         e_stv = enemy.get_statevector()
         self.__stv_player.set_data(p_stv)
         self.__stv_diff.set_data(p_stv.get_diff(e_stv))
@@ -154,7 +219,8 @@ class FightWidgetSet(MyWidgetSet):
         ]
 
     def reset(self):
-        Logger.instance().println("Is there something to reset?", clear=True)
+        self.choices.render_reset()
+        self.details.render_reset()
 
     @property
     def choices(self):
@@ -172,7 +238,7 @@ class FightWidgetSet(MyWidgetSet):
         return True
 
     def __choices_commit(self) -> bool:
-        if self.attack():
+        if self.__attack():
             self.__details.set_data(data=(
                 ["Get reward! TODO implement"],
                 [self.__end_of_fight_callback]
@@ -189,7 +255,7 @@ class FightWidgetSet(MyWidgetSet):
         self.__end_of_fight_callback()
         return False
 
-    def attack(self) -> bool:
+    def __attack(self) -> bool:
         """
 
         :return: True if fight is over (attack was successful -> enemy is dead), False otherwise
@@ -204,5 +270,3 @@ class FightWidgetSet(MyWidgetSet):
         self.render()
 
         return self.__enemy.damage(result)
-
-

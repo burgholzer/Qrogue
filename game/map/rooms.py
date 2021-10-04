@@ -98,7 +98,8 @@ class SpawnRoom(Room):
 
 
 class WildRoom(Room):
-    def __init__(self, tiles: "list of tiles", doors: "list of Doors"):
+    def __init__(self, factory: EnemyFactory, tiles: "list of tiles", doors: "list of Doors"):
+
         self.__dictionary = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [], 8: [], 9: [] }
         if tiles is None or len(tiles) <= 0:
             tiles = []
@@ -108,7 +109,7 @@ class WildRoom(Room):
                     enemy = DummyEnemy()
                     from game.game import GameHandler
                     id = RM.instance().get_int(min=0, max=10)
-                    enemy = Enemy(enemy, GameHandler.fight_callback(), self.get_tiles_by_id, id)
+                    enemy = Enemy(factory, self.get_tiles_by_id, id)
                     if id > 0:
                         self.__dictionary[id].append(enemy)
                     tiles.append(enemy)
