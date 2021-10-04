@@ -100,7 +100,9 @@ class QrogueCUI(py_cui.PyCUI):
             self.__explore.set_data(map, map.player)
         self.apply_widget_set(self.__explore)
 
-    def continue_explore(self, player: PlayerActor, reward: Collectible):
+    def continue_explore(self, data: "tuple of Player and Collectible"):
+        player = data[0]
+        reward = data[1]
         player.give_collectible(reward)
         self.__state_machine.change_state(State.Explore, None)
 

@@ -10,3 +10,6 @@ class Coin(Collectible):
     @property
     def amount(self):
         return self.__amount
+
+    def __str__(self):
+        return f"{self.__amount}$"

@@ -242,8 +242,9 @@ class FightWidgetSet(MyWidgetSet):
         if fight_end:
             self.__details.set_data(data=(
                 [f"Get reward: {reward}"],
-                [self.__end_of_fight_callback(self.__player, reward)]
+                [self.__end_of_fight_callback]
             ))
+            self.__details.set_parameter((self.__player, reward))
             return True
         return False
 

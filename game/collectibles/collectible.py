@@ -1,4 +1,4 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 from enum import Enum
 
 
@@ -17,3 +17,7 @@ class Collectible(ABC):
     @property
     def type(self):
         return self.__type
+
+    @abstractmethod
+    def __str__(self):
+        pass
