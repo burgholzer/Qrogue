@@ -4,6 +4,7 @@ import py_cui
 
 from game.actors.enemy import Enemy
 from game.actors.player import Player as PlayerActor
+from game.collectibles.collectible import Collectible
 from game.controls import Controls
 from game.map.map import Map
 from game.map.navigation import Direction
@@ -99,7 +100,8 @@ class QrogueCUI(py_cui.PyCUI):
             self.__explore.set_data(map, map.player)
         self.apply_widget_set(self.__explore)
 
-    def continue_explore(self):
+    def continue_explore(self, player: PlayerActor, reward: Collectible):
+        player.give_collectible(reward)
         self.__state_machine.change_state(State.Explore, None)
 
     def switch_to_fight(self, data):

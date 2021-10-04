@@ -192,13 +192,13 @@ class Enemy(WalkTriggerTile):
         if isinstance(actor, PlayerActor):
             if self.__state == _EnemyState.UNDECIDED:
                 if self.measure():
-                    enemy = self.__factory.get_enemy()
+                    enemy = self.__factory.get_enemy(actor)
                     self._on_walk_callback(actor, enemy, direction)
                     self.__state = _EnemyState.DEAD
                 else:
                     self.__state = _EnemyState.FLED
             elif self.__state == _EnemyState.FIGHT:
-                enemy = self.__factory.get_enemy()
+                enemy = self.__factory.get_enemy(actor)
                 self._on_walk_callback(actor, enemy, direction)
                 self.__state = _EnemyState.DEAD
             elif self.__state == _EnemyState.FREE:

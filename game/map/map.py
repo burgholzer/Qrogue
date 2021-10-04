@@ -3,7 +3,7 @@ import random
 
 import game.map.tiles as tiles
 from game.actors.boss import DummyBoss
-from game.actors.factory import EnemyFactory
+from game.actors.factory import EnemyFactory, DummyFightDifficulty
 from game.map.navigation import Coordinate, Direction
 from game.map.rooms import Room, SpawnRoom, BossRoom, WildRoom
 from util.config import MapConfig
@@ -19,7 +19,7 @@ class Map:
         rand.seed(seed)
         self.__player = player  # TODO save player_pos in player?
         self.__start_fight_callback = start_fight_callback
-        self.__enemy_factory = EnemyFactory(self.__start_fight_callback)
+        self.__enemy_factory = EnemyFactory(self.__start_fight_callback, DummyFightDifficulty())
 
         if MapConfig.create_random():
             for y in range(height):

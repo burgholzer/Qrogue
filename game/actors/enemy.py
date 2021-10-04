@@ -1,14 +1,15 @@
 from abc import ABC, abstractmethod
 
 from game.actors.player import Player
-from game.logic.difficulty import Difficulty, DummyDifficulty
+from game.collectibles.collectible import Collectible
+from game.collectibles.pickup import Coin
 from game.logic.qubit import StateVector
 
 
 class Enemy(ABC):
-    def __init__(self, difficulty: Difficulty):
-        self.__difficulty = difficulty
-        self.__target = None
+    def __init__(self, target: StateVector, reward: Collectible):
+        self.__target = target
+        self.__reward = reward
         self.__alive = True
 
     @property
@@ -21,20 +22,20 @@ class Enemy(ABC):
     def get_img(self):
         pass
 
-    def _on_death(self):
+    def _on_death(self) -> Collectible:
         self.__alive = False
+        return self.__reward
 
     def fight_init(self, player: Player):
-        self.__target = self.__difficulty.create_statevector(player.num_of_qubits)
+        pass#self.__target = self.__difficulty.create_statevector(player.num_of_qubits)
 
     def get_statevector(self) -> StateVector:
         return self.__target
 
-    def damage(self, state_vec: StateVector):
+    def damage(self, state_vec: StateVector) -> (bool, Collectible):
         if self.__target.is_equal_to(state_vec):
-            self._on_death()
-            return True
-        return False
+            return True, self._on_death()
+        return False, None
 
     def is_alive(self):
         return self.__alive
@@ -48,8 +49,8 @@ class Enemy(ABC):
 
 
 class DummyEnemy(Enemy):
-    def __init__(self, difficulty: Difficulty = DummyDifficulty()):
-        super(DummyEnemy, self).__init__(difficulty)
+    def __init__(self, target: StateVector):
+        super(DummyEnemy, self).__init__(target, Coin(1))
 
     def get_img(self):
         return "E"

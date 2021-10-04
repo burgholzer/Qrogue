@@ -151,7 +151,7 @@ class FightWidgetSet(MyWidgetSet):
     __NUM_OF_ROWS = 9
     __NUM_OF_COLS = 9
 
-    def __init__(self, logger, end_of_fight_callback):
+    def __init__(self, logger, end_of_fight_callback: "void(Collectible)"):
         super().__init__(self.__NUM_OF_ROWS, self.__NUM_OF_COLS, logger)
         self.__player = None
         self.__enemy = None
@@ -238,10 +238,11 @@ class FightWidgetSet(MyWidgetSet):
         return True
 
     def __choices_commit(self) -> bool:
-        if self.__attack():
+        fight_end, reward = self.__attack()
+        if fight_end:
             self.__details.set_data(data=(
-                ["Get reward! TODO implement"],
-                [self.__end_of_fight_callback]
+                [f"Get reward: {reward}"],
+                [self.__end_of_fight_callback(self.__player, reward)]
             ))
             return True
         return False

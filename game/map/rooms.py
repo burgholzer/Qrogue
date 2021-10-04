@@ -99,15 +99,12 @@ class SpawnRoom(Room):
 
 class WildRoom(Room):
     def __init__(self, factory: EnemyFactory, tiles: "list of tiles", doors: "list of Doors"):
-
         self.__dictionary = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [], 8: [], 9: [] }
         if tiles is None or len(tiles) <= 0:
             tiles = []
             chance = 0.3
             for x in range(Room.INNER_WIDTH * Room.INNER_HEIGHT):
                 if RM.instance().get() < chance:
-                    enemy = DummyEnemy()
-                    from game.game import GameHandler
                     id = RM.instance().get_int(min=0, max=10)
                     enemy = Enemy(factory, self.get_tiles_by_id, id)
                     if id > 0:

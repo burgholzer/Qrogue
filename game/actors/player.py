@@ -7,6 +7,8 @@ from abc import ABC, abstractmethod
 from qiskit import QuantumCircuit, transpile
 from qiskit.providers.aer import StatevectorSimulator
 
+from game.collectibles.collectible import Collectible, CollectibleType
+from game.collectibles.pickup import Coin
 from game.logic.instruction import Instruction, HGate
 from game.logic.qubit import QubitSet, EmptyQubitSet, DummyQubitSet, StateVector
 # from jkq import ddsim
@@ -110,6 +112,9 @@ class Player(ABC):
         self.__apply_instructions()
         self.measure()  # to initialize the statevector
 
+        # init other stats
+        self.__coin_count = 0
+
     @property
     def backpack(self):
         return self.__backpack
@@ -162,6 +167,10 @@ class Player(ABC):
             return f"q_{index}"
         else:
             return "ERROR"  # todo adapt?
+
+    def give_collectible(self, collectible: Collectible):
+        if type(collectible) is Coin:
+            self.__coin_count += collectible.amount
 
     @property
     def num_of_qubits(self):
