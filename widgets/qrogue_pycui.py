@@ -81,7 +81,6 @@ class QrogueCUI(py_cui.PyCUI):
         new_widget_set.reset()
         super().apply_widget_set(new_widget_set)
         self.__cur_widget_set = new_widget_set
-        self.__cur_widget_set.activate_logger()
         self.move_focus(self.__cur_widget_set.get_main_widget(), auto_press_buttons=False)
         self.__cur_widget_set.render()
 
