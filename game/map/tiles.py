@@ -131,20 +131,29 @@ class FogOfWar(Tile):
         return True
 
 
-class Door(Tile):
-    def __init__(self, direction: Direction, locked: bool = False):   # todo entangled door as extra class?
-        super().__init__(TileCode.Door)
+class Door(WalkTriggerTile):
+    def __init__(self, direction: Direction, locked: bool = False, opened: bool = False):   # todo entangled door as extra class?
+        super().__init__(TileCode.Door, on_walk_callback=None)
         self.__direction = direction
         self.__locked = locked
+        self.__opened = opened
 
     def get_img(self):
-        return "D"
+        if self.__opened:
+            return " "
+        if self.__direction is Direction.East or self.__direction is Direction.West:
+            return "|"
+        else:
+            return "-"
 
     def is_walkable(self, direction: Direction, actor) -> bool:
         if direction == self.__direction or direction == self.__direction.opposite():
             return not self.__locked
         else:
             return False
+
+    def on_walk(self, direction: Direction, actor) -> None:
+        self.__opened = True
 
     @property
     def direction(self) -> Direction:
