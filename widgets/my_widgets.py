@@ -15,19 +15,19 @@ class Widget(ABC):
         self.__widget = widget
 
     @property
-    def widget(self):
+    def widget(self) -> BlockLabel:
         return self.__widget
 
     @abstractmethod
-    def set_data(self, data):
+    def set_data(self, data) -> None:
         pass
 
     @abstractmethod
-    def render(self):
+    def render(self) -> None:
         pass
 
     @abstractmethod
-    def render_reset(self):
+    def render_reset(self) -> None:
         pass
 
 
@@ -36,13 +36,13 @@ class SimpleWidget(Widget):
         super().__init__(widget)
         self.__text = ""
 
-    def set_data(self, data):
+    def set_data(self, data) -> None:
         self.__text = str(data)
 
-    def render(self):
+    def render(self) -> None:
         self.widget.set_title(self.__text)
 
-    def render_reset(self):
+    def render_reset(self) -> None:
         self.widget.set_title("")
 
 
@@ -51,10 +51,10 @@ class CircuitWidget(Widget):
         super().__init__(widget)
         self.__player = None
 
-    def set_data(self, player: PlayerActor):
+    def set_data(self, player: PlayerActor) -> None:
         self.__player = player
 
-    def render(self):
+    def render(self) -> None:
         if self.__player is not None:
             entry = "-" * (3 + Instruction.MAX_ABBREVIATION_LEN + 3)
             row = [entry] * self.__player.space
@@ -62,9 +62,7 @@ class CircuitWidget(Widget):
             for i in range(self.__player.num_of_qubits):
                 rows.append(row.copy())
 
-            instructions = self.__player.instructions
-            for i in range(len(instructions)):
-                inst = instructions[i]
+            for i, inst in self.__player.circuit_enumerator():
                 for q in inst.qargs:
                     inst_str = inst.abbreviation(q)
                     diff_len = Instruction.MAX_ABBREVIATION_LEN - len(inst_str)
@@ -87,7 +85,7 @@ class CircuitWidget(Widget):
                 circ_str += "< M |\n"
             self.widget.set_title(circ_str)
 
-    def render_reset(self):
+    def render_reset(self) -> None:
         self.widget.set_title("")
 
 
@@ -97,10 +95,10 @@ class MapWidget(Widget):
         self.__map = None
         self.__backup = None
 
-    def set_data(self, map: Map):
+    def set_data(self, map: Map) -> None:
         self.__map = map
 
-    def render(self):   # todo more efficient rendering!
+    def render(self) -> None:   # todo more efficient rendering!
         if self.__map is not None:
             str_rep = ""
             for y in range(self.__map.height):
@@ -110,7 +108,7 @@ class MapWidget(Widget):
                 str_rep += "\n"
             self.widget.set_title(str_rep)
 
-    def render_reset(self):
+    def render_reset(self) -> None:
         self.__backup = self.widget.get_title().title()
         self.widget.set_title("")
 
@@ -124,15 +122,15 @@ class StateVectorWidget(Widget):
         self.__headline = headline
         self.__state_vector = None
 
-    def set_data(self, state_vector: StateVector):
+    def set_data(self, state_vector: StateVector) -> None:
         self.__state_vector = state_vector
 
-    def render(self):
+    def render(self) -> None:
         if self.__state_vector is not None:
             str_rep = f"~{self.__headline}~\n{self.__state_vector}"
             self.widget.set_title(str_rep)
 
-    def render_reset(self):
+    def render_reset(self) -> None:
         self.widget.set_title("")
 
 
@@ -151,10 +149,10 @@ class SelectionWidget(Widget):
         self.__parameter = None
 
     @property
-    def choice_length(self):
+    def choice_length(self) -> int:
         return self.__choice_length
 
-    def set_data(self, data: "tuple of list of str and list of SelectionCallbacks"):
+    def set_data(self, data: "tuple of list of str and list of SelectionCallbacks") -> None:
         self.render_reset()
         self.__choices = data[0]
         self.__callbacks = data[1]
@@ -165,10 +163,10 @@ class SelectionWidget(Widget):
         for i in range(len(self.__choices)):
             self.__choices[i] = self.__choices[i].ljust(self.__choice_length)
 
-    def set_parameter(self, parameter):
+    def set_parameter(self, parameter) -> None:
         self.__parameter = parameter
 
-    def render(self):
+    def render(self) -> None:
         str_rep = ""
         for i in range(len(self.__choices)):
             if i == self.__index and self.widget.is_selected():
@@ -184,17 +182,17 @@ class SelectionWidget(Widget):
                 str_rep += self.__COLUMN_SEPARATOR
         self.widget.set_title(str_rep)
 
-    def render_reset(self):
+    def render_reset(self) -> None:
         self.widget.set_title("")
         self.__index = 0
 
-    def up(self):
+    def up(self) -> None:
         self.__index -= self.__columns
         if self.__index < 0:
             self.__index += len(self.__choices)
         self.render()
 
-    def right(self):
+    def right(self) -> None:
         if self.__columns == 1:
             self.down()
         else:
@@ -204,13 +202,13 @@ class SelectionWidget(Widget):
             else:
                 self.render()
 
-    def down(self):
+    def down(self) -> None:
         self.__index += self.__columns
         if self.__index >= len(self.__choices):
             self.__index -= len(self.__choices)
         self.render()
 
-    def left(self):
+    def left(self) -> None:
         if self.__columns == 1:
             self.up()
         else:

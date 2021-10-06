@@ -22,7 +22,7 @@ class QrogueCUI(py_cui.PyCUI):
 
         self.__menu = MenuWidgetSet(Logger.instance(), self.__start_gameplay, self.__start_fight)
         self.__explore = ExploreWidgetSet(Logger.instance())
-        self.__fight = FightWidgetSet(Logger.instance(), self.continue_explore)
+        self.__fight = FightWidgetSet(Logger.instance(), self.__continue_explore)
 
         self.__cur_widget_set = None
         self.__init_keys()
@@ -30,7 +30,7 @@ class QrogueCUI(py_cui.PyCUI):
         self.__state_machine.change_state(State.Menu, None)
         self.render()
 
-    def __init_keys(self):
+    def __init_keys(self) -> None:
         # debugging stuff
         self.add_key_command(self.__controls.print_screen, self.print_screen)
         self.__menu.get_main_widget().add_key_command(self.__controls.print_screen, self.print_screen)
@@ -60,7 +60,7 @@ class QrogueCUI(py_cui.PyCUI):
         self.__fight.choices.widget.add_key_command(self.__controls.action, self.__use_choice)
         self.__fight.details.widget.add_key_command(self.__controls.action, self.__use_details)
 
-    def print_screen(self):
+    def print_screen(self) -> None:
         import os
         from datetime import datetime
         folder = os.path.join("Documents", "Studium", "Master", "3. Semester", "Qrogue", "screenprints")
@@ -78,55 +78,54 @@ class QrogueCUI(py_cui.PyCUI):
         file.write(text)
         file.close()
 
-    def apply_widget_set(self, new_widget_set: MyWidgetSet):
+    def apply_widget_set(self, new_widget_set: MyWidgetSet) -> None:
         new_widget_set.reset()
         super().apply_widget_set(new_widget_set)
         self.__cur_widget_set = new_widget_set
         self.move_focus(self.__cur_widget_set.get_main_widget(), auto_press_buttons=False)
         self.__cur_widget_set.render()
 
-    def switch_to_menu(self, data):
+    def switch_to_menu(self, data) -> None:
         self.apply_widget_set(self.__menu)
 
-    def __start_gameplay(self, map: Map):
+    def __start_gameplay(self, map: Map) -> None:
         self.__state_machine.change_state(State.Explore, map)
 
-    def __start_fight(self, player: PlayerActor, enemy: Enemy, direction: Direction):
+    def __start_fight(self, player: PlayerActor, enemy: Enemy, direction: Direction) -> None:
         self.__state_machine.change_state(State.Fight, (enemy, player))
 
-    def switch_to_explore(self, data):
+    def switch_to_explore(self, data) -> None:
         if data is not None:
             map = data
             self.__explore.set_data(map, map.player)
         self.apply_widget_set(self.__explore)
 
-    def continue_explore(self, data: "tuple of Player and Collectible"):
+    def __continue_explore(self, data: "tuple of Player and Collectible") -> None:
         player = data[0]
         reward = data[1]
         player.give_collectible(reward)
         self.__state_machine.change_state(State.Explore, None)
 
-    def switch_to_fight(self, data):
+    def switch_to_fight(self, data) -> None:
         enemy = data[0]
         player = data[1]
-        enemy.fight_init(player)
         self.__fight.set_data(player, enemy)
         self.apply_widget_set(self.__fight)
 
-    def render(self):
+    def render(self) -> None:
         self.__cur_widget_set.render()
 
-    def __use_menu_selection(self):
+    def __use_menu_selection(self) -> None:
         if self.__menu.selection.use() and self.__cur_widget_set is self.__menu:
             self.render()
 
-    def __use_choice(self):
+    def __use_choice(self) -> None:
         if self.__fight.choices.use() and self.__cur_widget_set is self.__fight:
             self.move_focus(self.__fight.details.widget, auto_press_buttons=False)
             self.__fight.choices.render()
             self.__fight.details.render()
 
-    def __use_details(self):
+    def __use_details(self) -> None:
         if self.__fight.details.use() and self.__cur_widget_set is self.__fight:
             self.move_focus(self.__fight.choices.widget, auto_press_buttons=False)
             self.__fight.render()   # needed for updating the StateVectors and the circuit
@@ -147,14 +146,14 @@ class StateMachine:
         self.__prev_state = None
 
     @property
-    def cur_state(self):
+    def cur_state(self) -> State:
         return self.__cur_state
 
     @property
-    def prev_state(self):
+    def prev_state(self) -> State:
         return self.__prev_state
 
-    def change_state(self, state: State, data):
+    def change_state(self, state: State, data) -> None:
         self.__prev_state = self.__cur_state
         self.__cur_state = state
 

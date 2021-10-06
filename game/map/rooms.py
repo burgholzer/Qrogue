@@ -1,5 +1,5 @@
-from game.actors.enemy import DummyEnemy
 from game.map.tiles import *
+from game.map.tiles import Enemy as EnemyTile
 from util.my_random import RandomManager as RM
 
 
@@ -16,9 +16,13 @@ class Room(ABC):
     def __init__(self, tiles: "list of tiles", doors: "list of Doors"):
         self.__tiles = []
         top = [ Wall() for t in range(Room.ROOM_WIDTH) ]
+        # Add an additional invisible Tile so we have space for hallways. We only need this on the right side and
+        # bottom of a room since the hallways at the top or left of the room will be displayed in the neighbouring
+        # room.
         top.append(Void())
         self.__tiles.append(top)
 
+        # fence the room tiles with Walls
         for y in range(Room.INNER_HEIGHT):
             row = [Wall()]
             for x in range(Room.INNER_WIDTH):
@@ -27,11 +31,12 @@ class Room(ABC):
                 else:
                     row.append(Floor())
             row.append(Wall())
-            row.append(Void())
+            row.append(Void()) # again append an invisible Tile to the right
             self.__tiles.append(row)
 
         room_bottom = [ Wall() for t in range(Room.ROOM_WIDTH) ]
         room_bottom.append(Void())
+        # append the visible row at the bottom for potential hallways
         bottom = [ Void() for t in range(Room.OUTER_WIDTH)]
 
         self.__tiles.append(room_bottom)
@@ -58,13 +63,20 @@ class Room(ABC):
             elif door.direction == Direction.West:
                 self.__tiles[Room.MID_Y][0] = Floor()
 
-    def _set_tile(self, tile: Tile, x: int, y: int):
+    def _set_tile(self, tile: Tile, x: int, y: int) -> bool:
+        """
+
+        :param tile: the Tile we want to place
+        :param x: horizontal position of the Tile
+        :param y: vertical position of the Tile
+        :return: whether we could place the Tile at the given position or not
+        """
         if 0 <= x < Room.OUTER_WIDTH and 0 <= y < Room.OUTER_HEIGHT:
             self.__tiles[y][x] = tile
             return True
         return False
 
-    def get_row(self, y: int):
+    def get_row(self, y: int) -> "list of Tiles":
         if 0 <= y < Room.OUTER_HEIGHT:
             row = []
             for x in range(len(self.__tiles[y])):
@@ -73,7 +85,14 @@ class Room(ABC):
         else:
             return Room.OUTER_HEIGHT * [Invalid()]
 
-    def at(self, x: int, y: int, force: bool = False):
+    def at(self, x: int, y: int, force: bool = False) -> Tile:
+        """
+
+        :param x: horizontal position of the Tile we want to know
+        :param y: vertical position of the Tile we want to know
+        :param force: whether we return the real Tile or not (e.g. invisible Rooms usually return Fog)
+        :return: the Tile at the requested position
+        """
         if 0 <= x < Room.OUTER_WIDTH and 0 <= y < Room.OUTER_HEIGHT:
             if self.__is_visible or force:
                 return self.__tiles[y][x]
@@ -89,7 +108,11 @@ class Room(ABC):
         self.__was_visited = True
 
     def leave(self, direction: Direction):
-        test = 0
+        pass
+
+    @abstractmethod
+    def __str__(self):
+        pass
 
 
 class SpawnRoom(Room):
@@ -106,7 +129,7 @@ class WildRoom(Room):
             for x in range(Room.INNER_WIDTH * Room.INNER_HEIGHT):
                 if RM.instance().get() < chance:
                     id = RM.instance().get_int(min=0, max=10)
-                    enemy = Enemy(factory, self.get_tiles_by_id, id)
+                    enemy = EnemyTile(factory, self.get_tiles_by_id, id)
                     if id > 0:
                         self.__dictionary[id].append(enemy)
                     tiles.append(enemy)
@@ -118,7 +141,7 @@ class WildRoom(Room):
     def __str__(self):
         return "WR"
 
-    def get_tiles_by_id(self, id: int):
+    def get_tiles_by_id(self, id: int) -> "list of EnemyTiles":
         return self.__dictionary[id]
 
 
@@ -142,3 +165,6 @@ class BossRoom(Room):
     def __init__(self, door: Door, boss: Boss, tiles: "list of tiles" = None):
         super().__init__(tiles, [door])
         self._set_tile(boss, x=Room.MID_X, y=Room.MID_Y)
+
+    def __str__(self) -> str:
+        return "BR"

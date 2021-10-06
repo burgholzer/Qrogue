@@ -6,7 +6,7 @@ class TileRenderer:
     __instance = None
 
     @staticmethod
-    def instance():
+    def instance() -> "TileRenderer":
         if TileRenderer.__instance is None:
             TileRenderer()
         return TileRenderer.__instance

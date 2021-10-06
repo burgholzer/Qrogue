@@ -2,13 +2,13 @@
 from abc import ABC, abstractmethod
 
 import qiskit.circuit.library.standard_gates as gates
-
-
-# wrapper for gates from qiskit.circuit.library with their needed arguments (qubits/cbits to apply it on)
 from qiskit import QuantumCircuit
 
 
 class Instruction(ABC):
+    """
+    Wrapper class for gates from qiskit.circuit.library with their needed arguments (qubits/cbits to apply it on)
+    """
     MAX_ABBREVIATION_LEN = 5
 
     def __init__(self, instruction, qargs: "list of ints", cargs: "list of ints" = None):
@@ -28,10 +28,6 @@ class Instruction(ABC):
 
     def append_to(self, circuit: QuantumCircuit):
         circuit.append(self.__instruction, self.__qargs, self.__cargs)
-
-    @property
-    def instruction(self):
-        return self.__instruction
 
     @property
     def qargs(self) -> "list of ints":

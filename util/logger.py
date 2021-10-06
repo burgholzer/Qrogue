@@ -17,17 +17,17 @@ class Logger:
             self.__error_popup = None
             Logger.__instance = self
 
-    def set_popup(self, message_popup_function: "void(str, str)", error_popup_function: "void(str, str)"):
+    def set_popup(self, message_popup_function: "void(str, str)", error_popup_function: "void(str, str)") -> None:
         self.__message_popup = message_popup_function
         self.__error_popup = error_popup_function
 
-    def info(self, message):
+    def info(self, message) -> None:
         pass
 
-    def error(self, message):
+    def error(self, message) -> None:
         self.__error_popup("ERROR", message)
 
-    def print(self, message: str, clear: bool = False):
+    def print(self, message: str, clear: bool = False) -> None:
         print(message)
         if clear:
             self.__text = message
@@ -35,10 +35,10 @@ class Logger:
             self.__text += message
         self.__message_popup("Logger", self.__text)
 
-    def println(self, message: str = "", clear: bool = False):
+    def println(self, message: str = "", clear: bool = False) -> None:
         self.print(f"{message}\n", clear)
 
-    def print_list(self, list=[], delimiter: str = ", "):
+    def print_list(self, list=[], delimiter: str = ", ") -> None:
         sb = "["
         for elem in list:
             if elem is not None:
@@ -47,5 +47,5 @@ class Logger:
         sb += "]"
         self.print(sb)
 
-    def clear(self):
+    def clear(self) -> None:
         self.__text = ""

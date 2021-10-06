@@ -28,14 +28,14 @@ class Direction(Enum):
         self.__y = y
 
     @property
-    def x(self):
+    def x(self) -> int:
         return self.__x
 
     @property
-    def y(self):
+    def y(self) -> int:
         return self.__y
 
-    def opposite(self):
+    def opposite(self) -> "Direction":
         if self == Direction.North:
             return Direction.South
         elif self == Direction.East:
@@ -54,14 +54,14 @@ class Coordinate:
         self.__y = y
 
     @property
-    def x(self):
+    def x(self) -> int:
         return self.__x
 
     @property
-    def y(self):
+    def y(self) -> int:
         return self.__y
 
-    def resolve(self):
+    def resolve(self) -> (int, int):
         return self.__x, self.__y
 
     def __add__(self, other) -> "Coordinate":
@@ -72,7 +72,7 @@ class Coordinate:
         else:
             raise NotImplementedError(f"Adding \"{other}\" to a Coordinate is not supported!")
 
-    def __sub__(self, other):
+    def __sub__(self, other) -> "Coordinate":
         if isinstance(other, Direction):
             return Coordinate(self.x - other.x, self.y - other.y)
         elif isinstance(other, Coordinate):
@@ -81,7 +81,7 @@ class Coordinate:
             raise NotImplementedError(f"Subtracting \"{other}\" from a Coordinate is not supported!")
 
 
-def direction(c_from: Coordinate, c_to: Coordinate):
+def direction(c_from: Coordinate, c_to: Coordinate) -> Direction:
     diff = c_to - c_from
     if diff.x == 0 and diff.y == 0:
         return Direction.Center
@@ -97,7 +97,7 @@ def direction(c_from: Coordinate, c_to: Coordinate):
             return Direction.North
 
 
-def distance(a: Coordinate, b: Coordinate):
+def distance(a: Coordinate, b: Coordinate) -> int:
     diff_x = a.x - b.x
     diff_y = a.y - b.y
     if diff_x < 0:

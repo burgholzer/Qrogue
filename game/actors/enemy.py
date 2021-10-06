@@ -12,12 +12,6 @@ class Enemy(ABC):
         self.__reward = reward
         self.__alive = True
 
-    @property
-    def target(self) -> "list of numbers":
-        if self.__target is None:
-            raise Exception("Illegal call! Target not initialized yet.")
-        return self.__target.to_value()
-
     @abstractmethod
     def get_img(self):
         pass
@@ -25,9 +19,6 @@ class Enemy(ABC):
     def _on_death(self) -> Collectible:
         self.__alive = False
         return self.__reward
-
-    def fight_init(self, player: Player):
-        pass#self.__target = self.__difficulty.create_statevector(player.num_of_qubits)
 
     def get_statevector(self) -> StateVector:
         return self.__target

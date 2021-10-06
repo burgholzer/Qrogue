@@ -17,10 +17,10 @@ class StateVector:
     def num_of_qubits(self) -> int:
         return int(np.log2(self.size))
 
-    def to_value(self):
+    def to_value(self) -> "list of floats":
         return [np.round(val.real**2 + val.imag**2, decimals=StateVector.__DECIMALS) for val in self.__amplitudes]
 
-    def is_equal_to(self, other, tolerance: float = __TOLERANCE):
+    def is_equal_to(self, other, tolerance: float = __TOLERANCE) -> bool:
         if type(other) is not type(self):
             return False
         # other_value needs at least as many entries as self_value, more are allowed
@@ -44,7 +44,9 @@ class StateVector:
         else:
             return None
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool: # TODO currently not even in use!
+        #from util.logger import Logger
+        #Logger.instance().error("Test")
         if type(other) is type(self):
             return self.__amplitudes == other.__amplitudes
         elif type(other) is type([True, False]):  # TODO how to check correctly for bool-list?
@@ -63,7 +65,7 @@ class StateVector:
             return False
         return False
 
-    def __str__(self):
+    def __str__(self) -> str:
         text = ""
         for val in self.__amplitudes:
             text += f"{np.round(val, 2)}\n"

@@ -20,45 +20,45 @@ class Controls:
         self.__print_screen = KEY_CTRL_P
 
     @property
-    def move_up(self):
+    def move_up(self) -> int:
         return self.__move_up
 
     @property
-    def move_right(self):
+    def move_right(self) -> int:
         return self.__move_right
 
     @property
-    def move_down(self):
+    def move_down(self) -> int:
         return self.__move_down
 
     @property
-    def move_left(self):
+    def move_left(self) -> int:
         return self.__move_left
 
     @property
-    def selection_up(self):
+    def selection_up(self) -> int:
         return self.__selection_up
 
     @property
-    def selection_right(self):
+    def selection_right(self) -> int:
         return self.__selection_right
 
     @property
-    def selection_down(self):
+    def selection_down(self) -> int:
         return self.__selection_down
 
     @property
-    def selection_left(self):
+    def selection_left(self) -> int:
         return self.__selection_left
 
     @property
-    def action(self):
+    def action(self) -> int:
         return self.__action
 
     @property
-    def render(self):
+    def render(self) -> int:
         return self.__render
 
     @property
-    def print_screen(self):
+    def print_screen(self) -> int:
         return self.__print_screen

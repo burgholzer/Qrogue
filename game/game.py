@@ -24,9 +24,9 @@ class GameHandler:
 
             self.__renderer = QrogueCUI(seed, Controls())
 
-    def start(self):
+    def start(self) -> None:
         self.__renderer.start()
         self.__renderer.render()
 
-    def stop(self):
+    def stop(self) -> None:
         self.__renderer.stop()

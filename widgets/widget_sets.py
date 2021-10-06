@@ -16,16 +16,19 @@ from widgets.my_widgets import SelectionWidget, StateVectorWidget, CircuitWidget
 
 
 class MyWidgetSet(WidgetSet, ABC):
+    """
+    Class that handles different sets of widgets so we can easily switch between different screens.
+    """
     def __init__(self, num_rows, num_cols, logger):
         super().__init__(num_rows, num_cols, logger)
         self.init_widgets()
 
-    def render(self):
+    def render(self) -> None:
         for widget in self.get_widget_list():
             widget.render()
 
     @abstractmethod
-    def init_widgets(self):
+    def init_widgets(self) -> None:
         pass
 
     @abstractmethod
@@ -37,7 +40,7 @@ class MyWidgetSet(WidgetSet, ABC):
         pass
 
     @abstractmethod
-    def reset(self):
+    def reset(self) -> None:
         pass
 
 
@@ -57,7 +60,7 @@ class MenuWidgetSet(MyWidgetSet):
         self.__seed = 7
         self.__start_fight_callback = start_fight_callback
 
-    def init_widgets(self):
+    def init_widgets(self) -> None:
         title = self.add_block_label("Qrogue", 0, 0, row_span=6, column_span=self.__NUM_OF_COLS, center=True)
         self.__title = SimpleWidget(title)
         self.__title.set_data(_ascii_art)
@@ -78,25 +81,25 @@ class MenuWidgetSet(MyWidgetSet):
     def get_main_widget(self) -> py_cui.widgets.Widget:
         return self.__selection.widget
 
-    def reset(self):
+    def reset(self) -> None:
         self.__selection.render_reset()
 
     @property
-    def selection(self):
+    def selection(self) -> SelectionWidget:
         return self.__selection
 
-    def __play(self):
+    def __play(self) -> None:
         player_tile = tiles.Player(DummyPlayer())
         map = Map(self.__seed, self.__MAP_WIDTH, self.__MAP_HEIGHT, player_tile, self.__start_fight_callback)
         self.__start_gameplay_callback(map)
 
-    def __tutorial(self):
+    def __tutorial(self) -> None:
         print("Tutorial")
 
-    def __options(self):
+    def __options(self) -> None:
         print("todo")
 
-    def __exit(self):
+    def __exit(self) -> None:
         #GameHandler.instance().stop()
         exit()
 
@@ -111,7 +114,7 @@ class ExploreWidgetSet(MyWidgetSet):
                                          column_span=self.__NUM_OF_COLS)
         self.__first_row.toggle_border()
 
-    def init_widgets(self):
+    def init_widgets(self) -> None:
         map_widget = self.add_block_label('MAP', 1, 2, row_span=5, column_span=5, center=True)
         self.__map_widget = MapWidget(map_widget)
 
@@ -120,7 +123,7 @@ class ExploreWidgetSet(MyWidgetSet):
     def get_main_widget(self) -> py_cui.widgets.Widget:
         return self.__map_widget.widget
 
-    def set_data(self, map: Map, player_tile: PlayerTile):
+    def set_data(self, map: Map, player_tile: PlayerTile) -> None:
         self.__map_widget.set_data(map)
 
     def get_widget_list(self) -> "list of Widgets":
@@ -128,24 +131,25 @@ class ExploreWidgetSet(MyWidgetSet):
             self.__map_widget
         ]
 
-    def reset(self):
+    def reset(self) -> None:
         self.__map_widget.widget.set_title("")
 
-    def move_up(self):
+    def move_up(self) -> None:
         if self.__map_widget.move(Direction.Up):
             self.render()
 
-    def move_right(self):
+    def move_right(self) -> None:
         if self.__map_widget.move(Direction.Right):
             self.render()
 
-    def move_down(self):
+    def move_down(self) -> None:
         if self.__map_widget.move(Direction.Down):
             self.render()
 
-    def move_left(self):
+    def move_left(self) -> None:
         if self.__map_widget.move(Direction.Left):
             self.render()
+
 
 class FightWidgetSet(MyWidgetSet):
     __NUM_OF_ROWS = 9
@@ -157,7 +161,7 @@ class FightWidgetSet(MyWidgetSet):
         self.__enemy = None
         self.__end_of_fight_callback = end_of_fight_callback
 
-    def init_widgets(self):
+    def init_widgets(self) -> None:
         logger_row = self.add_block_label('Logger', 0, 0, row_span=1, column_span=self.__NUM_OF_COLS, center=True)
         logger_row.toggle_border()
         self.__logger_row = logger_row
@@ -196,7 +200,7 @@ class FightWidgetSet(MyWidgetSet):
     def get_main_widget(self) -> py_cui.widgets.Widget:
         return self.__choices.widget
 
-    def set_data(self, player: PlayerActor, enemy: Enemy):
+    def set_data(self, player: PlayerActor, enemy: Enemy) -> None:
         self.__player = player
         self.__enemy = enemy
 
@@ -218,16 +222,16 @@ class FightWidgetSet(MyWidgetSet):
             self.__details
         ]
 
-    def reset(self):
+    def reset(self) -> None:
         self.choices.render_reset()
         self.details.render_reset()
 
     @property
-    def choices(self):
+    def choices(self) -> SelectionWidget:
         return self.__choices
 
     @property
-    def details(self):
+    def details(self) -> SelectionWidget:
         return self.__details
 
     def __choices_adapt(self) -> bool:
@@ -266,7 +270,7 @@ class FightWidgetSet(MyWidgetSet):
             Logger.instance().error("Error! Enemy is not set!")
             return False
 
-        result = self.__player.measure()
+        result = self.__player.update_statevector()
         self.__stv_player.set_data(result)
         self.__stv_diff.set_data(result.get_diff(self.__enemy.get_statevector()))
         self.render()

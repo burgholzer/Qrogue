@@ -16,10 +16,16 @@ from util.logger import Logger
 
 
 class PlayerAttributes:
-    # default values
-    __CIRCUIT_SPACE = 3
+    """
+    Is used as storage for a bunch of attributes of the player
+    """
 
-    def __init__(self, qubits: QubitSet = EmptyQubitSet(), space: int = __CIRCUIT_SPACE):
+    def __init__(self, qubits: QubitSet = EmptyQubitSet(), space: int = 3):
+        """
+
+        :param qubits: the set of qubits the player is currently using
+        :param space: how many instructions the player can put on their circuit
+        """
         self.__space = space
         self.__qubits = qubits
 
@@ -31,58 +37,80 @@ class PlayerAttributes:
     def space(self):
         return self.__space
 
-    def set_space(self, value: int):
-        if value < 1:
-            raise ValueError("value must be >= 1!")
-        self.__space = value
-
     @property
     def qubits(self):
         return self.__qubits
 
 
 class Backpack:
-    CAPACITY = 4
+    """
+    Stores the Instructions for the player to use.
+    """
+    __CAPACITY = 4
 
-    def __init__(self, capacity: int = CAPACITY, content: "list of Instructions" = []):
+    def __init__(self, capacity: int = __CAPACITY, content: "list of Instructions" = []):
+        """
+
+        :param capacity: how many Instructions can be stored in this Backpack
+        :param content: initially stored Instructions
+        """
         self.__capacity = capacity
         self.__storage = content
 
-    def __iter__(self):
+    def __iter__(self) -> "BackpackIterator":
         return BackpackIterator(self)
 
     @property
-    def capacity(self):
+    def capacity(self) -> int:
         return self.__capacity
 
     @property
-    def size(self):
+    def size(self) -> int:
         return len(self.__storage)
 
-    def get(self, index: int):
+    def get(self, index: int) -> Instruction:
         if 0 <= index < self.size:
             return self.__storage[index]
 
-    def add(self, instruction: Instruction):
+    def add(self, instruction: Instruction) -> bool:
+        """
+        Adds an Instruction to the backpack if possible.
+
+        :param instruction: the Instruction to add
+        :return: True if there is enough capacity left to store the Instruction, False otherwise
+        """
         if len(self.__storage) < self.__capacity:
             self.__storage.append(instruction)
             return True
         return False
 
-    def remove(self, instruction: Instruction):
+    def remove(self, instruction: Instruction) -> bool:
+        """
+        Removes an Instruction from the backpack if it's present.
+
+        :param instruction: the Instruction we want to remove
+        :return: True if the Instruction is in the backpack and we were able to remove it, False otherwise
+        """
         for i in range(len(self.__storage)):
             if self.__storage[i] == instruction:
                 self.__storage.remove(instruction)
                 return True
-        return False
+        try:
+            self.__storage.remove(instruction)
+            return True
+        except ValueError:
+            return False
 
 
 class BackpackIterator:
+    """
+    Allows us to easily iterate through all the Instructions in a backpack
+    """
     def __init__(self, backpack: Backpack):
         self.__index = 0
         self.__backpack = backpack
 
-    def __next__(self):
+    def __next__(self) -> Instruction:
         if self.__index < self.__backpack.size:
             item = self.__backpack.get(self.__index)
             self.__index += 1
@@ -102,96 +130,111 @@ class Player(ABC):
             self.__qubit_indices.append(i)
 
         # initialize gate stuff (columns)
-        self.next_col = 0
+        self.__next_col = 0
 
         # apply gates/instructions, create the circuit
-        self.generator = None
-        self.set_generator()
-        self.circuit = None
-        self.instructions = []
+        self.__generator = None
+        self.__set_generator()
+        self.__circuit = None
+        self.__instructions = []
         self.__apply_instructions()
-        self.measure()  # to initialize the statevector
+        self.update_statevector()  # to initialize the statevector
 
         # init other stats
         self.__coin_count = 0
 
     @property
-    def backpack(self):
+    def backpack(self) -> Backpack:
         return self.__backpack
 
     @property
     def state_vector(self) -> StateVector:
         return self.__stv
 
-    def set_generator(self, instructions: "list of Instructions" = None):
+    def circuit_enumerator(self):
+        return enumerate(self.__instructions)
+
+    def __set_generator(self, instructions: "list of Instructions" = None):
         num = self.__attributes.num_of_qubits
         if num > 0:
-            self.generator = QuantumCircuit(num, num)
+            self.__generator = QuantumCircuit(num, num)
             if instructions is None:        # default generator
                 for i in range(num):
-                    self.generator.h(i)     # HGate on every qubit
+                    self.__generator.h(i)     # HGate on every qubit
             else:
                 for inst in instructions:
-                    self.generator.append(inst.instruction, qargs=inst.qargs, cargs=inst.cargs)
+                    inst.append_to(self.__generator)
 
-    def measure(self) -> StateVector:
-        result = self.__get_result(self.circuit)
-        self.__stv = StateVector(result.get_statevector(self.circuit))
+    def update_statevector(self) -> StateVector:
+        """
+        Compiles and simulates the current circuit and saves and returns the resulting StateVector
+        :return: an updated StateVector corresponding to the current circuit
+        """
+        compiled_circuit = transpile(self.__circuit, self.__simulator)
+        job = self.__simulator.run(compiled_circuit, shots=1)
+        result = job.result()
+        self.__stv = StateVector(result.get_statevector(self.__circuit))
         return self.__stv
 
-    def use_instruction(self, instruction_index: int):
+    def use_instruction(self, instruction_index: int) -> bool:
+        """
+        Tries to put the Instruction corresponding to the given index in the backpack into the player's circuit.
+        If the Instruction is already in-use (put onto the circuit) it is removed instead.
+
+        :param instruction_index: index of the Instruction we want to use in the backpack
+        :return: True if we were able to use the Instruction in our circuit
+        """
         if 0 <= instruction_index < self.__backpack.size:
             instruction = self.__backpack.get(instruction_index)
             if instruction.is_used():
                 self.__remove_instruction(instruction)
             else:
-                if self.next_col < self.__attributes.space:
+                if self.__next_col < self.__attributes.space:
                     self.__append_instruction(instruction)
                 else:
-                    Logger.instance().error("Error, no more space available")
+                    return False
             return self.__apply_instructions()
         return False
 
     def __append_instruction(self, instruction: Instruction):
-        self.instructions.append(instruction)
+        self.__instructions.append(instruction)
         instruction.set_used(True)
-        self.next_col += 1
+        self.__next_col += 1
 
     def __remove_instruction(self, instruction: Instruction):
-        self.instructions.remove(instruction)
+        self.__instructions.remove(instruction)
         instruction.set_used(False)
-        self.next_col -= 1
+        self.__next_col -= 1
 
-    def get_qubit_string(self, index: int):
-        if 0 <= index < self.num_of_qubits:
-            return f"q_{index}"
-        else:
-            return "ERROR"  # todo adapt?
+    def get_available_instructions(self) -> "list of Instructions":
+        """
+
+        :return: all Instructions that are currently available to the player
+        """
+        data = [] #self.__instructions.copy()
+        for instruction in self.backpack:
+            data.append(instruction)
+        return data
 
     def give_collectible(self, collectible: Collectible):
         if type(collectible) is Coin:
             self.__coin_count += collectible.amount
 
     @property
-    def num_of_qubits(self):
+    def num_of_qubits(self) -> int:
         return self.__attributes.num_of_qubits
 
     @property
-    def space(self):
+    def space(self) -> int:
         return self.__attributes.space
 
-    def __get_result(self, circuit: QuantumCircuit, shots: int = 1):
-        compiled_circuit = transpile(circuit, self.__simulator)
-        job = self.__simulator.run(compiled_circuit, shots=shots)
-        return job.result()
-
     def __apply_instructions(self):
-        if self.generator is None:
+        if self.__generator is None:
             return False
-        circuit = self.generator.copy(name="PlayerCircuit")
-        for inst in self.instructions:
+        circuit = self.__generator.copy(name="PlayerCircuit")
+        for inst in self.__instructions:
             inst.append_to(circuit)
-        self.circuit = circuit
+        self.__circuit = circuit
         return True
 
     @staticmethod
