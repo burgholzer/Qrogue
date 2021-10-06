@@ -6,11 +6,11 @@ from py_cui.widget_set import WidgetSet
 from game.actors.enemy import Enemy
 from game.actors.player import Player as PlayerActor
 from game.actors.player import DummyPlayer
+from game.callbacks import SimpleCallback
 from game.map import tiles
 from game.map.map import Map
 from game.map.navigation import Direction
 from game.map.tiles import Player as PlayerTile
-from util.logger import Logger
 from widgets.color_rules import ColorRules
 from widgets.my_widgets import SelectionWidget, StateVectorWidget, CircuitWidget, MapWidget, SimpleWidget
 
@@ -155,11 +155,12 @@ class FightWidgetSet(MyWidgetSet):
     __NUM_OF_ROWS = 9
     __NUM_OF_COLS = 9
 
-    def __init__(self, logger, end_of_fight_callback: "void()"):
+    def __init__(self, logger, end_of_fight_callback: SimpleCallback, end_of_gameplay_callback: SimpleCallback):
         super().__init__(self.__NUM_OF_ROWS, self.__NUM_OF_COLS, logger)
         self.__player = None
         self.__enemy = None
         self.__end_of_fight_callback = end_of_fight_callback
+        self.__end_of_gameplay_callback = end_of_gameplay_callback
 
     def init_widgets(self) -> None:
         logger_row = self.add_block_label('Logger', 0, 0, row_span=1, column_span=self.__NUM_OF_COLS, center=True)
@@ -242,14 +243,24 @@ class FightWidgetSet(MyWidgetSet):
         return True
 
     def __choices_commit(self) -> bool:
-        fight_end, reward = self.__attack()
+        fight_end, msg = self.__attack()
         if fight_end:
             self.__details.set_data(data=(
-                [f"Get reward: {reward}"],
+                [f"Get reward: {msg}"],
                 [self.__end_of_fight_callback]
             ))
-            return True
-        return False
+        else:
+            if msg.startswith("-"):
+                self.__details.set_data(data=(
+                    [f"Oh no, you took {msg[1:]} damage and died!"],
+                    [self.__game_over]
+                ))
+            else:
+                self.__details.set_data(data=(
+                    [f"Wrong, you took {msg} damage. Remaining HP = {self.__player.cur_hp}"],
+                    [self.__damage_taken]
+                ))
+        return True
 
     def __choices_items(self) -> bool:
         print("items")
@@ -266,6 +277,7 @@ class FightWidgetSet(MyWidgetSet):
         :return: True if fight is over (attack was successful -> enemy is dead), False otherwise
         """
         if self.__enemy is None:
+            from util.logger import Logger
             Logger.instance().error("Error! Enemy is not set!")
             return False
 
@@ -274,9 +286,18 @@ class FightWidgetSet(MyWidgetSet):
         self.__stv_diff.set_data(result.get_diff(self.__enemy.get_statevector()))
         self.render()
 
-        fight_end = self.__enemy.damage(result)
-        if fight_end:
+        success = self.__enemy.damage(result)
+        if success:
             reward = self.__enemy.get_reward()
             self.__player.give_collectible(reward)
             return True, str(reward)
-        return False, None
+        else:
+            diff = self.__enemy.get_statevector().get_diff(self.__player.state_vector)
+            damage_taken = self.__player.damage(diff)
+            return False, str(damage_taken)
+
+    def __game_over(self):
+        self.__end_of_gameplay_callback()
+
+    def __damage_taken(self) -> None:
+        pass

@@ -220,6 +220,13 @@ class Player(ABC):
         if type(collectible) is Coin:
             self.__coin_count += collectible.amount
 
+    def damage(self, diff: StateVector):
+        return self.__attributes.qubits.damage(1)
+
+    @property
+    def cur_hp(self) -> int:
+        return self.__attributes.qubits.hp()
+
     @property
     def num_of_qubits(self) -> int:
         return self.__attributes.num_of_qubits

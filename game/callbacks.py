@@ -3,6 +3,11 @@ from game.actors.player import Player
 from game.map.navigation import Direction
 
 
+class SimpleCallback:
+    def __call__(self, *args: None, **kwargs: dict) -> None:
+        pass
+
+
 class OnWalkCallback:
     def __call__(self, *args: (Player, Enemy, Direction), **kwds: dict) -> None:
         pass

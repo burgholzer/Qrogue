@@ -1,3 +1,5 @@
+from abc import ABC, abstractmethod
+
 import numpy as np
 
 
@@ -71,27 +73,45 @@ class StateVector:
             text += f"{np.round(val, 2)}\n"
         return text
 
+    def __iter__(self) -> "iterator":
+        return iter(self.__amplitudes)
+
 
 # interface for a set of qubits (e.g. Ion-traps, Super conducting, ...)
-class QubitSet:
-    def is_alive(self):
+class QubitSet(ABC):
+    @abstractmethod
+    def hp(self):
         pass
 
-    def size(self):
+    @abstractmethod
+    def is_alive(self) -> bool:
         pass
 
-    def damage(self, dmg_0: int, dmg_1):
+    @abstractmethod
+    def size(self) -> int:
+        pass
+
+    @abstractmethod
+    def damage(self, amount: int) -> int:
+        """
+
+        :param amount: the amount of damage that should be received
+        :return: the amount of damage actually received, negative if the damage was lethal
+        """
         pass
 
 
 class EmptyQubitSet(QubitSet):
-    def is_alive(self):
+    def hp(self):
+        pass
+
+    def is_alive(self) -> bool:
         return False
 
-    def size(self):
+    def size(self) -> int:
         return 0
 
-    def damage(self, dmg_0: int, dmg_1):
+    def damage(self, amount: int) -> int:
         pass
 
 
@@ -104,12 +124,20 @@ class DummyQubitSet(QubitSet):
         self.__hp_0 = self.__HP_0
         self.__hp_1 = self.__HP_1
 
-    def is_alive(self):
-        return self.__hp_0 > 0 and self.__hp_1 > 0
+    def hp(self) -> int:
+        return self.__hp_0
 
-    def size(self):
+    def is_alive(self) -> bool:
+        return self.__hp_0 > 0# and self.__hp_1 > 0
+
+    def size(self) -> int:
         return self.__SIZE
 
-    def damage(self, dmg_0: int, dmg_1):
-        self.__hp_0 = max(self.__hp_0 - dmg_0, 0)
-        self.__hp_1 = max(self.__hp_1 - dmg_1, 0)
+    def damage(self, amount: int) -> int:
+        #self.__hp_0 = max(self.__hp_0 - dmg_0, 0)
+        #self.__hp_1 = max(self.__hp_1 - dmg_1, 0)
+        self.__hp_0 = max(self.__hp_0 - amount, 0)
+        if self.is_alive():
+            return amount
+        else:
+            return -amount

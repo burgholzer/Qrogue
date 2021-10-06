@@ -22,7 +22,7 @@ class QrogueCUI(py_cui.PyCUI):
 
         self.__menu = MenuWidgetSet(Logger.instance(), self.__start_gameplay, self.__start_fight)
         self.__explore = ExploreWidgetSet(Logger.instance())
-        self.__fight = FightWidgetSet(Logger.instance(), self.__continue_explore)
+        self.__fight = FightWidgetSet(Logger.instance(), self.__continue_explore, self.__end_of_gameplay)
 
         self.__cur_widget_set = None
         self.__init_keys()
@@ -90,6 +90,9 @@ class QrogueCUI(py_cui.PyCUI):
 
     def __start_gameplay(self, map: Map) -> None:
         self.__state_machine.change_state(State.Explore, map)
+
+    def __end_of_gameplay(self) -> None:
+        self.switch_to_menu(None)
 
     def __start_fight(self, player: PlayerActor, enemy: Enemy, direction: Direction) -> None:
         self.__state_machine.change_state(State.Fight, (enemy, player))
