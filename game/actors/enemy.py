@@ -16,17 +16,24 @@ class Enemy(ABC):
     def get_img(self):
         pass
 
-    def _on_death(self) -> Collectible:
+    def _on_death(self) -> None:
         self.__alive = False
-        return self.__reward
 
     def get_statevector(self) -> StateVector:
         return self.__target
 
-    def damage(self, state_vec: StateVector) -> (bool, Collectible):
+    def get_reward(self) -> Collectible:
+        if not self.is_alive():
+            temp = self.__reward
+            self.__reward = None
+            return temp
+        return None
+
+    def damage(self, state_vec: StateVector) -> bool:
         if self.__target.is_equal_to(state_vec):
-            return True, self._on_death()
-        return False, None
+            self._on_death()
+            return True
+        return False
 
     def is_alive(self):
         return self.__alive

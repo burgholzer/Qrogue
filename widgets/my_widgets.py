@@ -146,7 +146,6 @@ class SelectionWidget(Widget):
         self.__choice_length = 0
         self.__choices = []
         self.__callbacks = []
-        self.__parameter = None
 
     @property
     def choice_length(self) -> int:
@@ -162,9 +161,6 @@ class SelectionWidget(Widget):
                 self.__choice_length = len(choice)
         for i in range(len(self.__choices)):
             self.__choices[i] = self.__choices[i].ljust(self.__choice_length)
-
-    def set_parameter(self, parameter) -> None:
-        self.__parameter = parameter
 
     def render(self) -> None:
         str_rep = ""
@@ -222,10 +218,6 @@ class SelectionWidget(Widget):
         """
         :return: True if the focus should move, False if the focus should stay in this SelectionWidget
         """
-        if self.__parameter is not None:    # TODO currently only needed to give rewards at the end of a fight
-            self.__callbacks[self.__index](self.__parameter)
-            self.__parameter = None
-            return True
         # if only one callback is given, it needs the index as parameter
         if len(self.__callbacks) == 1 and len(self.__choices) > 1:
             ret = self.__callbacks[0](self.__index)

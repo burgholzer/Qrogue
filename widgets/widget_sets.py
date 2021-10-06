@@ -155,7 +155,7 @@ class FightWidgetSet(MyWidgetSet):
     __NUM_OF_ROWS = 9
     __NUM_OF_COLS = 9
 
-    def __init__(self, logger, end_of_fight_callback: "void(Collectible)"):
+    def __init__(self, logger, end_of_fight_callback: "void()"):
         super().__init__(self.__NUM_OF_ROWS, self.__NUM_OF_COLS, logger)
         self.__player = None
         self.__enemy = None
@@ -248,7 +248,6 @@ class FightWidgetSet(MyWidgetSet):
                 [f"Get reward: {reward}"],
                 [self.__end_of_fight_callback]
             ))
-            self.__details.set_parameter((self.__player, reward))
             return True
         return False
 
@@ -261,7 +260,7 @@ class FightWidgetSet(MyWidgetSet):
         self.__end_of_fight_callback()
         return False
 
-    def __attack(self) -> bool:
+    def __attack(self) -> (bool, str):
         """
 
         :return: True if fight is over (attack was successful -> enemy is dead), False otherwise
@@ -275,4 +274,9 @@ class FightWidgetSet(MyWidgetSet):
         self.__stv_diff.set_data(result.get_diff(self.__enemy.get_statevector()))
         self.render()
 
-        return self.__enemy.damage(result)
+        fight_end = self.__enemy.damage(result)
+        if fight_end:
+            reward = self.__enemy.get_reward()
+            self.__player.give_collectible(reward)
+            return True, str(reward)
+        return False, None
