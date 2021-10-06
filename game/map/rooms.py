@@ -119,6 +119,9 @@ class SpawnRoom(Room):
     def __init__(self, tiles: "list of tiles", doors: "list of Doors", player: Player):    # todo add type to player; always spawn at center?
         super().__init__(tiles, doors)
 
+    def __str__(self):
+        return "SR"
+
 
 class WildRoom(Room):
     def __init__(self, factory: EnemyFactory, tiles: "list of tiles", doors: "list of Doors"):
