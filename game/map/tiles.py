@@ -167,16 +167,22 @@ class Collectible(WalkTriggerTile):
     def __init__(self, factory: CollectibleFactory):
         super().__init__(TileCode.Collectible)
         self.__factory = factory
+        self.__active = True
 
     def get_img(self):
-        return "c"
+        if self.__active:
+            return "c"
+        else:
+            return " "
 
     def is_walkable(self, direction: Direction, actor) -> bool:
         return True
 
     def on_walk(self, direction: Direction, actor) -> None:
-        player = actor
-        player.give_collectible(self.__factory.produce())
+        if self.__active:
+            player = actor
+            player.give_collectible(self.__factory.produce())
+            self.__active = False
 
 
 class Player(Tile):
