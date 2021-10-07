@@ -11,6 +11,7 @@ from game.map import tiles
 from game.map.map import Map
 from game.map.navigation import Direction
 from game.map.tiles import Player as PlayerTile
+from util.config import MapConfig
 from widgets.color_rules import ColorRules
 from widgets.my_widgets import SelectionWidget, StateVectorWidget, CircuitWidget, MapWidget, SimpleWidget
 
@@ -89,12 +90,15 @@ class MenuWidgetSet(MyWidgetSet):
         return self.__selection
 
     def __play(self) -> None:
-        player_tile = tiles.Player(DummyPlayer())
-        map = Map(self.__seed, self.__MAP_WIDTH, self.__MAP_HEIGHT, player_tile, self.__start_fight_callback)
+        player_tile = tiles.Player(DummyPlayer())   # todo use real player
+        seed = MapConfig.tutorial_seed() # todo and real seed
+        map = Map(seed, self.__MAP_WIDTH, self.__MAP_HEIGHT, player_tile, self.__start_fight_callback)
         self.__start_gameplay_callback(map)
 
     def __tutorial(self) -> None:
-        print("Tutorial")
+        player_tile = tiles.Player(DummyPlayer())
+        map = Map(MapConfig.tutorial_seed(), self.__MAP_WIDTH, self.__MAP_HEIGHT, player_tile, self.__start_fight_callback)
+        self.__start_gameplay_callback(map)
 
     def __options(self) -> None:
         print("todo")
@@ -115,7 +119,7 @@ class ExploreWidgetSet(MyWidgetSet):
         self.__first_row.toggle_border()
 
     def init_widgets(self) -> None:
-        map_widget = self.add_block_label('MAP', 1, 2, row_span=5, column_span=5, center=True)
+        map_widget = self.add_block_label('MAP', 1, 0, row_span=self.__NUM_OF_ROWS-1, column_span=self.__NUM_OF_COLS, center=True)
         self.__map_widget = MapWidget(map_widget)
 
         ColorRules.apply_map_rules(self.__map_widget)

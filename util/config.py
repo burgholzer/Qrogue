@@ -1,5 +1,6 @@
 
 class MapConfig:
     @staticmethod
-    def create_random() -> bool:
-        return False
+    def tutorial_seed() -> int:
+        return 0
+

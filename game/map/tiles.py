@@ -8,6 +8,7 @@ from game.actors.boss import Boss as BossActor
 from game.actors.factory import EnemyFactory
 from game.actors.player import Player as PlayerActor
 from game.callbacks import OnWalkCallback
+from game.collectibles.factory import CollectibleFactory
 from game.map.navigation import Direction
 from util.my_random import RandomManager
 
@@ -26,7 +27,7 @@ class TileCode(Enum):
     Enemy = 30
     Boss = 40
 
-    Item = 50
+    Collectible = 50
 
 
 class Tile(ABC):
@@ -47,9 +48,8 @@ class Tile(ABC):
 
 
 class WalkTriggerTile(Tile):
-    def __init__(self, code: TileCode, on_walk_callback: OnWalkCallback):
+    def __init__(self, code: TileCode):
         super().__init__(code)
-        self._on_walk_callback = on_walk_callback
 
     def is_walkable(self, direction: Direction, actor) -> bool:
         return True
@@ -133,7 +133,7 @@ class FogOfWar(Tile):
 
 class Door(WalkTriggerTile):
     def __init__(self, direction: Direction, locked: bool = False, opened: bool = False):   # todo entangled door as extra class?
-        super().__init__(TileCode.Door, on_walk_callback=None)
+        super().__init__(TileCode.Door)
         self.__direction = direction
         self.__locked = locked
         self.__opened = opened
@@ -163,15 +163,20 @@ class Door(WalkTriggerTile):
         self.__locked = False
 
 
-class Item(Tile):
-    def __init__(self): # TODO add item
-        super().__init__(TileCode.Item)
+class Collectible(WalkTriggerTile):
+    def __init__(self, factory: CollectibleFactory):
+        super().__init__(TileCode.Collectible)
+        self.__factory = factory
 
     def get_img(self):
-        return "I"
+        return "c"
 
     def is_walkable(self, direction: Direction, actor) -> bool:
         return True
+
+    def on_walk(self, direction: Direction, actor) -> None:
+        player = actor
+        player.give_collectible(self.__factory.produce())
 
 
 class Player(Tile):
@@ -199,7 +204,7 @@ class _EnemyState(Enum):
 class Enemy(WalkTriggerTile):
     def __init__(self, factory: EnemyFactory, get_entangled_tiles,
                  id: int = 0, amplitude: float = 0.5):
-        super().__init__(TileCode.Enemy, factory.callback)
+        super().__init__(TileCode.Enemy)
         self.__factory = factory
         self.__state = _EnemyState.UNDECIDED
         self.__get_entangled_tiles = get_entangled_tiles
@@ -211,13 +216,13 @@ class Enemy(WalkTriggerTile):
             if self.__state == _EnemyState.UNDECIDED:
                 if self.measure():
                     enemy = self.__factory.get_enemy(actor)
-                    self._on_walk_callback(actor, enemy, direction)
+                    self.__factory.callback(actor, enemy, direction)
                     self.__state = _EnemyState.DEAD
                 else:
                     self.__state = _EnemyState.FLED
             elif self.__state == _EnemyState.FIGHT:
                 enemy = self.__factory.get_enemy(actor)
-                self._on_walk_callback(actor, enemy, direction)
+                self.__factory.callback(actor, enemy, direction)
                 self.__state = _EnemyState.DEAD
             elif self.__state == _EnemyState.FREE:
                 self.__state = _EnemyState.FLED
@@ -257,12 +262,13 @@ class Enemy(WalkTriggerTile):
 
 class Boss(WalkTriggerTile):
     def __init__(self, boss: BossActor, on_walk_callback: OnWalkCallback):
-        super().__init__(TileCode.Boss, on_walk_callback)
+        super().__init__(TileCode.Boss)
         self.__boss = boss
+        self.__on_walk_callback = on_walk_callback
 
     def on_walk(self, direction: Direction, actor) -> None:
         if isinstance(actor, PlayerActor):
-            self._on_walk_callback(actor, self.boss, direction)
+            self.__on_walk_callback(actor, self.boss, direction)
 
     def get_img(self):
         return "B"
@@ -280,7 +286,7 @@ __color_manager = {
     TileCode.Obstacle: py_cui.CYAN_ON_BLACK,
     TileCode.FogOfWar: py_cui.CYAN_ON_BLACK,
     TileCode.Door: py_cui.CYAN_ON_BLACK,
-    TileCode.Item: py_cui.CYAN_ON_BLACK,
+    TileCode.Collectible: py_cui.CYAN_ON_BLACK,
     TileCode.Player: py_cui.GREEN_ON_BLACK,
     TileCode.Enemy: py_cui.RED_ON_BLACK,
     TileCode.Boss: py_cui.BLACK_ON_RED,

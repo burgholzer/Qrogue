@@ -1,3 +1,4 @@
+from game.collectibles.factory import GateFactories
 from game.map.tiles import *
 from game.map.tiles import Enemy as EnemyTile
 from util.my_random import RandomManager as RM
@@ -42,6 +43,7 @@ class Room(ABC):
         self.__tiles.append(room_bottom)
         self.__tiles.append(bottom)
         self.__doors = doors
+        self.__is_in_sight = False
         self.__is_visible = False
         self.__was_visited = False
 
@@ -103,6 +105,9 @@ class Room(ABC):
         else:
             return Invalid()
 
+    def in_sight(self):     # todo use later to display hallways of neighbouring rooms
+        self.__is_in_sight = True
+
     def enter(self):
         self.__is_visible = True
         self.__was_visited = True
@@ -149,7 +154,13 @@ class WildRoom(Room):
 
 
 class GateRoom(Room):
-    pass
+    def __init__(self, tiles: "list of Tiles", doors: "list of Doors"):
+        super().__init__(tiles, doors)
+        factory = GateFactories.standard_factory()
+        self._set_tile(Collectible(factory), x=Room.MID_X, y=Room.MID_Y)
+
+    def __str__(self) -> str:
+        return "GR"
 
 
 class RiddleRoom(Room):

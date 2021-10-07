@@ -27,6 +27,10 @@ class Direction(Enum):
         self.__x = x
         self.__y = y
 
+    @staticmethod
+    def from_coordinates(c_from: "Coordinate", c_to: "Coordinate") -> "Direction":
+        return direction(c_from, c_to)
+
     @property
     def x(self) -> int:
         return self.__x

@@ -101,6 +101,12 @@ class Backpack:
         except ValueError:
             return False
 
+    def copy(self) -> "Backpack":
+        data = []
+        for instruction in self.__storage:
+            data.append(instruction.copy())
+        return Backpack(self.__capacity, data)
+
 
 class BackpackIterator:
     """
@@ -184,8 +190,8 @@ class Player(ABC):
         :param instruction_index: index of the Instruction we want to use in the backpack
         :return: True if we were able to use the Instruction in our circuit
         """
-        if 0 <= instruction_index < self.__backpack.size:
-            instruction = self.__backpack.get(instruction_index)
+        if 0 <= instruction_index < self.backpack.size:
+            instruction = self.backpack.get(instruction_index)
             if instruction.is_used():
                 self.__remove_instruction(instruction)
             else:
@@ -209,16 +215,19 @@ class Player(ABC):
     def get_available_instructions(self) -> "list of Instructions":
         """
 
-        :return: all Instructions that are currently available to the player
+        :return: a copy of all Instructions currently available to the player
         """
-        data = [] #self.__instructions.copy()
-        for instruction in self.backpack:
+        data = []
+        bp = self.backpack.copy()
+        for instruction in bp:
             data.append(instruction)
         return data
 
     def give_collectible(self, collectible: Collectible):
-        if type(collectible) is Coin:
+        if isinstance(collectible, Coin):
             self.__coin_count += collectible.amount
+        elif isinstance(collectible, Instruction):
+            self.backpack.add(collectible)
 
     def damage(self, diff: StateVector):
         return self.__attributes.qubits.damage(1)
@@ -262,7 +271,7 @@ class Player(ABC):
 
 class DummyPlayer(Player):
     __ATTR = PlayerAttributes(DummyQubitSet())
-    __BACKPACK = Backpack(3, [HGate(0), HGate(0), HGate(1), HGate(2)])
+    __BACKPACK = Backpack(5, [HGate(0), HGate(1), HGate(2)])
 
     def __init__(self):
         super(DummyPlayer, self).__init__(attributes=self.__ATTR, backpack=self.__BACKPACK)

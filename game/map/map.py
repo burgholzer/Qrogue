@@ -5,7 +5,7 @@ import game.map.tiles as tiles
 from game.actors.boss import DummyBoss
 from game.actors.factory import EnemyFactory, DummyFightDifficulty
 from game.map.navigation import Coordinate, Direction
-from game.map.rooms import Room, SpawnRoom, BossRoom, WildRoom
+from game.map.rooms import Room, SpawnRoom, BossRoom, WildRoom, GateRoom
 from util.config import MapConfig
 from util.logger import Logger
 from util.my_random import RandomManager
@@ -20,7 +20,9 @@ class Map:
         self.__start_fight_callback = start_fight_callback
         self.__enemy_factory = EnemyFactory(self.__start_fight_callback, DummyFightDifficulty())
 
-        if MapConfig.create_random():
+        if seed == MapConfig.tutorial_seed():
+            self.__build_room_layout(self.__player)
+        else:
             rand = RandomManager.instance()
             for y in range(height):
                 row = []
@@ -33,18 +35,30 @@ class Map:
                         else:
                             row.append(tiles.Floor())
                 self.__player_pos = Coordinate(2, 3)
-        else:
-            self.__build_room_layout(self.__player)
 
     def __build_room_layout(self, player: tiles.Player):
         spawn = SpawnRoom([], [tiles.Door(Direction.East), tiles.Door(Direction.South)], player)
-        spawn_x = 0
+        spawn_x = 1
         spawn_y = 0
 
         self.__rooms = [[None for x in range(Map.WIDTH)] for y in range(Map.HEIGHT)]
-        self.__rooms[spawn_x][spawn_y] = spawn
-        self.__rooms[0][1] = BossRoom(tiles.Door(Direction.West), tiles.Boss(DummyBoss(), self.__start_fight_callback))
-        self.__rooms[1][0] = WildRoom(self.__enemy_factory, tiles=None, doors=[tiles.Door(Direction.North)])
+        self.__rooms[spawn_y][spawn_x] = spawn
+        self.__rooms[0][2] = WildRoom(self.__enemy_factory, tiles=None, doors=[
+            tiles.Door(Direction.West), tiles.Door(Direction.South)
+        ])
+        self.__rooms[1][2] = GateRoom(tiles=None, doors=[
+            tiles.Door(Direction.North)
+        ])
+        self.__rooms[1][1] = WildRoom(self.__enemy_factory, tiles=None, doors=[
+            tiles.Door(Direction.North), tiles.Door(Direction.South)
+        ])
+        self.__rooms[2][1] = WildRoom(self.__enemy_factory, tiles=None, doors=[
+            tiles.Door(Direction.North), tiles.Door(Direction.West), tiles.Door(Direction.East)
+        ])
+        self.__rooms[2][0] = WildRoom(self.__enemy_factory, tiles=None, doors=[
+            tiles.Door(Direction.North), tiles.Door(Direction.East)
+        ])
+        self.__rooms[1][0] = BossRoom(tiles.Door(Direction.South), tiles.Boss(DummyBoss(), self.__start_fight_callback))
 
         self.__cur_room = spawn
         self.__player_pos = Map.__calculate_pos(Coordinate(spawn_x, spawn_y), Coordinate(Room.MID_X, Room.MID_Y))

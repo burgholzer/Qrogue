@@ -63,7 +63,7 @@ class CircuitWidget(Widget):
                 rows.append(row.copy())
 
             for i, inst in self.__player.circuit_enumerator():
-                for q in inst.qargs:
+                for q in inst.qargs_iter():
                     inst_str = inst.abbreviation(q)
                     diff_len = Instruction.MAX_ABBREVIATION_LEN - len(inst_str)
                     inst_str = f"--{{{inst_str}}}--"

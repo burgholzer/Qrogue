@@ -42,16 +42,7 @@ class FightDifficulty:
 
         # choose random circuits on random qubits and cbits
         for i in range(self.__num_of_instructions):
-            instruction = rand.get_element(player.get_available_instructions())
-            inst_qubits = qubits.copy()
-            inst_cbits = cbits.copy()
-            for i in range(len(instruction.qargs)):
-                qubit = rand.get_element(inst_qubits, remove=True)
-                instruction.qargs[i] = qubit
-            for i in range(len(instruction.cargs)):
-                cubit = rand.get_element(inst_cbits, remove=True)
-                instruction.cargs[i] = cubit
-
+            instruction = rand.get_element(player.get_available_instructions(), remove=False)
             instruction.append_to(circuit)
         simulator = StatevectorSimulator()
         compiled_circuit = transpile(circuit, simulator)
