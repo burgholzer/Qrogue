@@ -62,7 +62,7 @@ class Room(ABC):
         self.__tiles.append(room_bottom)
         self.__tiles.append(bottom)
         self.__is_in_sight = False
-        self.__is_visible = True
+        self.__is_visible = False
         self.__was_visited = False
 
         # North and West doors must be defined in the neighboring room, because that room creates the hallway
@@ -152,14 +152,14 @@ class SpawnRoom(Room):
 
 
 class WildRoom(Room):
-    def __init__(self, factory: EnemyFactory, east_door: Door = None,
+    def __init__(self, factory: EnemyFactory, chance: float = 0.4, east_door: Door = None,
                  south_door: Door = None, west_door: bool = False, north_door: bool = False):
         self.__dictionary = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [], 8: [], 9: [] }
         tile_list = []
-        chance = 0.3
+        rm = RM.create_new()
         for x in range(Room.INNER_WIDTH * Room.INNER_HEIGHT):
-            if RM.instance().get() < chance:
-                id = RM.instance().get_int(min=0, max=10)
+            if rm.get() < chance:
+                id = rm.get_int(min=0, max=10)
                 enemy = EnemyTile(factory, self.get_tiles_by_id, id)
                 if id > 0:
                     self.__dictionary[id].append(enemy)
