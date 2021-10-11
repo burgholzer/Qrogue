@@ -84,6 +84,14 @@ class Coordinate:
         else:
             raise NotImplementedError(f"Subtracting \"{other}\" from a Coordinate is not supported!")
 
+    def __eq__(self, other) -> bool:
+        if isinstance(other, Coordinate):
+            return self.x == other.x and self.y == other.y
+        return False
+
+    def __hash__(self):
+        return 61 * self.x + 51 * self.y
+
 
 def direction(c_from: Coordinate, c_to: Coordinate) -> Direction:
     diff = c_to - c_from

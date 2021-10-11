@@ -14,7 +14,23 @@ class Room(ABC):
     MID_X = int(ROOM_WIDTH / 2)     # middle of the room on the x-axis
     MID_Y = int(ROOM_HEIGHT / 2)    # middle of the room on the y-axis
 
-    def __init__(self, tiles: "list of tiles", doors: "list of Doors"):
+    @staticmethod
+    def get_empty_room_tile_list() -> "list of Tiles":
+        return [Floor()] * (Room.INNER_WIDTH * Room.INNER_HEIGHT)
+
+    @staticmethod
+    def dic_to_tile_list(tile_dic: "dic of Coordinate and Tile") -> "list of Tiles":
+        tile_list = Room.get_empty_room_tile_list()
+        if tile_dic is not None:
+            for coordinate, tile in tile_dic.items():
+                index = coordinate.y * Room.INNER_WIDTH + coordinate.x
+                if 0 <= index < len(tile_list):
+                    tile_list[index] = tile
+                else:
+                    raise IndexError(f"Invalid Index ({index} for tile_list of length {len(tile_list)}!")
+        return tile_list
+
+    def __init__(self, tile_list: "list of Tiles", doors: "list of Doors"):
         self.__tiles = []
         top = [ Wall() for t in range(Room.ROOM_WIDTH) ]
         # Add an additional invisible Tile so we have space for hallways. We only need this on the right side and
@@ -27,8 +43,10 @@ class Room(ABC):
         for y in range(Room.INNER_HEIGHT):
             row = [Wall()]
             for x in range(Room.INNER_WIDTH):
-                if tiles is not None and len(tiles) > 0:
-                    row.append(tiles.pop())    # todo is it okay to do this reversed?
+                if tile_list is not None:
+                    index = x + y * Room.INNER_WIDTH
+                    if index < len(tile_list):
+                        row.append(tile_list[index])
                 else:
                     row.append(Floor())
             row.append(Wall())
@@ -121,30 +139,30 @@ class Room(ABC):
 
 
 class SpawnRoom(Room):
-    def __init__(self, tiles: "list of tiles", doors: "list of Doors", player: Player):    # todo add type to player; always spawn at center?
-        super().__init__(tiles, doors)
+    def __init__(self, doors: "list of Doors", player: Player, tile_dic: "dic of Coordinate and Tile" = None):    # todo add type to player; always spawn at center?
+        tile_list = Room.dic_to_tile_list(tile_dic)
+        super().__init__(tile_list, doors)
 
     def __str__(self):
         return "SR"
 
 
 class WildRoom(Room):
-    def __init__(self, factory: EnemyFactory, tiles: "list of tiles", doors: "list of Doors"):
+    def __init__(self, factory: EnemyFactory, doors: "list of Doors"):
         self.__dictionary = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [], 8: [], 9: [] }
-        if tiles is None or len(tiles) <= 0:
-            tiles = []
-            chance = 0.3
-            for x in range(Room.INNER_WIDTH * Room.INNER_HEIGHT):
-                if RM.instance().get() < chance:
-                    id = RM.instance().get_int(min=0, max=10)
-                    enemy = EnemyTile(factory, self.get_tiles_by_id, id)
-                    if id > 0:
-                        self.__dictionary[id].append(enemy)
-                    tiles.append(enemy)
-                else:
-                    tiles.append(Floor())
+        tile_list = []
+        chance = 0.3
+        for x in range(Room.INNER_WIDTH * Room.INNER_HEIGHT):
+            if RM.instance().get() < chance:
+                id = RM.instance().get_int(min=0, max=10)
+                enemy = EnemyTile(factory, self.get_tiles_by_id, id)
+                if id > 0:
+                    self.__dictionary[id].append(enemy)
+                tile_list.append(enemy)
+            else:
+                tile_list.append(Floor())
 
-        super().__init__(tiles, doors)
+        super().__init__(tile_list, doors)
 
     def __str__(self):
         return "WR"
@@ -154,8 +172,9 @@ class WildRoom(Room):
 
 
 class GateRoom(Room):
-    def __init__(self, tiles: "list of Tiles", doors: "list of Doors"):
-        super().__init__(tiles, doors)
+    def __init__(self, doors: "list of Doors", tile_dic: "dic of Coordinate and Tile" = None):
+        tile_list = Room.dic_to_tile_list(tile_dic)
+        super().__init__(tile_list, doors)
         factory = GateFactories.standard_factory()
         self._set_tile(Collectible(factory), x=Room.MID_X, y=Room.MID_Y)
 
@@ -176,8 +195,9 @@ class TreasureRoom(Room):
 
 
 class BossRoom(Room):
-    def __init__(self, door: Door, boss: Boss, tiles: "list of tiles" = None):
-        super().__init__(tiles, [door])
+    def __init__(self, door: Door, boss: Boss, tile_dic: "dic of Coordinate and Tile" = None):
+        tile_list = Room.dic_to_tile_list(tile_dic)
+        super().__init__(tile_list, [door])
         self._set_tile(boss, x=Room.MID_X, y=Room.MID_Y)
 
     def __str__(self) -> str:
