@@ -19,6 +19,7 @@ class QrogueCUI(py_cui.PyCUI):
         self.__state_machine = StateMachine(self)
         self.__seed = seed
         self.__controls = controls
+        self.__focused_widget = None
 
         self.__menu = MenuWidgetSet(Logger.instance(), self.__start_gameplay, self.__start_fight)
         self.__explore = ExploreWidgetSet(Logger.instance())
@@ -84,6 +85,22 @@ class QrogueCUI(py_cui.PyCUI):
         self.__cur_widget_set = new_widget_set
         self.move_focus(self.__cur_widget_set.get_main_widget(), auto_press_buttons=False)
         self.__cur_widget_set.render()
+
+    def __show_popup(self, title: str, text: str, color: int) -> None:
+        self.__focused_widget = self.get_selected_widget()
+
+        self._popup = py_cui.popups.MessagePopup(self, title, text, color, self._renderer, self._logger)
+        self.add_key_command(py_cui.keys.KEY_ESCAPE, self.__close_popup)
+        self.add_key_command(py_cui.keys.KEY_SPACE, self.__close_popup)
+        self.add_key_command(py_cui.keys.KEY_ENTER, self.__close_popup)
+
+    def __close_popup(self) -> None:
+        super(QrogueCUI, self).close_popup()
+        self.add_key_command(py_cui.keys.KEY_ESCAPE, self.__dummy)
+        self.move_focus(self.__focused_widget)
+
+    def __dummy(self) -> None:
+        pass
 
     def switch_to_menu(self, data) -> None:
         self.apply_widget_set(self.__menu)
