@@ -1,8 +1,6 @@
 from abc import ABC, abstractmethod
 
-from game.actors.player import Player
 from game.collectibles.collectible import Collectible
-from game.collectibles.pickup import Coin
 from game.logic.qubit import StateVector
 
 
@@ -47,8 +45,8 @@ class Enemy(ABC):
 
 
 class DummyEnemy(Enemy):
-    def __init__(self, target: StateVector):
-        super(DummyEnemy, self).__init__(target, Coin(1))
+    def __init__(self, target: StateVector, reward: Collectible):
+        super(DummyEnemy, self).__init__(target, reward)
 
     def get_img(self):
         return "E"

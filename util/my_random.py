@@ -2,16 +2,22 @@ import random
 
 
 class MyRandom:
-    _MAX_SEED = 1000000000
+    _MAX_INT = 1000000000
 
     def __init__(self, seed: int):
-        seed = seed % self._MAX_SEED
+        seed = seed % self._MAX_INT
         self.__random = random.Random(seed)
 
     def get(self):
         return self.__random.random()
 
-    def get_int(self, min: int = 0, max: int = _MAX_SEED) -> int:
+    def get_int(self, min: int = 0, max: int = _MAX_INT) -> int:
+        """
+        Random integer in the interval [min, max[
+        :param min: minimum possible int (inclusive)
+        :param max: maximum possible int (exclusive)
+        :return: random int in the given range
+        """
         return min + int(self.get() * (max - min))
 
     def get_element(self, iterable, remove: bool = False):
@@ -34,8 +40,9 @@ class RandomManager(MyRandom):
             super().__init__(seed)
             RandomManager.__instance = self
 
-    def create_new(self) -> MyRandom:
-        seed = self.get_int()
+    @staticmethod
+    def create_new() -> MyRandom:
+        seed = RandomManager.instance().get_int()
         return MyRandom(seed)
 
     @staticmethod

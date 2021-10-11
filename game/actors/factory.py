@@ -3,7 +3,6 @@ from game.actors.player import Player as PlayerActor
 from game.actors.enemy import Enemy as EnemyActor, DummyEnemy
 from game.callbacks import OnWalkCallback
 from game.collectibles.pickup import Coin
-from game.logic.instruction import HGate
 from game.logic.qubit import StateVector
 
 from qiskit import transpile, QuantumCircuit
@@ -17,15 +16,18 @@ class FightDifficulty:
     A class that handles all parameters that define the difficulty of a fight.
     """
 
-    def __init__(self, instruction_pool: "list of Instructions", num_of_instructions: int, reward_pool):
+    def __init__(self, num_of_instructions: int, reward_pool: "list of Collectibles"):
         """
 
-        :param instruction_pool: list of the instructions to choose from to create a statevector
         :param num_of_instructions: num of instructions used to create a statevector
         :param reward_pool: list of possible rewards for winning against an enemy of this difficulty
         """
-        #self.__instruction_pool = instruction_pool
         self.__num_of_instructions = num_of_instructions
+        self.__reward_pool = reward_pool
+
+    @property
+    def reward_pool(self):
+        return self.__reward_pool
 
     def create_statevector(self, player: PlayerActor) -> StateVector:
         """
@@ -57,7 +59,7 @@ class DummyFightDifficulty(FightDifficulty):
     """
 
     def __init__(self):
-        super(DummyFightDifficulty, self).__init__([HGate(0), HGate(1)], 2, [Coin(1), Coin(3)])
+        super(DummyFightDifficulty, self).__init__(2, [Coin(1), Coin(3)])
 
 
 class EnemyFactory:
@@ -74,6 +76,7 @@ class EnemyFactory:
         """
         self.__start_fight_callback = start_fight_callback
         self.__difficulty = difficulty
+        self.__rm = RandomManager.create_new()
 
     @property
     def callback(self):
@@ -90,5 +93,5 @@ class EnemyFactory:
         :return: a freshly created enemy
         """
         stv = self.__difficulty.create_statevector(player)
-
-        return DummyEnemy(stv)
+        reward = self.__rm.get_element(self.__difficulty.reward_pool)
+        return DummyEnemy(stv, reward)
