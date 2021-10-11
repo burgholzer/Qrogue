@@ -11,6 +11,7 @@ from game.callbacks import OnWalkCallback
 from game.collectibles.factory import CollectibleFactory
 from game.map.navigation import Direction
 from util.my_random import RandomManager
+from widgets.my_popups import Popup
 
 
 class TileCode(Enum):
@@ -18,6 +19,7 @@ class TileCode(Enum):
     Void = 7        # tile outside of the playable area
     Floor = 0       # simple floor tile without special meaning
     FogOfWar = 3    # tile of a place we cannot see yet
+    Message = 6     # tile for displaying a popup message
 
     Wall = 1
     Obstacle = 2
@@ -129,6 +131,27 @@ class FogOfWar(Tile):
 
     def is_walkable(self, direction: Direction, actor) -> bool:
         return True
+
+
+class Message(WalkTriggerTile):
+    def __init__(self, popup: Popup, popup_times: int = 1):
+        super().__init__(TileCode.Message)
+        self.__popup = popup
+        self.__times = popup_times
+
+    def get_img(self):
+        if self.__times > 0:
+            return "."
+        else:
+            return " "
+
+    def is_walkable(self, direction: Direction, actor) -> bool:
+        return True
+
+    def on_walk(self, direction: Direction, actor) -> None:
+        if self.__times > 0:
+            self.__popup.show()
+        self.__times -= 1
 
 
 class Door(WalkTriggerTile):
