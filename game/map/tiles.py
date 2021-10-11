@@ -184,9 +184,13 @@ class Door(WalkTriggerTile):
             return False
 
     def on_walk(self, direction: Direction, player: PlayerActor) -> None:
-        if self.__locked and not player.use_key():
-            Logger.instance().error(f"Error! walked on a door without having enough keys!\n#keys={player.key_count}"
-                                    f", dir={direction}")
+        if self.__locked:
+            if player.use_key():
+                self.__locked = False
+                self.__opened = True
+            else:
+                Logger.instance().error(f"Error! walked on a door without having enough keys!\n#keys={player.key_count}"
+                                        f", dir={direction}")
         else:
             self.__opened = True
 
@@ -299,6 +303,9 @@ class Enemy(WalkTriggerTile):
             enemy._set_state(state)
 
         return state == _EnemyState.FIGHT
+
+    def __str__(self) -> str:
+        return f"E({self.__id}|{self.__state})"
 
 
 class Boss(WalkTriggerTile):

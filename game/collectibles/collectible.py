@@ -8,6 +8,7 @@ class CollectibleType(Enum):
     ActiveItem = 3
     PassiveItem = 4
     Coin = 5
+    Key = 6
 
 
 class Collectible(ABC):
