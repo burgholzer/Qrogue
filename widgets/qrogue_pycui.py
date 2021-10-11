@@ -9,6 +9,7 @@ from game.controls import Controls
 from game.map.map import Map
 from game.map.navigation import Direction
 from util.logger import Logger
+from widgets.my_popups import MultilinePopup
 from widgets.widget_sets import ExploreWidgetSet, FightWidgetSet, MyWidgetSet, MenuWidgetSet
 
 
@@ -21,7 +22,7 @@ class QrogueCUI(py_cui.PyCUI):
         self.__controls = controls
         self.__focused_widget = None
 
-        self.__menu = MenuWidgetSet(Logger.instance(), self.__start_gameplay, self.__start_fight)
+        self.__menu = MenuWidgetSet(Logger.instance(), self.__start_gameplay, self.__start_fight, self.__show_popup)
         self.__explore = ExploreWidgetSet(Logger.instance())
         self.__fight = FightWidgetSet(Logger.instance(), self.__continue_explore, self.__end_of_gameplay)
 
@@ -89,12 +90,10 @@ class QrogueCUI(py_cui.PyCUI):
     def __show_popup(self, title: str, text: str, color: int) -> None:
         self.__focused_widget = self.get_selected_widget()
 
-        self._popup = py_cui.popups.MessagePopup(self, title, text, color, self._renderer, self._logger)
-        self.add_key_command(py_cui.keys.KEY_ESCAPE, self.__close_popup)
-        self.add_key_command(py_cui.keys.KEY_SPACE, self.__close_popup)
-        self.add_key_command(py_cui.keys.KEY_ENTER, self.__close_popup)
+        self._popup = MultilinePopup(self, title, text, color, self._renderer, self._logger)
+        self.add_key_command(py_cui.keys.KEY_ESCAPE, self.close_popup)
 
-    def __close_popup(self) -> None:
+    def close_popup(self) -> None:
         super(QrogueCUI, self).close_popup()
         self.add_key_command(py_cui.keys.KEY_ESCAPE, self.__dummy)
         self.move_focus(self.__focused_widget)
