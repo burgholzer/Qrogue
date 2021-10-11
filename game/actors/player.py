@@ -30,15 +30,15 @@ class PlayerAttributes:
         self.__qubits = qubits
 
     @property
-    def num_of_qubits(self):
+    def num_of_qubits(self) -> int:
         return self.__qubits.size()
 
     @property
-    def space(self):
+    def space(self) -> int:
         return self.__space
 
     @property
-    def qubits(self):
+    def qubits(self) -> QubitSet:
         return self.__qubits
 
 
@@ -56,6 +56,7 @@ class Backpack:
         """
         self.__capacity = capacity
         self.__storage = content
+        self.__key_count = 0
 
     def __iter__(self) -> "BackpackIterator":
         return BackpackIterator(self)
@@ -67,6 +68,22 @@ class Backpack:
     @property
     def size(self) -> int:
         return len(self.__storage)
+
+    @property
+    def key_count(self) -> int:
+        return self.__key_count
+
+    def give_key(self, amount: int) -> bool:
+        if amount > 0:
+            self.__key_count += amount
+            return True
+        return False
+
+    def use_key(self) -> bool:
+        if self.key_count > 0:
+            self.__key_count -= 1
+            return True
+        return False
 
     def get(self, index: int) -> Instruction:
         if 0 <= index < self.size:
@@ -156,6 +173,16 @@ class Player(ABC):
     @property
     def state_vector(self) -> StateVector:
         return self.__stv
+
+    @property
+    def key_count(self) -> int:
+        return self.backpack.key_count
+
+    def give_key(self, amount: int = 1) -> bool:
+        return self.backpack.give_key(amount)
+
+    def use_key(self) -> bool:
+        return self.backpack.use_key()
 
     def circuit_enumerator(self):
         return enumerate(self.__instructions)

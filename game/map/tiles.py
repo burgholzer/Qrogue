@@ -10,6 +10,7 @@ from game.actors.player import Player as PlayerActor
 from game.callbacks import OnWalkCallback
 from game.collectibles.factory import CollectibleFactory
 from game.map.navigation import Direction
+from util.logger import Logger
 from util.my_random import RandomManager
 from widgets.my_popups import Popup
 
@@ -45,7 +46,7 @@ class Tile(ABC):
         pass
 
     @abstractmethod
-    def is_walkable(self, direction: Direction, actor) -> bool:
+    def is_walkable(self, direction: Direction, player: PlayerActor) -> bool:
         pass
 
 
@@ -53,15 +54,15 @@ class WalkTriggerTile(Tile):
     def __init__(self, code: TileCode):
         super().__init__(code)
 
-    def is_walkable(self, direction: Direction, actor) -> bool:
+    def is_walkable(self, direction: Direction, player: PlayerActor) -> bool:
         return True
     
     @abstractmethod
-    def on_walk(self, direction: Direction, actor) -> None:
+    def on_walk(self, direction: Direction, player: PlayerActor) -> None:
         """
         Event that is triggered when an actor moves onto this Tile
         :param direction: the Direction from which the actor moves onto this Tile
-        :param actor: the actor (e.g. Player) that is moving onto this Tile
+        :param player: the actor (e.g. Player) that is moving onto this Tile
         :return: None
         """
         pass
@@ -74,7 +75,7 @@ class Invalid(Tile):
     def get_img(self):
         return "§"
 
-    def is_walkable(self, direction: Direction, actor) -> bool:
+    def is_walkable(self, direction: Direction, player: PlayerActor) -> bool:
         return False
 
 
@@ -85,7 +86,7 @@ class Void(Tile):
     def get_img(self):
         return " "
 
-    def is_walkable(self, direction: Direction, actor) -> bool:
+    def is_walkable(self, direction: Direction, player: PlayerActor) -> bool:
         return False
 
 
@@ -96,7 +97,7 @@ class Floor(Tile):
     def get_img(self):
         return " "
 
-    def is_walkable(self, direction: Direction, actor) -> bool:
+    def is_walkable(self, direction: Direction, player: PlayerActor) -> bool:
         return True
 
 
@@ -107,7 +108,7 @@ class Wall(Tile):
     def get_img(self):
         return "#"
 
-    def is_walkable(self, direction: Direction, actor) -> bool:
+    def is_walkable(self, direction: Direction, player: PlayerActor) -> bool:
         return False
 
 
@@ -118,7 +119,7 @@ class Obstacle(Tile):
     def get_img(self):
         return "o"
 
-    def is_walkable(self, direction: Direction, actor) -> bool:
+    def is_walkable(self, direction: Direction, player: PlayerActor) -> bool:
         return False
 
 
@@ -129,7 +130,7 @@ class FogOfWar(Tile):
     def get_img(self):
         return "~"
 
-    def is_walkable(self, direction: Direction, actor) -> bool:
+    def is_walkable(self, direction: Direction, player: PlayerActor) -> bool:
         return True
 
 
@@ -145,10 +146,10 @@ class Message(WalkTriggerTile):
         else:
             return " "
 
-    def is_walkable(self, direction: Direction, actor) -> bool:
+    def is_walkable(self, direction: Direction, player: PlayerActor) -> bool:
         return True
 
-    def on_walk(self, direction: Direction, actor) -> None:
+    def on_walk(self, direction: Direction, player: PlayerActor) -> None:
         if self.__times > 0:
             self.__popup.show()
         self.__times -= 1
@@ -169,14 +170,25 @@ class Door(WalkTriggerTile):
         else:
             return "-"
 
-    def is_walkable(self, direction: Direction, actor) -> bool:
+    def is_walkable(self, direction: Direction, player: PlayerActor) -> bool:
         if direction == self.__direction or direction == self.__direction.opposite():
-            return not self.__locked
+            if self.__locked:
+                if player.key_count > 0:
+                    return True
+                else:
+                    Logger.instance().println("Door is locked!", clear=True)
+                    return False
+            else:
+                return True
         else:
             return False
 
-    def on_walk(self, direction: Direction, actor) -> None:
-        self.__opened = True
+    def on_walk(self, direction: Direction, player: PlayerActor) -> None:
+        if self.__locked and not player.use_key():
+            Logger.instance().error(f"Error! walked on a door without having enough keys!\n#keys={player.key_count}"
+                                    f", dir={direction}")
+        else:
+            self.__opened = True
 
     @property
     def direction(self) -> Direction:
@@ -198,12 +210,12 @@ class Collectible(WalkTriggerTile):
         else:
             return " "
 
-    def is_walkable(self, direction: Direction, actor) -> bool:
+    def is_walkable(self, direction: Direction, player: PlayerActor) -> bool:
         return True
 
-    def on_walk(self, direction: Direction, actor) -> None:
+    def on_walk(self, direction: Direction, player: PlayerActor) -> None:
         if self.__active:
-            player = actor
+            player = player
             player.give_collectible(self.__factory.produce())
             self.__active = False
 
@@ -216,7 +228,7 @@ class Player(Tile):
     def get_img(self):
         return "P"
 
-    def is_walkable(self, direction: Direction, actor) -> bool:
+    def is_walkable(self, direction: Direction, player: PlayerActor) -> bool:
         return True # todo check
 
     @property
@@ -240,27 +252,27 @@ class Enemy(WalkTriggerTile):
         self.__id = id
         self.__amplitude = amplitude
 
-    def on_walk(self, direction: Direction, actor) -> None:
-        if isinstance(actor, PlayerActor):
+    def on_walk(self, direction: Direction, player: PlayerActor) -> None:
+        if isinstance(player, PlayerActor):
             if self.__state == _EnemyState.UNDECIDED:
                 if self.measure():
-                    enemy = self.__factory.get_enemy(actor)
-                    self.__factory.callback(actor, enemy, direction)
+                    enemy = self.__factory.get_enemy(player)
+                    self.__factory.callback(player, enemy, direction)
                     self.__state = _EnemyState.DEAD
                 else:
                     self.__state = _EnemyState.FLED
             elif self.__state == _EnemyState.FIGHT:
-                enemy = self.__factory.get_enemy(actor)
-                self.__factory.callback(actor, enemy, direction)
+                enemy = self.__factory.get_enemy(player)
+                self.__factory.callback(player, enemy, direction)
                 self.__state = _EnemyState.DEAD
             elif self.__state == _EnemyState.FREE:
                 self.__state = _EnemyState.FLED
 
     def get_img(self):
         if self.__state == _EnemyState.DEAD :
-            return "x"
+            return " "
         elif self.__state == _EnemyState.FLED:
-            return "."
+            return " "
         else:
             return str(self.__id)
 
@@ -295,9 +307,8 @@ class Boss(WalkTriggerTile):
         self.__boss = boss
         self.__on_walk_callback = on_walk_callback
 
-    def on_walk(self, direction: Direction, actor) -> None:
-        if isinstance(actor, PlayerActor):
-            self.__on_walk_callback(actor, self.boss, direction)
+    def on_walk(self, direction: Direction, player: PlayerActor) -> None:
+        self.__on_walk_callback(player, self.boss, direction)
 
     def get_img(self):
         return "B"

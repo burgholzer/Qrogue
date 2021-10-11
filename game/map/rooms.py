@@ -30,7 +30,8 @@ class Room(ABC):
                     raise IndexError(f"Invalid Index ({index} for tile_list of length {len(tile_list)}!")
         return tile_list
 
-    def __init__(self, tile_list: "list of Tiles", doors: "list of Doors"):
+    def __init__(self, tile_list: "list of Tiles", east_door: Door = None, south_door: Door = None,
+                 west_door: bool = False, north_door: bool = False):
         self.__tiles = []
         top = [ Wall() for t in range(Room.ROOM_WIDTH) ]
         # Add an additional invisible Tile so we have space for hallways. We only need this on the right side and
@@ -60,28 +61,30 @@ class Room(ABC):
 
         self.__tiles.append(room_bottom)
         self.__tiles.append(bottom)
-        self.__doors = doors
         self.__is_in_sight = False
-        self.__is_visible = False
+        self.__is_visible = True
         self.__was_visited = False
 
         # North and West doors must be defined in the neighboring room, because that room creates the hallway
         # South and East doors are created and placed into a hallway
-        for door in doors:
-            if door.direction == Direction.North:
-                self.__tiles[0][Room.MID_X] = Floor()
-            elif door.direction == Direction.East:
-                self.__tiles[Room.MID_Y-1][Room.ROOM_WIDTH] = Wall()
-                self.__tiles[Room.MID_Y][Room.ROOM_WIDTH-1] = Floor()   # remove the wall in front of the hallway
-                self.__tiles[Room.MID_Y][Room.ROOM_WIDTH] = door
-                self.__tiles[Room.MID_Y+1][Room.ROOM_WIDTH] = Wall()
-            elif door.direction == Direction.South:
-                self.__tiles[Room.ROOM_HEIGHT][Room.MID_X-1] = Wall()
-                self.__tiles[Room.ROOM_HEIGHT-1][Room.MID_X] = Floor()  # remove the wall in front of the hallway
-                self.__tiles[Room.ROOM_HEIGHT][Room.MID_X] = door
-                self.__tiles[Room.ROOM_HEIGHT][Room.MID_X+1] = Wall()
-            elif door.direction == Direction.West:
-                self.__tiles[Room.MID_Y][0] = Floor()
+        if north_door:
+            self.__tiles[0][Room.MID_X] = Floor()
+        if west_door:
+            self.__tiles[Room.MID_Y][0] = Floor()
+        if east_door is not None:
+            if east_door.direction != Direction.East:
+                Logger.instance().error(f"Found room with a east_door not pointing East!\n{self}")
+            self.__tiles[Room.MID_Y-1][Room.ROOM_WIDTH] = Wall()
+            self.__tiles[Room.MID_Y][Room.ROOM_WIDTH-1] = Floor()   # remove the wall in front of the hallway
+            self.__tiles[Room.MID_Y][Room.ROOM_WIDTH] = east_door
+            self.__tiles[Room.MID_Y+1][Room.ROOM_WIDTH] = Wall()
+        if south_door is not None:
+            if south_door.direction != Direction.South:
+                Logger.instance().error(f"Found room with a south_door not pointing South!\n{self}")
+            self.__tiles[Room.ROOM_HEIGHT][Room.MID_X-1] = Wall()
+            self.__tiles[Room.ROOM_HEIGHT-1][Room.MID_X] = Floor()  # remove the wall in front of the hallway
+            self.__tiles[Room.ROOM_HEIGHT][Room.MID_X] = south_door
+            self.__tiles[Room.ROOM_HEIGHT][Room.MID_X+1] = Wall()
 
     def _set_tile(self, tile: Tile, x: int, y: int) -> bool:
         """
@@ -139,16 +142,18 @@ class Room(ABC):
 
 
 class SpawnRoom(Room):
-    def __init__(self, doors: "list of Doors", player: Player, tile_dic: "dic of Coordinate and Tile" = None):    # todo add type to player; always spawn at center?
+    def __init__(self, player: Player, tile_dic: "dic of Coordinate and Tile" = None, east_door: Door = None,
+                 south_door: Door = None, west_door: bool = False, north_door: bool = False):    # todo add type to player; always spawn at center?
         tile_list = Room.dic_to_tile_list(tile_dic)
-        super().__init__(tile_list, doors)
+        super().__init__(tile_list, east_door, south_door, west_door, north_door)
 
     def __str__(self):
         return "SR"
 
 
 class WildRoom(Room):
-    def __init__(self, factory: EnemyFactory, doors: "list of Doors"):
+    def __init__(self, factory: EnemyFactory, east_door: Door = None,
+                 south_door: Door = None, west_door: bool = False, north_door: bool = False):
         self.__dictionary = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [], 8: [], 9: [] }
         tile_list = []
         chance = 0.3
@@ -162,7 +167,7 @@ class WildRoom(Room):
             else:
                 tile_list.append(Floor())
 
-        super().__init__(tile_list, doors)
+        super().__init__(tile_list, east_door, south_door, west_door, north_door)
 
     def __str__(self):
         return "WR"
@@ -172,9 +177,10 @@ class WildRoom(Room):
 
 
 class GateRoom(Room):
-    def __init__(self, doors: "list of Doors", tile_dic: "dic of Coordinate and Tile" = None):
+    def __init__(self, tile_dic: "dic of Coordinate and Tile" = None, east_door: Door = None,
+                 south_door: Door = None, west_door: bool = False, north_door: bool = False):
         tile_list = Room.dic_to_tile_list(tile_dic)
-        super().__init__(tile_list, doors)
+        super().__init__(tile_list, east_door, south_door, west_door, north_door)
         factory = GateFactories.standard_factory()
         self._set_tile(Collectible(factory), x=Room.MID_X, y=Room.MID_Y)
 
@@ -197,7 +203,14 @@ class TreasureRoom(Room):
 class BossRoom(Room):
     def __init__(self, door: Door, boss: Boss, tile_dic: "dic of Coordinate and Tile" = None):
         tile_list = Room.dic_to_tile_list(tile_dic)
-        super().__init__(tile_list, [door])
+        if door.direction == Direction.East:
+            super().__init__(tile_list, east_door=door)
+        elif door.direction == Direction.South:
+            super().__init__(tile_list, south_door=door)
+        elif door.direction == Direction.West:
+            super().__init__(tile_list, west_door=True)
+        else:
+            super().__init__(tile_list, north_door=True)
         self._set_tile(boss, x=Room.MID_X, y=Room.MID_Y)
 
     def __str__(self) -> str:
