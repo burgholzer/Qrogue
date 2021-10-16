@@ -1,26 +1,40 @@
-from abc import ABC
+from enum import Enum
 
 import py_cui
 import py_cui.ui
+from util.config import PopupConfig
 
 
-class Popup(ABC):
-    def __init__(self, show_popup: "void(str, str, int)", title: str, text: str,
-                 color: int = py_cui.WHITE_ON_CYAN, show: bool = True):
+class Popup:
+    __show_popup = None
+
+    @staticmethod
+    def update_popup_functions(show_popup_callback: "void(str, str, int)") -> None:
+        Popup.__show_popup = show_popup_callback
+
+    @staticmethod
+    def show_popup() -> "void(str, str, int)":
+        return Popup.__show_popup
+
+    @staticmethod
+    def message(title: str, text: str, color: int = PopupConfig.default_color()):
+        Popup(title, text, color, show=True)
+
+    def __init__(self, title: str, text: str, color: int = PopupConfig.default_color(), show: bool = True):
         self.__title = title
         self.__text = text
         self.__color = color
-        self.__show_popup = show_popup
-        self.__focused_widget = None
         if show:
             self.show()
 
-    def show(self):
-        self.__show_popup(self.__title, self.__text, self.__color)
+    def show(self, show_popup_callback: "void(str, str, int)" = None) -> None:
+        if show_popup_callback is None:
+            Popup.__show_popup(self.__title, self.__text, self.__color)
+        else:
+            show_popup_callback(self.__title, self.__text, self.__color)
 
 
 class MultilinePopup(py_cui.popups.Popup, py_cui.ui.MenuImplementation):
-
     @staticmethod
     def __split_text(text: str, width: int) -> "list of str":
         split_text = []
@@ -68,3 +82,17 @@ class MultilinePopup(py_cui.popups.Popup, py_cui.ui.MenuImplementation):
             #line_counter += 1
         self._renderer.unset_color_mode(self._color)
         self._renderer.reset_cursor(self)
+
+
+class CommonPopups(Enum):
+    LockedDoor = ("Door is locked!", "Come back with a Key to open the Door.")
+    TutorialBlocked = ("Halt!", "You should not go there yet! Finish the current step of the Tutorial first.")
+    NotEnoughMoney = ("$$$", "You cannot afford that right now. Come back when you have enough money.")
+
+    def __init__(self, title: str, text: str, color: int = PopupConfig.default_color()):
+        self.__title = title
+        self.__text = text
+        self.__color = color
+
+    def show(self):
+        Popup(self.__title, self.__text, self.__color, show=True)
