@@ -23,7 +23,22 @@ class MultilinePopup(py_cui.popups.Popup, py_cui.ui.MenuImplementation):
 
     @staticmethod
     def __split_text(text: str, width: int) -> "list of str":
-        return [text[i:i + width] for i in range(0, len(text), width)]
+        split_text = []
+        for paragraph in text.splitlines():
+            index = 0
+            while index + width < len(paragraph):
+                last_whitespace = paragraph.rfind(" ", index + 1, index + width)
+                if last_whitespace == -1:
+                    cur_width = width
+                else:
+                    cur_width = last_whitespace - index
+                next_line = paragraph[index:index + cur_width].strip()
+                if len(next_line) > 0:
+                    split_text.append(next_line)
+                index += cur_width
+            # The last line is appended as it is
+            split_text.append(paragraph[index:index + width].strip())
+        return split_text
 
     def __init__(self, root, title, text, color, renderer, logger):
         super().__init__(root, title, text, color, renderer, logger)
