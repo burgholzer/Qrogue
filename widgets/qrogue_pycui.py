@@ -4,7 +4,6 @@ import py_cui
 
 from game.actors.enemy import Enemy
 from game.actors.player import Player as PlayerActor
-from game.collectibles.collectible import Collectible
 from game.controls import Controls
 from game.map.map import Map
 from game.map.navigation import Direction
@@ -22,9 +21,11 @@ class QrogueCUI(py_cui.PyCUI):
         self.__controls = controls
         self.__focused_widget = None
 
-        self.__menu = MenuWidgetSet(Logger.instance(), self.__start_gameplay, self.__start_fight, self.__show_popup)
+        self.__menu = MenuWidgetSet(Logger.instance(), self.__start_gameplay, self.__start_fight, self.__visit_shop,
+                                    self.__show_popup)
         self.__explore = ExploreWidgetSet(Logger.instance())
         self.__fight = FightWidgetSet(Logger.instance(), self.__continue_explore, self.__end_of_gameplay)
+        self.__shop = ShopWidgetSet(Logger.instance(), self.__continue_explore)
 
         self.__cur_widget_set = None
         self.__init_keys()
@@ -40,7 +41,11 @@ class QrogueCUI(py_cui.PyCUI):
         self.__fight.get_main_widget().add_key_command(self.__controls.print_screen, self.print_screen)
 
         # all selections
-        selection_widgets = [self.__menu.selection, self.__fight.choices, self.__fight.details]
+        selection_widgets = [
+            self.__menu.selection,
+            self.__fight.choices, self.__fight.details,
+            self.__shop.inventory, self.__shop.buy,
+        ]
         for my_widget in selection_widgets:
             widget = my_widget.widget
             widget.add_key_command(self.__controls.selection_up, my_widget.up)
@@ -61,6 +66,10 @@ class QrogueCUI(py_cui.PyCUI):
         # fight
         self.__fight.choices.widget.add_key_command(self.__controls.action, self.__use_choice)
         self.__fight.details.widget.add_key_command(self.__controls.action, self.__use_details)
+
+        # shop
+        self.__shop.inventory.widget.add_key_command(self.__controls.action, self.__use_inventory)
+        self.__shop.buy.widget.add_key_command(self.__controls.action, self.__use_buy)
 
     def print_screen(self) -> None:
         import os
@@ -128,6 +137,15 @@ class QrogueCUI(py_cui.PyCUI):
         self.__fight.set_data(player, enemy)
         self.apply_widget_set(self.__fight)
 
+    def __visit_shop(self, player: PlayerActor, items: "list of ShopItems"):
+        self.__state_machine.change_state(State.Shop, (player, items))
+
+    def switch_to_shop(self, data) -> None:
+        player = data[0]
+        items = data[1]
+        self.__shop.set_data(player, items)
+        self.apply_widget_set(self.__shop)
+
     def render(self) -> None:
         self.__cur_widget_set.render()
 
@@ -146,13 +164,26 @@ class QrogueCUI(py_cui.PyCUI):
             self.move_focus(self.__fight.choices.widget, auto_press_buttons=False)
             self.__fight.render()   # needed for updating the StateVectors and the circuit
 
+    def __use_inventory(self) -> None:
+        if self.__shop.inventory.use() and self.__cur_widget_set is self.__shop:
+            self.move_focus(self.__shop.buy.widget, auto_press_buttons=False)
+            self.__shop.inventory.render()
+            self.__shop.buy.render()
+
+    def __use_buy(self) -> None:
+        if self.__shop.buy.use() and self.__cur_widget_set is self.__shop:
+            self.move_focus(self.__shop.inventory.widget, auto_press_buttons=False)
+            self.__shop.inventory.render()
+            self.__shop.buy.render()
+
 
 class State(Enum):
     Menu = 0
     Pause = 1
     Explore = 2
     Fight = 3
-    Riddle = 4
+    Shop = 4
+    Riddle = 5
 
 
 class StateMachine:
@@ -179,6 +210,8 @@ class StateMachine:
             self.__renderer.switch_to_explore(data)
         elif self.__cur_state == State.Fight:
             self.__renderer.switch_to_fight(data)
+        elif self.__cur_state == State.Shop:
+            self.__renderer.switch_to_shop(data)
         #elif self.__cur_state == State.Pause:
         #    self.__game.init_pause_screen()
         #elif self.__cur_state == State.Riddle:
