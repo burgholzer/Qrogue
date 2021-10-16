@@ -141,6 +141,19 @@ class Room(ABC):
         pass
 
 
+class SpecialRoom(Room, ABC):
+    def __init__(self, door: Door, tile_dic: "dic of Coordinate and Tile"):
+        tile_list = Room.dic_to_tile_list(tile_dic)
+        if door.direction == Direction.East:
+            super().__init__(tile_list, east_door=door)
+        elif door.direction == Direction.South:
+            super().__init__(tile_list, south_door=door)
+        elif door.direction == Direction.West:
+            super().__init__(tile_list, west_door=True)
+        else:
+            super().__init__(tile_list, north_door=True)
+
+
 class SpawnRoom(Room):
     def __init__(self, player: Player, tile_dic: "dic of Coordinate and Tile" = None, east_door: Door = None,
                  south_door: Door = None, west_door: bool = False, north_door: bool = False):    # todo add type to player; always spawn at center?
@@ -176,11 +189,9 @@ class WildRoom(Room):
         return self.__dictionary[id]
 
 
-class GateRoom(Room):
-    def __init__(self, tile_dic: "dic of Coordinate and Tile" = None, east_door: Door = None,
-                 south_door: Door = None, west_door: bool = False, north_door: bool = False):
-        tile_list = Room.dic_to_tile_list(tile_dic)
-        super().__init__(tile_list, east_door, south_door, west_door, north_door)
+class GateRoom(SpecialRoom):
+    def __init__(self, door: Door, tile_dic: "dic of Coordinate and Tile" = None):
+        super().__init__(door, tile_dic)
         factory = GateFactories.standard_factory()
         self._set_tile(Collectible(factory), x=Room.MID_X, y=Room.MID_Y)
 
@@ -192,25 +203,23 @@ class RiddleRoom(Room):
     pass
 
 
-class ShopRoom(Room):
+class ShopRoom(SpecialRoom):
+    def __init__(self, door: Door, inventory: "list of ShopItems",
+                 visit_shop_callback: "void(Player, list of ShopItems)", tile_dic: "dic of Coordinate and Tile" = None):
+        super().__init__(door, tile_dic)
+        self._set_tile(ShopKeeper(visit_shop_callback, inventory), Room.MID_X, Room.MID_Y)
+
+    def __str__(self):
+        return "$R"
+
+
+class TreasureRoom(SpecialRoom):
     pass
 
 
-class TreasureRoom(Room):
-    pass
-
-
-class BossRoom(Room):
+class BossRoom(SpecialRoom):
     def __init__(self, door: Door, boss: Boss, tile_dic: "dic of Coordinate and Tile" = None):
-        tile_list = Room.dic_to_tile_list(tile_dic)
-        if door.direction == Direction.East:
-            super().__init__(tile_list, east_door=door)
-        elif door.direction == Direction.South:
-            super().__init__(tile_list, south_door=door)
-        elif door.direction == Direction.West:
-            super().__init__(tile_list, west_door=True)
-        else:
-            super().__init__(tile_list, north_door=True)
+        super().__init__(door, tile_dic)
         self._set_tile(boss, x=Room.MID_X, y=Room.MID_Y)
 
     def __str__(self) -> str:
