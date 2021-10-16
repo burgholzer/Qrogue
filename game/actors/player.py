@@ -56,6 +56,7 @@ class Backpack:
         """
         self.__capacity = capacity
         self.__storage = content
+        self.__coin_count = 0
         self.__key_count = 0
 
     def __iter__(self) -> "BackpackIterator":
@@ -68,6 +69,22 @@ class Backpack:
     @property
     def size(self) -> int:
         return len(self.__storage)
+
+    @property
+    def coin_count(self) -> int:
+        return self.__coin_count
+
+    def give_coin(self, amount: int) -> bool:
+        if amount > 0:
+            self.__coin_count += amount
+            return True
+        return False
+
+    def use_coins(self, amount: int) -> bool:
+        if self.coin_count >= amount:
+            self.__coin_count -= amount
+            return True
+        return False
 
     @property
     def key_count(self) -> int:
@@ -163,9 +180,6 @@ class Player(ABC):
         self.__apply_instructions()
         self.update_statevector()  # to initialize the statevector
 
-        # init other stats
-        self.__coin_count = 0
-
     @property
     def backpack(self) -> Backpack:
         return self.__backpack
@@ -249,7 +263,7 @@ class Player(ABC):
 
     def give_collectible(self, collectible: Collectible):
         if isinstance(collectible, Coin):
-            self.__coin_count += collectible.amount
+            self.__backpack.give_coin(collectible.amount)
         elif isinstance(collectible, Key):
             self.__backpack.give_key(collectible.amount)
         elif isinstance(collectible, Instruction):
