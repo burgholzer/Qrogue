@@ -12,7 +12,7 @@ from game.collectibles.factory import CollectibleFactory
 from game.map.navigation import Direction
 from util.logger import Logger
 from util.my_random import RandomManager
-from widgets.my_popups import Popup
+from widgets.my_popups import Popup, CommonPopups
 
 
 class TileCode(Enum):
@@ -190,7 +190,7 @@ class Door(WalkTriggerTile):
                 if player.key_count > 0:
                     return True
                 else:
-                    Logger.instance().println("Door is locked!", clear=True)
+                    CommonPopups.LockedDoor.show()
                     return False
             else:
                 return True
