@@ -8,21 +8,22 @@ from game.controls import Controls
 from game.map.map import Map
 from game.map.navigation import Direction
 from util.logger import Logger
-from widgets.my_popups import MultilinePopup
-from widgets.widget_sets import ExploreWidgetSet, FightWidgetSet, MyWidgetSet, MenuWidgetSet
+from widgets.my_popups import Popup, MultilinePopup
+from widgets.widget_sets import ExploreWidgetSet, FightWidgetSet, MyWidgetSet, MenuWidgetSet, ShopWidgetSet
 
 
 class QrogueCUI(py_cui.PyCUI):
     def __init__(self, seed: int, controls: Controls, width: int = 8, height: int = 9):
         super().__init__(width, height)
         Logger.instance().set_popup(self.show_message_popup, self.show_error_popup)
+        Popup.update_popup_functions(self.__show_popup)
+
         self.__state_machine = StateMachine(self)
         self.__seed = seed
         self.__controls = controls
         self.__focused_widget = None
 
-        self.__menu = MenuWidgetSet(Logger.instance(), self.__start_gameplay, self.__start_fight, self.__visit_shop,
-                                    self.__show_popup)
+        self.__menu = MenuWidgetSet(Logger.instance(), self.__start_gameplay, self.__start_fight, self.__visit_shop)
         self.__explore = ExploreWidgetSet(Logger.instance())
         self.__fight = FightWidgetSet(Logger.instance(), self.__continue_explore, self.__end_of_gameplay)
         self.__shop = ShopWidgetSet(Logger.instance(), self.__continue_explore)

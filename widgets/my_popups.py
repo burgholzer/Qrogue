@@ -95,4 +95,4 @@ class CommonPopups(Enum):
         self.__color = color
 
     def show(self):
-        Popup(self.__title, self.__text, self.__color, show=True)
+        Popup.message(self.__title, self.__text, self.__color)

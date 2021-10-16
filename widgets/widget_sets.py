@@ -57,11 +57,9 @@ class MenuWidgetSet(MyWidgetSet):
 
     def __init__(self, logger, start_gameplay_callback: "void(Map, tiles.Player)",
                  start_fight_callback: "void(Player, Enemy, Direction)",
-                 visit_shop_callback: "void(Player, list of ShopItems)",
-                 show_popup_callback: "void(str, str, int)"):
+                 visit_shop_callback: "void(Player, list of ShopItems)"):
         super().__init__(self.__NUM_OF_ROWS, self.__NUM_OF_COLS, logger)
         self.__start_gameplay_callback = start_gameplay_callback
-        self.__show_popup_callback = show_popup_callback
 
         self.__seed = 7
         self.__start_fight_callback = start_fight_callback
@@ -99,18 +97,18 @@ class MenuWidgetSet(MyWidgetSet):
         player_tile = tiles.Player(DummyPlayer())   # todo use real player
         seed = MapConfig.tutorial_seed() # todo and real seed
         map = Map(seed, self.__MAP_WIDTH, self.__MAP_HEIGHT, player_tile,
-                  self.__start_fight_callback, self.__visit_shop_callback, self.__show_popup_callback)
+                  self.__start_fight_callback, self.__visit_shop_callback)
         self.__start_gameplay_callback(map)
 
     def __tutorial(self) -> None:
         player_tile = tiles.Player(DummyPlayer())
         map = Map(MapConfig.tutorial_seed(), self.__MAP_WIDTH, self.__MAP_HEIGHT, player_tile,
-                  self.__start_fight_callback, self.__visit_shop_callback, self.__show_popup_callback)
+                  self.__start_fight_callback, self.__visit_shop_callback)
         self.__start_gameplay_callback(map)
         msg =   "Try to move around with the arrow keys and go to the door (|) on the right! " \
                 "The fields with a \".\" will give you the next hints. " \
                 "Now press ENTER, ESC or SPACE to close this dialog."
-        Popup("Welcome to Qrogue!", msg)
+        Popup.message("Welcome to Qrogue!", msg)
 
     def __options(self) -> None:
         print("todo")

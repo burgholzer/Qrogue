@@ -138,8 +138,7 @@ class Tutorial:
         self.__cur_id += 1
 
     def create_tutorial_map(self, player: tiles.Player, start_fight_callback: "void(Player, Enemy, Direction)",
-                            visit_shop_callback: "void(Player, list of ShopItems",
-                            show_popup_callback: "void(str, str, int)") -> "Room[][], Coordinate":
+                            visit_shop_callback: "void(Player, list of ShopItems") -> "Room[][], Coordinate":
         messages = [
             "Great! The room you're about to enter gives you a new Gate you can use for your circuits. But it seems to "
             "be locked...",
