@@ -46,6 +46,24 @@ class SimpleWidget(Widget):
         self.widget.set_title("")
 
 
+class HudWidget(Widget):
+    def __init__(self, widget: BlockLabel):
+        super().__init__(widget)
+        self.__player = None
+
+    def set_data(self, player:PlayerActor) -> None:
+        self.__player = player
+
+    def render(self) -> None:
+        if self.__player is not None:
+            text = f"{self.__player.cur_hp} HP   \t" \
+                   f"{self.__player.backpack.coin_count}$, {self.__player.backpack.key_count} keys"
+            self.widget.set_title(text)
+
+    def render_reset(self) -> None:
+        self.widget.set_title("")
+
+
 class CircuitWidget(Widget):
     def __init__(self, widget: BlockLabel):
         super().__init__(widget)

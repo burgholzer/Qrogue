@@ -55,7 +55,9 @@ class MenuWidgetSet(MyWidgetSet):
     __MAP_WIDTH = 50
     __MAP_HEIGHT = 14
 
-    def __init__(self, logger, start_gameplay_callback: "void(Map, tiles.Player)", start_fight_callback: "void(Enemy)",
+    def __init__(self, logger, start_gameplay_callback: "void(Map, tiles.Player)",
+                 start_fight_callback: "void(Player, Enemy, Direction)",
+                 visit_shop_callback: "void(Player, list of ShopItems)",
                  show_popup_callback: "void(str, str, int)"):
         super().__init__(self.__NUM_OF_ROWS, self.__NUM_OF_COLS, logger)
         self.__start_gameplay_callback = start_gameplay_callback
@@ -63,6 +65,7 @@ class MenuWidgetSet(MyWidgetSet):
 
         self.__seed = 7
         self.__start_fight_callback = start_fight_callback
+        self.__visit_shop_callback = visit_shop_callback
 
     def init_widgets(self) -> None:
         title = self.add_block_label("Qrogue", 0, 0, row_span=6, column_span=self.__NUM_OF_COLS, center=True)
@@ -96,13 +99,13 @@ class MenuWidgetSet(MyWidgetSet):
         player_tile = tiles.Player(DummyPlayer())   # todo use real player
         seed = MapConfig.tutorial_seed() # todo and real seed
         map = Map(seed, self.__MAP_WIDTH, self.__MAP_HEIGHT, player_tile,
-                  self.__start_fight_callback, self.__show_popup_callback)
+                  self.__start_fight_callback, self.__visit_shop_callback, self.__show_popup_callback)
         self.__start_gameplay_callback(map)
 
     def __tutorial(self) -> None:
         player_tile = tiles.Player(DummyPlayer())
         map = Map(MapConfig.tutorial_seed(), self.__MAP_WIDTH, self.__MAP_HEIGHT, player_tile,
-                  self.__start_fight_callback, self.__show_popup_callback)
+                  self.__start_fight_callback, self.__visit_shop_callback, self.__show_popup_callback)
         self.__start_gameplay_callback(map)
         msg =   "Try to move around with the arrow keys and go to the door (|) on the right! " \
                 "The fields with a \".\" will give you the next hints. " \
@@ -314,3 +317,89 @@ class FightWidgetSet(MyWidgetSet):
 
     def __damage_taken(self) -> None:
         pass
+
+
+class ShopWidgetSet(MyWidgetSet):
+    __NUM_OF_ROWS = 9
+    __NUM_OF_COLS = 9
+
+    def __init__(self, logger, continue_exploration_callback: "()"):
+        super().__init__(self.__NUM_OF_ROWS, self.__NUM_OF_COLS, logger)
+        self.__continue_exploration = continue_exploration_callback
+        self.__player = None
+        self.__items = None
+
+    def init_widgets(self) -> None:
+        hud = self.add_block_label("HUD", 0, 0, row_span=1, column_span=self.__NUM_OF_COLS)
+        self.__hud = HudWidget(hud)
+
+        inv_width = 4
+        inventory = self.add_block_label("Inventory", 1, 0, row_span=7, column_span=inv_width)
+        self.__inventory = SelectionWidget(inventory)
+
+        details = self.add_block_label("Details", 1, inv_width, row_span=4, column_span=self.__NUM_OF_COLS - inv_width)
+        self.__details = SimpleWidget(details)
+        buy = self.add_block_label("Buy", 4, inv_width, row_span=1, column_span=self.__NUM_OF_COLS - inv_width)
+        self.__buy = SelectionWidget(buy)
+
+    @property
+    def inventory(self) -> SelectionWidget:
+        return self.__inventory
+
+    @property
+    def buy(self) -> SelectionWidget:
+        return self.__buy
+
+    def get_widget_list(self) -> "list of Widgets":
+        return [
+            self.__hud,
+            self.__inventory,
+            self.__details,
+            self.__buy,
+        ]
+
+    def get_main_widget(self) -> py_cui.widgets.Widget:
+        return self.__inventory.widget
+
+    def reset(self) -> None:
+        self.__inventory.render_reset()
+
+    def set_data(self, player: PlayerActor, items: "list of ShopItems") -> None:
+        self.__player = player
+        self.__hud.set_data(player)
+        self.__update_inventory(items)
+
+    def __update_inventory(self, items):
+        self.__items = items
+        self.__inventory.set_data(data=(
+            [str(si) for si in items] + ["-Leave-"],
+            [self.__select_item]
+        ))
+
+    def __select_item(self, index: int = 0) -> bool:
+        if index >= len(self.__items):
+            self.__continue_exploration()
+            return False
+
+        shop_item = self.__items[index]
+        self.__cur_item = shop_item
+        self.__details.set_data(shop_item.collectible)
+        self.__buy.set_data(data=(
+            ["Buy!", "No thanks"],
+            [self.__buy_item, self.__back_to_inventory]
+        ))
+        return True
+
+    def __buy_item(self) -> bool:
+        if self.__player.backpack.use_coins(self.__cur_item.price):
+            self.__player.give_collectible(self.__cur_item.collectible)
+            self.__hud.render()
+            self.__items.remove(self.__cur_item)
+            self.__update_inventory(self.__items)
+            return True
+        else:
+            return False
+
+    def __back_to_inventory(self) -> bool:
+        self.__cur_item = None
+        return True
