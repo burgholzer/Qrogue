@@ -31,6 +31,7 @@ class TileCode(Enum):
     Boss = 40
 
     Collectible = 50
+    ShopKeeper = 52
 
 
 class Tile(ABC):
@@ -153,6 +154,19 @@ class Message(WalkTriggerTile):
         if self.__times > 0:
             self.__popup.show()
         self.__times -= 1
+
+
+class ShopKeeper(WalkTriggerTile):
+    def __init__(self, visit_shop_callback, inventory: "list of ShopItems"):
+        super().__init__(TileCode.ShopKeeper)
+        self.__visit_shop = visit_shop_callback
+        self.__inventory = inventory
+
+    def on_walk(self, direction: Direction, player: PlayerActor) -> None:
+        self.__visit_shop(player, self.__inventory)
+
+    def get_img(self):
+        return "$"
 
 
 class Door(WalkTriggerTile):
