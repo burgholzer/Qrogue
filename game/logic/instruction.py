@@ -66,6 +66,9 @@ class HGate(Instruction):
     def __init__(self, qubit: int):
         super().__init__(gates.HGate(), qargs=[qubit])
 
+    def description(self) -> str:
+        return "The Hadamard Gate is often used to get Qubits into Superposition."
+
     def name(self):
         return "Hadamard"
 
@@ -79,6 +82,9 @@ class HGate(Instruction):
 class SwapGate(Instruction):
     def __init__(self, q0: int, q1: int):
         super().__init__(gates.SwapGate(), qargs=[q0, q1])
+
+    def description(self) -> str:
+        return "As the name suggests, Swap Gates swap the amplitude between two Qubits."
 
     def name(self):
         return "Swap"
