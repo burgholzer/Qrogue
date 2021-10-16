@@ -14,7 +14,7 @@ from game.map.tiles import Player as PlayerTile
 from util.config import MapConfig
 from widgets.color_rules import ColorRules
 from widgets.my_popups import Popup
-from widgets.my_widgets import SelectionWidget, StateVectorWidget, CircuitWidget, MapWidget, SimpleWidget
+from widgets.my_widgets import SelectionWidget, StateVectorWidget, CircuitWidget, MapWidget, SimpleWidget, HudWidget
 
 
 class MyWidgetSet(WidgetSet, ABC):
@@ -110,7 +110,7 @@ class MenuWidgetSet(MyWidgetSet):
         msg =   "Try to move around with the arrow keys and go to the door (|) on the right! " \
                 "The fields with a \".\" will give you the next hints. " \
                 "Now press ENTER, ESC or SPACE to close this dialog."
-        Popup(self.__show_popup_callback, "Welcome to Qrogue!", msg)
+        Popup("Welcome to Qrogue!", msg)
 
     def __options(self) -> None:
         print("todo")
@@ -126,9 +126,9 @@ class ExploreWidgetSet(MyWidgetSet):
 
     def __init__(self, logger):
         super().__init__(self.__NUM_OF_ROWS, self.__NUM_OF_COLS, logger)
-        self.__first_row = self.add_block_label('first line (metadata like playtime, floor, ...?)', 0, 0,
-                                         column_span=self.__NUM_OF_COLS)
-        self.__first_row.toggle_border()
+        hud = self.add_block_label('HUD', 0, 0, row_span=1, column_span=self.__NUM_OF_COLS, center=False)
+        hud.toggle_border()
+        self.__hud = HudWidget(hud)
 
     def init_widgets(self) -> None:
         map_widget = self.add_block_label('MAP', 1, 0, row_span=self.__NUM_OF_ROWS-1, column_span=self.__NUM_OF_COLS, center=True)
@@ -140,10 +140,12 @@ class ExploreWidgetSet(MyWidgetSet):
         return self.__map_widget.widget
 
     def set_data(self, map: Map, player_tile: PlayerTile) -> None:
+        self.__hud.set_data(player_tile.player)
         self.__map_widget.set_data(map)
 
     def get_widget_list(self) -> "list of Widgets":
         return [
+            self.__hud,
             self.__map_widget
         ]
 
@@ -179,9 +181,9 @@ class FightWidgetSet(MyWidgetSet):
         self.__end_of_gameplay_callback = end_of_gameplay_callback
 
     def init_widgets(self) -> None:
-        logger_row = self.add_block_label('Logger', 0, 0, row_span=1, column_span=self.__NUM_OF_COLS, center=True)
-        logger_row.toggle_border()
-        self.__logger_row = logger_row
+        hud = self.add_block_label('HUD', 0, 0, row_span=1, column_span=self.__NUM_OF_COLS, center=True)
+        hud.toggle_border()
+        self.__hud = HudWidget(hud)
 
         stv_row = 1
         stv = self.add_block_label('Player StV', stv_row, 0, row_span=4, column_span=3, center=True)
@@ -221,6 +223,7 @@ class FightWidgetSet(MyWidgetSet):
         self.__player = player
         self.__enemy = enemy
 
+        self.__hud.set_data(player)
         self.__circuit.set_data(player)
 
         p_stv = player.state_vector
@@ -231,6 +234,7 @@ class FightWidgetSet(MyWidgetSet):
 
     def get_widget_list(self) -> "list of Widgets":
         return [
+            self.__hud,
             self.__stv_player,
             self.__stv_diff,
             self.__stv_enemy,
