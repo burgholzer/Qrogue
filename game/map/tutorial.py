@@ -67,7 +67,7 @@ class TutorialTile(tiles.Message):
         if self.is_active():
             return super(TutorialTile, self).get_img()
         else:
-            return " "
+            return self._invisible
 
     def is_walkable(self, direction: Direction, player: PlayerActor) -> bool:
         if self.__blocks:

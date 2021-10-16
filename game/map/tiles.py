@@ -42,6 +42,10 @@ class Tile(ABC):
     def code(self) -> TileCode:
         return self.__code
 
+    @property
+    def _invisible(self) -> str:
+        return " "
+
     @abstractmethod
     def get_img(self):
         pass
@@ -85,7 +89,7 @@ class Void(Tile):
         super().__init__(TileCode.Floor)
 
     def get_img(self):
-        return " "
+        return self._invisible
 
     def is_walkable(self, direction: Direction, player: PlayerActor) -> bool:
         return False
@@ -96,7 +100,7 @@ class Floor(Tile):
         super().__init__(TileCode.Floor)
 
     def get_img(self):
-        return " "
+        return self._invisible
 
     def is_walkable(self, direction: Direction, player: PlayerActor) -> bool:
         return True
@@ -145,7 +149,7 @@ class Message(WalkTriggerTile):
         if self.__times > 0:
             return "."
         else:
-            return " "
+            return self._invisible
 
     def is_walkable(self, direction: Direction, player: PlayerActor) -> bool:
         return True
@@ -178,7 +182,7 @@ class Door(WalkTriggerTile):
 
     def get_img(self):
         if self.__opened:
-            return " "
+            return self._invisible
         if self.__direction is Direction.East or self.__direction is Direction.West:
             return "|"
         else:
@@ -226,7 +230,7 @@ class Collectible(WalkTriggerTile):
         if self.__active:
             return "c"
         else:
-            return " "
+            return self._invisible
 
     def is_walkable(self, direction: Direction, player: PlayerActor) -> bool:
         return True
@@ -288,9 +292,9 @@ class Enemy(WalkTriggerTile):
 
     def get_img(self):
         if self.__state == _EnemyState.DEAD :
-            return " "
+            return self._invisible
         elif self.__state == _EnemyState.FLED:
-            return " "
+            return self._invisible
         else:
             return str(self.__id)
 
