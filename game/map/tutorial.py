@@ -2,13 +2,15 @@ from game.actors.factory import EnemyFactory, FightDifficulty, DummyFightDifficu
 from game.actors.enemy import Enemy as EnemyActor
 from game.actors.boss import Boss as BossActor
 from game.actors.player import Player as PlayerActor
+from game.actors.riddle import Riddle
 from game.callbacks import OnWalkCallback
 from game.collectibles.collectible import ShopItem
 from game.collectibles.pickup import Coin, Key
+from game.logic.instruction import CXGate
 from game.logic.qubit import StateVector
 from game.map import tiles
 from game.map.navigation import Coordinate, Direction
-from game.map.rooms import Room, SpawnRoom, GateRoom, WildRoom, BossRoom, ShopRoom
+from game.map.rooms import Room, SpawnRoom, GateRoom, WildRoom, BossRoom, ShopRoom, RiddleRoom
 from game.map.tiles import Door
 
 from widgets.my_popups import Popup, CommonPopups
@@ -25,6 +27,13 @@ class TutorialEnemy(EnemyActor):
 
     def get_img(self):
         return "E"
+
+
+class TutorialRiddle(Riddle):
+    def __init__(self):
+        target = StateVector([1, 0, 0, 0, 0, 0, 0, 0])
+        reward = CXGate(0, 1)
+        super().__init__(target, reward, attempts=7)
 
 
 class TutorialBoss(BossActor):
@@ -65,12 +74,12 @@ class TutorialTile(tiles.Message):
 
     def get_img(self):
         if self.is_active():
+                return super(TutorialTile, self).get_img()
+        else:
             if self.__blocks:
                 return "X"
             else:
-                return super(TutorialTile, self).get_img()
-        else:
-            return self._invisible
+                return self._invisible
 
     def is_walkable(self, direction: Direction, player: PlayerActor) -> bool:
         if self.__blocks:
@@ -182,10 +191,10 @@ class Tutorial:
         rooms[1][1] = CustomWildRoom(start_fight_callback, TutorialTile(popups[2], 2, self.is_active, self.progress),
                                      TutorialTile(popups[4], 4, self.is_active, self.progress, blocks=True))
         rooms[2][0] = TutorialGateRoom(TutorialTile(popups[3], 3, self.is_active, self.progress))
-        rooms[1][2] = WildRoom(factory, north_door=False, west_door=True, east_door=tiles.Door(Direction.East),
+        rooms[1][2] = WildRoom(factory, north_door=True, west_door=True, east_door=tiles.Door(Direction.East),
                                south_door=tiles.Door(Direction.South))
-        rooms[1][3] = BossRoom(tiles.Door(Direction.West), tiles.Boss(TutorialBoss(), start_fight_callback))
-
+        rooms[0][2] = BossRoom(tiles.Door(Direction.South), tiles.Boss(TutorialBoss(), start_fight_callback))
+        rooms[1][3] = RiddleRoom(tiles.Door(Direction.East), TutorialRiddle(), open_riddle_callback)
         rooms[2][2] = ShopRoom(Door(Direction.North), [ShopItem(Key(2), 3), ShopItem(Key(1), 2)], visit_shop_callback)
 
         return rooms, Coordinate(spawn_x, spawn_y)
