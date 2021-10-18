@@ -199,8 +199,14 @@ class GateRoom(SpecialRoom):
         return "GR"
 
 
-class RiddleRoom(Room):
-    pass
+class RiddleRoom(SpecialRoom):
+    def __init__(self, door: Door, riddle: Riddle, open_riddle_callback: "void(Player, Riddle)",
+                 tile_dic: "dic of Coordinate and Tile" = None):
+        super().__init__(door, tile_dic)
+        self._set_tile(Riddler(open_riddle_callback, riddle), Room.MID_X, Room.MID_Y)
+
+    def __str__(self):
+        return "RR"
 
 
 class ShopRoom(SpecialRoom):

@@ -7,6 +7,7 @@ import py_cui
 from game.actors.boss import Boss as BossActor
 from game.actors.factory import EnemyFactory
 from game.actors.player import Player as PlayerActor
+from game.actors.riddle import Riddle
 from game.callbacks import OnWalkCallback
 from game.collectibles.factory import CollectibleFactory
 from game.map.navigation import Direction
@@ -31,6 +32,7 @@ class TileCode(Enum):
     Boss = 40
 
     Collectible = 50
+    Riddler = 51
     ShopKeeper = 52
 
 
@@ -158,6 +160,23 @@ class Message(WalkTriggerTile):
         if self.__times > 0:
             self.__popup.show()
         self.__times -= 1
+
+
+class Riddler(WalkTriggerTile):
+    def __init__(self, open_riddle_callback: "void(Player, Riddle)", riddle: Riddle):
+        super().__init__(TileCode.Riddler)
+        self.__open_riddle = open_riddle_callback
+        self.__riddle = riddle
+
+    def on_walk(self, direction: Direction, player: PlayerActor) -> None:
+        if self.__riddle.is_active:
+            self.__open_riddle(player, self.__riddle)
+
+    def get_img(self):
+        if self.__riddle.is_active:
+            return "?"
+        else:
+            return self._invisible
 
 
 class ShopKeeper(WalkTriggerTile):

@@ -6,7 +6,8 @@ from py_cui.widget_set import WidgetSet
 from game.actors.enemy import Enemy
 from game.actors.player import Player as PlayerActor
 from game.actors.player import DummyPlayer
-from game.callbacks import SimpleCallback
+from game.actors.riddle import Riddle
+from game.actors.target import Target
 from game.map import tiles
 from game.map.map import Map
 from game.map.navigation import Direction
@@ -57,13 +58,14 @@ class MenuWidgetSet(MyWidgetSet):
     __MAP_HEIGHT = 14
 
     def __init__(self, logger, start_gameplay_callback: "void(Map, tiles.Player)",
-                 start_fight_callback: "void(Player, Enemy, Direction)",
+                 start_fight_callback: "void(Player, Enemy, Direction)", open_riddle_callback: "void(Player, Riddle)",
                  visit_shop_callback: "void(Player, list of ShopItems)"):
         super().__init__(self.__NUM_OF_ROWS, self.__NUM_OF_COLS, logger)
         self.__start_gameplay_callback = start_gameplay_callback
 
         self.__seed = 7
         self.__start_fight_callback = start_fight_callback
+        self.__open_riddle_callback = open_riddle_callback
         self.__visit_shop_callback = visit_shop_callback
 
     def init_widgets(self) -> None:
@@ -97,14 +99,14 @@ class MenuWidgetSet(MyWidgetSet):
     def __play(self) -> None:
         player_tile = tiles.Player(DummyPlayer())   # todo use real player
         seed = MapConfig.tutorial_seed() # todo and real seed
-        map = Map(seed, self.__MAP_WIDTH, self.__MAP_HEIGHT, player_tile,
-                  self.__start_fight_callback, self.__visit_shop_callback)
+        map = Map(seed, self.__MAP_WIDTH, self.__MAP_HEIGHT, player_tile, self.__start_fight_callback,
+                  self.__open_riddle_callback, self.__visit_shop_callback)
         self.__start_gameplay_callback(map)
 
     def __tutorial(self) -> None:
         player_tile = tiles.Player(DummyPlayer())
         map = Map(MapConfig.tutorial_seed(), self.__MAP_WIDTH, self.__MAP_HEIGHT, player_tile,
-                  self.__start_fight_callback, self.__visit_shop_callback)
+                  self.__start_fight_callback, self.__open_riddle_callback, self.__visit_shop_callback)
         self.__start_gameplay_callback(map)
         msg =   "Try to move around with the arrow keys and go to the door (-) at the bottom! " \
                 "The fields with a \".\" will give you the next hints. " \
@@ -168,17 +170,18 @@ class ExploreWidgetSet(MyWidgetSet):
             self.render()
 
 
-class FightWidgetSet(MyWidgetSet):
+class ReachTargetWidgetSet(MyWidgetSet, ABC):
     __NUM_OF_ROWS = 9
     __NUM_OF_COLS = 9
 
-    def __init__(self, logger, end_of_fight_callback: SimpleCallback, game_over_callback: SimpleCallback):
+    def __init__(self, logger, continue_exploration_callback: "()", choices: "list of str"):
+        if len(choices) != 4:
+            raise RuntimeError("Created a ReachTargetWidgetSet with more or less than 4 choices!")
+        self.__choice_strings = choices
         super().__init__(self.__NUM_OF_ROWS, self.__NUM_OF_COLS, logger)
-        self.__end_of_fight_callback = end_of_fight_callback
-        self.__game_over_callback = game_over_callback
-        self.__random = RandomManager.create_new()
-        self.__player = None
-        self.__enemy = None
+        self._continue_exploration_callback = continue_exploration_callback
+        self._player = None
+        self._target = None
 
     def init_widgets(self) -> None:
         hud = self.add_block_label('HUD', 0, 0, row_span=1, column_span=self.__NUM_OF_COLS, center=True)
@@ -190,8 +193,8 @@ class FightWidgetSet(MyWidgetSet):
         self.__stv_player = StateVectorWidget(stv, "Current State")
         stv = self.add_block_label('Diff StV', stv_row, 3, row_span=3, column_span=3, center=True)
         self.__stv_diff = StateVectorWidget(stv, "Difference")
-        stv = self.add_block_label('Enemy StV', stv_row, 6, row_span=3, column_span=3, center=True)
-        self.__stv_enemy = StateVectorWidget(stv, "Target State")
+        stv = self.add_block_label('Target StV', stv_row, 6, row_span=3, column_span=3, center=True)
+        self.__stv_target = StateVectorWidget(stv, "Target State")
 
         circuit = self.add_block_label('Circuit', 5, 0, row_span=2, column_span=self.__NUM_OF_COLS, center=True)
         circuit.toggle_border()
@@ -199,48 +202,48 @@ class FightWidgetSet(MyWidgetSet):
 
         choices = self.add_block_label('Choices', 7, 0, row_span=2, column_span=3, center=True)
         choices.toggle_border()
-        self.__choices = SelectionWidget(choices, columns=SelectionWidget.FIGHT_CHOICE_COLUMNS)
-        self.__choices.set_data(data=(
-            ["Adapt", "Commit", "Items", "Flee"],
-            [self.__choices_adapt, self.__choices_commit, self.__choices_items, self.__choices_flee]
+        self._choices = SelectionWidget(choices, columns=SelectionWidget.FIGHT_CHOICE_COLUMNS)
+        self._choices.set_data(data=(
+            self.__choice_strings,
+            [self.__choices_adapt, self.__choices_commit, self.__choices_items, self._choices_flee]
         ))
 
         details = self.add_block_label('Details', 7, 3, row_span=2, column_span=6, center=True)
         details.toggle_border()
-        self.__details = SelectionWidget(details, columns=SelectionWidget.FIGHT_DETAILS_COLUMNS)
+        self._details = SelectionWidget(details, columns=SelectionWidget.FIGHT_DETAILS_COLUMNS)
 
         ColorRules.apply_stv_rules(self.__stv_player)
         ColorRules.apply_stv_rules(self.__stv_diff, diff_rules=True)
-        ColorRules.apply_stv_rules(self.__stv_enemy)
+        ColorRules.apply_stv_rules(self.__stv_target)
         ColorRules.apply_circuit_rules(self.__circuit)
-        ColorRules.apply_selection_rules(self.__choices)
-        ColorRules.apply_selection_rules(self.__details)
+        ColorRules.apply_selection_rules(self._choices)
+        ColorRules.apply_selection_rules(self._details)
 
     def get_main_widget(self) -> py_cui.widgets.Widget:
-        return self.__choices.widget
+        return self._choices.widget
 
-    def set_data(self, player: PlayerActor, enemy: Enemy) -> None:
-        self.__player = player
-        self.__enemy = enemy
+    def set_data(self, player: PlayerActor, target: Target) -> None:
+        self._player = player
+        self._target = target
 
         self.__hud.set_data(player)
         self.__circuit.set_data(player)
 
         p_stv = player.state_vector
-        e_stv = enemy.get_statevector()
+        t_stv = target.statevector
         self.__stv_player.set_data(p_stv)
-        self.__stv_diff.set_data(p_stv.get_diff(e_stv))
-        self.__stv_enemy.set_data(e_stv)
+        self.__stv_diff.set_data(p_stv.get_diff(t_stv))
+        self.__stv_target.set_data(t_stv)
 
     def get_widget_list(self) -> "list of Widgets":
         return [
             self.__hud,
             self.__stv_player,
             self.__stv_diff,
-            self.__stv_enemy,
+            self.__stv_target,
             self.__circuit,
-            self.__choices,
-            self.__details
+            self._choices,
+            self._details
         ]
 
     def reset(self) -> None:
@@ -249,91 +252,102 @@ class FightWidgetSet(MyWidgetSet):
 
     @property
     def choices(self) -> SelectionWidget:
-        return self.__choices
+        return self._choices
 
     @property
     def details(self) -> SelectionWidget:
-        return self.__details
+        return self._details
 
     def __choices_adapt(self) -> bool:
-        self.__details.set_data(data=(
-            [str(instruction) for instruction in self.__player.backpack],
-            [self.__player.use_instruction]
+        self._details.set_data(data=(
+            [str(instruction) for instruction in self._player.backpack],
+            [self._player.use_instruction]
         ))
         return True
 
     def __choices_commit(self) -> bool:
-        fight_end, msg = self.__attack()
-        if fight_end:
-            self.__details.set_data(data=(
-                [f"Get reward: {msg}"],
-                [self.__end_of_fight_callback]
+        if self._target is None:
+            from util.logger import Logger
+            Logger.instance().error("Error! Target is not set!")
+            return False
+
+        result = self._player.update_statevector()
+        self.__stv_player.set_data(result)
+        self.__stv_diff.set_data(result.get_diff(self._target.statevector))
+        self.render()
+
+        if self._target.is_reached(result):
+            reward = self._target.get_reward()
+            self._player.give_collectible(reward)
+            self._details.set_data(data=(
+                [f"Congratulations! Get reward: {reward}"],
+                [self._continue_exploration_callback]
             ))
+            return True
         else:
-            if msg.startswith("-"):
-                self.__details.set_data(data=(
-                    [f"Oh no, you took {msg[1:]} damage and died!"],
-                    [self.__game_over_callback]
-                ))
-            else:
-                self.__details.set_data(data=(
-                    [f"Wrong, you took {msg} damage. Remaining HP = {self.__player.cur_hp}"],
-                    [self.__empty_callback]
-                ))
-        return True
+            return self._on_commit_fail()
 
     def __choices_items(self) -> bool:
         print("items")
         return False
 
-    def __choices_flee(self) -> bool:
-        # todo check chances of fleeing
-        if self.__random.get() < self.__enemy.flee_chance:
-            self.__details.set_data(data=(
-                ["You successfully fled!"],
-                [self.__end_of_fight_callback]
+    @abstractmethod
+    def _on_commit_fail(self) -> bool:
+        pass
+
+    @abstractmethod
+    def _choices_flee(self) -> bool:
+        pass
+
+    def _empty_callback(self) -> None:
+        pass
+
+
+class FightWidgetSet(ReachTargetWidgetSet):
+    def __init__(self, logger, continue_exploration_callback: "()", game_over_callback: "()"):
+        super(FightWidgetSet, self).__init__(logger, continue_exploration_callback,
+                                             ["Adapt", "Commit", "Items", "Flee"])
+        self.__random = RandomManager.create_new()
+        self.__game_over_callback = game_over_callback
+
+    def set_data(self, player: PlayerActor, target: Enemy):
+        super(FightWidgetSet, self).set_data(player, target)
+        self.__flee_chance = target.flee_chance
+
+    def _on_commit_fail(self) -> bool:
+        diff = self._target.statevector.get_diff(self._player.state_vector)
+        damage_taken = self._player.damage(diff=diff)
+        if damage_taken < 0:
+            self._details.set_data(data=(
+                [f"Oh no, you took {damage_taken} damage and died!"],
+                [self.__game_over_callback]
             ))
         else:
-            self.__player.damage(amount=1)
-            if self.__player.cur_hp > 0:
-                self.__details.set_data(data=(
+            self._details.set_data(data=(
+                [f"Wrong, you took {damage_taken} damage. Remaining HP = {self._player.cur_hp}"],
+                [self._empty_callback]
+            ))
+        return True
+
+    def _choices_flee(self) -> bool:
+        if self.__random.get() < self.__flee_chance:
+            self._details.set_data(data=(
+                ["You successfully fled!"],
+                [self._continue_exploration_callback]
+            ))
+        else:
+            self._player.damage(amount=1)
+            if self._player.cur_hp > 0:
+                self._details.set_data(data=(
                     ["Failed to flee. You lost 1 HP."],
-                    [self.__empty_callback]
+                    [self._empty_callback]
                 ))
             else:
-                self.__details.set_data(data=(
+                self._details.set_data(data=(
                     ["Failed to flee. You have no more HP left and die."],
                     [self.__game_over_callback]
                 ))
         return True
-
-    def __attack(self) -> (bool, str):
-        """
-
-        :return: True if fight is over (attack was successful -> enemy is dead), False otherwise
-        """
-        if self.__enemy is None:
-            from util.logger import Logger
-            Logger.instance().error("Error! Enemy is not set!")
-            return False
-
-        result = self.__player.update_statevector()
-        self.__stv_player.set_data(result)
-        self.__stv_diff.set_data(result.get_diff(self.__enemy.get_statevector()))
-        self.render()
-
-        success = self.__enemy.damage(result)
-        if success:
-            reward = self.__enemy.get_reward()
-            self.__player.give_collectible(reward)
-            return True, str(reward)
-        else:
-            diff = self.__enemy.get_statevector().get_diff(self.__player.state_vector)
-            damage_taken = self.__player.damage(diff=diff)
-            return False, str(damage_taken)
-
-    def __empty_callback(self) -> None:
-        pass
 
 
 class ShopWidgetSet(MyWidgetSet):
@@ -419,4 +433,42 @@ class ShopWidgetSet(MyWidgetSet):
 
     def __back_to_inventory(self) -> bool:
         self.__cur_item = None
+        return True
+
+
+class RiddleWidgetSet(ReachTargetWidgetSet):
+    __NUM_OF_ROWS = 9
+    __NUM_OF_COLS = 9
+
+    def __init__(self, logger, continue_exploration_callback: "()"):
+        super().__init__(logger, continue_exploration_callback, ["Adapt", "Commit", "Items", "Give up"])
+
+    def set_data(self, player: PlayerActor, target: Riddle) -> None:
+        super(RiddleWidgetSet, self).set_data(player, target)
+        self._target.is_reached(player.state_vector)
+
+    def _on_commit_fail(self) -> bool:
+        if self._target.attempts <= 0:
+            self._details.set_data(data=(
+                [f"You couldn't solve the riddle within the given attempts. It vanishes together with its reward."],
+                [self._continue_exploration_callback]
+            ))
+        else:
+            self._details.set_data(data=(
+                [f"Wrong! Remaining attempts: {self._target.attempts}"],
+                [self._empty_callback]
+            ))
+        return True
+
+    def _choices_flee(self) -> bool:
+        if self._target.attempts > 0:
+            self._details.set_data(data=(
+                [f"Abort - you can still try again later", "Continue"],
+                [self._continue_exploration_callback, self._empty_callback]
+            ))
+        else:
+            self._details.set_data(data=(
+                ["Abort - but you don't have any attempts left to try again later!", "Continue"],
+                [self._continue_exploration_callback, self._empty_callback]
+            ))
         return True
