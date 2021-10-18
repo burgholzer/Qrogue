@@ -12,6 +12,7 @@ from game.map.map import Map
 from game.map.navigation import Direction
 from game.map.tiles import Player as PlayerTile
 from util.config import MapConfig
+from util.my_random import RandomManager
 from widgets.color_rules import ColorRules
 from widgets.my_popups import Popup
 from widgets.my_widgets import SelectionWidget, StateVectorWidget, CircuitWidget, MapWidget, SimpleWidget, HudWidget
@@ -171,12 +172,13 @@ class FightWidgetSet(MyWidgetSet):
     __NUM_OF_ROWS = 9
     __NUM_OF_COLS = 9
 
-    def __init__(self, logger, end_of_fight_callback: SimpleCallback, end_of_gameplay_callback: SimpleCallback):
+    def __init__(self, logger, end_of_fight_callback: SimpleCallback, game_over_callback: SimpleCallback):
         super().__init__(self.__NUM_OF_ROWS, self.__NUM_OF_COLS, logger)
+        self.__end_of_fight_callback = end_of_fight_callback
+        self.__game_over_callback = game_over_callback
+        self.__random = RandomManager.create_new()
         self.__player = None
         self.__enemy = None
-        self.__end_of_fight_callback = end_of_fight_callback
-        self.__end_of_gameplay_callback = end_of_gameplay_callback
 
     def init_widgets(self) -> None:
         hud = self.add_block_label('HUD', 0, 0, row_span=1, column_span=self.__NUM_OF_COLS, center=True)
@@ -271,12 +273,12 @@ class FightWidgetSet(MyWidgetSet):
             if msg.startswith("-"):
                 self.__details.set_data(data=(
                     [f"Oh no, you took {msg[1:]} damage and died!"],
-                    [self.__game_over]
+                    [self.__game_over_callback]
                 ))
             else:
                 self.__details.set_data(data=(
                     [f"Wrong, you took {msg} damage. Remaining HP = {self.__player.cur_hp}"],
-                    [self.__damage_taken]
+                    [self.__empty_callback]
                 ))
         return True
 
@@ -286,8 +288,24 @@ class FightWidgetSet(MyWidgetSet):
 
     def __choices_flee(self) -> bool:
         # todo check chances of fleeing
-        self.__end_of_fight_callback()
-        return False
+        if self.__random.get() < self.__enemy.flee_chance:
+            self.__details.set_data(data=(
+                ["You successfully fled!"],
+                [self.__end_of_fight_callback]
+            ))
+        else:
+            self.__player.damage(amount=1)
+            if self.__player.cur_hp > 0:
+                self.__details.set_data(data=(
+                    ["Failed to flee. You lost 1 HP."],
+                    [self.__empty_callback]
+                ))
+            else:
+                self.__details.set_data(data=(
+                    ["Failed to flee. You have no more HP left and die."],
+                    [self.__game_over_callback]
+                ))
+        return True
 
     def __attack(self) -> (bool, str):
         """
@@ -311,13 +329,10 @@ class FightWidgetSet(MyWidgetSet):
             return True, str(reward)
         else:
             diff = self.__enemy.get_statevector().get_diff(self.__player.state_vector)
-            damage_taken = self.__player.damage(diff)
+            damage_taken = self.__player.damage(diff=diff)
             return False, str(damage_taken)
 
-    def __game_over(self):
-        self.__end_of_gameplay_callback()
-
-    def __damage_taken(self) -> None:
+    def __empty_callback(self) -> None:
         pass
 
 

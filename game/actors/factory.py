@@ -85,13 +85,14 @@ class EnemyFactory:
         """
         return self.__start_fight_callback
 
-    def get_enemy(self, player: PlayerActor) -> EnemyActor:
+    def get_enemy(self, player: PlayerActor, flee_chance: float) -> EnemyActor:
         """
         Creates an enemy based on the number of qubits the provided player has.
 
+        :param flee_chance: chance of the player to flee from the fight
         :param player: the player the enemy should fight against
         :return: a freshly created enemy
         """
         stv = self.__difficulty.create_statevector(player)
         reward = self.__rm.get_element(self.__difficulty.reward_pool)
-        return DummyEnemy(stv, reward)
+        return DummyEnemy(stv, reward, flee_chance)

@@ -5,10 +5,15 @@ from game.logic.qubit import StateVector
 
 
 class Enemy(ABC):
-    def __init__(self, target: StateVector, reward: Collectible):
+    def __init__(self, target: StateVector, reward: Collectible, flee_chance: float):
         self.__target = target
         self.__reward = reward
+        self.__flee_chance = flee_chance
         self.__alive = True
+
+    @property
+    def flee_chance(self):
+        return self.__flee_chance
 
     @abstractmethod
     def get_img(self):
@@ -45,8 +50,8 @@ class Enemy(ABC):
 
 
 class DummyEnemy(Enemy):
-    def __init__(self, target: StateVector, reward: Collectible):
-        super(DummyEnemy, self).__init__(target, reward)
+    def __init__(self, target: StateVector, reward: Collectible, flee_chance: float):
+        super(DummyEnemy, self).__init__(target, reward, flee_chance)
 
     def get_img(self):
         return "E"

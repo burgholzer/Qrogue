@@ -269,7 +269,7 @@ class Player(ABC):
         elif isinstance(collectible, Instruction):
             self.backpack.add(collectible)
 
-    def damage(self, diff: StateVector):
+    def damage(self, diff: StateVector = None, amount: int = 1):
         return self.__attributes.qubits.damage(1)
 
     @property

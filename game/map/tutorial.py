@@ -1,4 +1,4 @@
-from game.actors.factory import EnemyFactory, FightDifficulty
+from game.actors.factory import EnemyFactory, FightDifficulty, DummyFightDifficulty
 from game.actors.enemy import Enemy as EnemyActor
 from game.actors.boss import Boss as BossActor
 from game.actors.player import Player as PlayerActor
@@ -21,7 +21,7 @@ class TutorialDifficulty(FightDifficulty):
 
 class TutorialEnemy(EnemyActor):
     def __init__(self, target: StateVector, reward: tiles.Collectible):
-        super().__init__(target, reward)
+        super().__init__(target, reward, flee_chance=0.0)
 
     def get_img(self):
         return "E"
@@ -47,7 +47,7 @@ class TutorialEnemyFactory(EnemyFactory):
             Coin(), Key(),
         ]
 
-    def get_enemy(self, player: PlayerActor) -> EnemyActor:
+    def get_enemy(self, player: PlayerActor, flee_chance: float) -> EnemyActor:
         stv = self.__difficulty.create_statevector(player)
         enemy = TutorialEnemy(stv, self.__rewards[self.__reward_index])
         self.__reward_index = (self.__reward_index + 1) % len(self.__rewards)
@@ -165,13 +165,13 @@ class Tutorial:
             Coordinate(Room.MID_X - 1, Room.INNER_HEIGHT - 1): TutorialTile(popups[1], 1, self.is_active, self.progress,
                                                                             blocks=True)
         }
-        spawn = SpawnRoom(player, spawn_dic, east_door=tiles.Door(Direction.East, locked=False),
+        spawn = SpawnRoom(player, spawn_dic, east_door=tiles.Door(Direction.East, locked=True),
                           south_door=tiles.Door(Direction.South))
         spawn_x = 1
         spawn_y = 0
         width = 5
         height = 5
-        factory = TutorialEnemyFactory(start_fight_callback)
+        factory = EnemyFactory(start_fight_callback, DummyFightDifficulty())
 
         rooms = [[None for x in range(width)] for y in range(height)]
         rooms[spawn_y][spawn_x] = spawn
@@ -181,6 +181,6 @@ class Tutorial:
         rooms[2][1] = WildRoom(factory, north_door=True, west_door=True, east_door=tiles.Door(Direction.East))
         rooms[2][2] = BossRoom(tiles.Door(Direction.West), tiles.Boss(TutorialBoss(), start_fight_callback))
 
-        rooms[0][2] = ShopRoom(Door(Direction.West), [ShopItem(Key(2), 3), ShopItem(Key(1), 2)], visit_shop_callback)
+        rooms[2][0] = ShopRoom(Door(Direction.West), [ShopItem(Key(2), 3), ShopItem(Key(1), 2)], visit_shop_callback)
 
         return rooms, Coordinate(spawn_x, spawn_y)

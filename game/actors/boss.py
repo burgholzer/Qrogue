@@ -8,7 +8,7 @@ from game.logic.qubit import StateVector
 
 class Boss(Enemy, ABC):
     def __init__(self, target: StateVector, reward: Collectible):
-        super().__init__(target, reward)
+        super().__init__(target, reward, flee_chance=0.0)
 
 
 class DummyBoss(Boss):
