@@ -8,7 +8,6 @@ from game.actors.player import Player as PlayerActor
 from game.actors.player import DummyPlayer
 from game.actors.riddle import Riddle
 from game.actors.target import Target
-from game.map import tiles
 from game.map.map import Map
 from game.map.navigation import Direction
 from game.map.tiles import Player as PlayerTile
@@ -97,16 +96,15 @@ class MenuWidgetSet(MyWidgetSet):
         return self.__selection
 
     def __play(self) -> None:
-        player_tile = tiles.Player(DummyPlayer())   # todo use real player
+        player = DummyPlayer()   # todo use real player
         seed = MapConfig.tutorial_seed() # todo and real seed
-        map = Map(seed, self.__MAP_WIDTH, self.__MAP_HEIGHT, player_tile, self.__start_fight_callback,
+        map = Map(seed, self.__MAP_WIDTH, self.__MAP_HEIGHT, player, self.__start_fight_callback,
                   self.__open_riddle_callback, self.__visit_shop_callback)
         self.__start_gameplay_callback(map)
 
     def __tutorial(self) -> None:
-        player_tile = tiles.Player(DummyPlayer())
-        map = Map(MapConfig.tutorial_seed(), self.__MAP_WIDTH, self.__MAP_HEIGHT, player_tile,
-                  self.__start_fight_callback, self.__open_riddle_callback, self.__visit_shop_callback)
+        map = Map(MapConfig.tutorial_seed(), self.__MAP_WIDTH, self.__MAP_HEIGHT, DummyPlayer(), self.__start_fight_callback,
+                  self.__open_riddle_callback, self.__visit_shop_callback)
         self.__start_gameplay_callback(map)
         msg =   "Try to move around with the arrow keys and go to the door (-) at the bottom! " \
                 "The fields with a \".\" will give you the next hints. " \

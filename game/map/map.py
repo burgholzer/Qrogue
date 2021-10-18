@@ -1,6 +1,7 @@
 
 import game.map.tiles as tiles
 from game.actors.factory import EnemyFactory, DummyFightDifficulty
+from game.actors.player import Player as PlayerActor
 from game.map.navigation import Coordinate, Direction
 from game.map.rooms import Room
 from game.map.tutorial import Tutorial
@@ -13,18 +14,18 @@ class Map:
     WIDTH = 5
     HEIGHT = 5
 
-    def __init__(self, seed: int, width: int, height: int, player: tiles.Player,
+    def __init__(self, seed: int, width: int, height: int, player: PlayerActor,
                  start_fight_callback: "void(Player, Enemy, Direction)",
                  open_riddle_callback: "void(Player, Riddle)",
                  visit_shop_callback: "void(Player, list of ShopItems)"):
-        self.__player = player
+        self.__player = tiles.Player(player)
         self.__start_fight_callback = start_fight_callback
         self.__open_riddle_callback = open_riddle_callback
         self.__visit_shop_callback = visit_shop_callback
         self.__enemy_factory = EnemyFactory(self.__start_fight_callback, DummyFightDifficulty())
 
         if seed == MapConfig.tutorial_seed():
-            self.__build_tutorial_map(self.__player)
+            self.__build_tutorial_map()
         else:
             rand = RandomManager.instance()
             for y in range(height):
@@ -39,10 +40,10 @@ class Map:
                             row.append(tiles.Floor())
                 self.__player_pos = Coordinate(2, 3)
 
-    def __build_tutorial_map(self, player: tiles.Player):
-        self.__rooms, spawn_point = Tutorial().create_tutorial_map(player, self.__start_fight_callback,
-                                                                   self.__open_riddle_callback,
-                                                                   self.__visit_shop_callback)
+    def __build_tutorial_map(self):
+        self.__rooms, spawn_point = Tutorial().build_tutorial_map(self.__start_fight_callback,
+                                                                  self.__open_riddle_callback,
+                                                                  self.__visit_shop_callback)
         self.__cur_room = self.__rooms[spawn_point.y][spawn_point.x]
         self.__player_pos = Map.__calculate_pos(spawn_point, Coordinate(Room.MID_X, Room.MID_Y))
         self.__cur_room.enter()
