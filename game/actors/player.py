@@ -204,7 +204,7 @@ class Player(ABC):
             self.__generator = QuantumCircuit(num, num)
             if instructions is None:        # default generator
                 for i in range(num):
-                    self.__generator.h(i)     # HGate on every qubit
+                    self.__generator.id(i)     # Identity on every qubit    # todo maybe remove later?
             else:
                 for inst in instructions:
                     inst.append_to(self.__generator)
@@ -313,7 +313,7 @@ class DummyPlayer(Player):
     def __init__(self):
         super(DummyPlayer, self).__init__(
             attributes=PlayerAttributes(DummyQubitSet()),
-            backpack=Backpack(5, [HGate(0), HGate(1), HGate(2)])
+            backpack=Backpack(5, [HGate(1), HGate(1), HGate(2)])
         )
 
     def get_img(self):

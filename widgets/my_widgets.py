@@ -94,8 +94,10 @@ class CircuitWidget(Widget):
                             inst_str = inst_str.rjust(len(inst_str) + half_diff + 1, "-")
                     rows[q][i] = inst_str
             circ_str = ""
+            q = 0
             for row in rows:
-                circ_str += "|" + HGate(0).abbreviation(0) + ">---" # add generator TODO make more flexible later?
+                circ_str += f"| q{q} >---" # add qubit
+                q += 1
                 for i in range(len(row)):
                     circ_str += row[i]
                     if i < len(row) - 1:
