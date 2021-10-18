@@ -15,9 +15,3 @@ class DummyBoss(Boss):
     def __init__(self):
         stv = StateVector([1, 0, 0, 0, 0, 0, 0, 0])
         super(DummyBoss, self).__init__(stv, Coin(3))
-
-    def get_img(self):
-        return "B"
-
-    def get_reward(self):
-        print("TODO: give reward")
