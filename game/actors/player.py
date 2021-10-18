@@ -310,11 +310,11 @@ class Player(ABC):
 
 
 class DummyPlayer(Player):
-    __ATTR = PlayerAttributes(DummyQubitSet())
-    __BACKPACK = Backpack(5, [HGate(0), HGate(1), HGate(2)])
-
     def __init__(self):
-        super(DummyPlayer, self).__init__(attributes=self.__ATTR, backpack=self.__BACKPACK)
+        super(DummyPlayer, self).__init__(
+            attributes=PlayerAttributes(DummyQubitSet()),
+            backpack=Backpack(5, [HGate(0), HGate(1), HGate(2)])
+        )
 
     def get_img(self):
         return "P"
