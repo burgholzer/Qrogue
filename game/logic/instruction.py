@@ -43,7 +43,7 @@ class Instruction(Collectible, ABC):
         return self.__cargs
 
     @abstractmethod
-    def name(self):
+    def name(self) -> str:
         pass
 
     @abstractmethod
@@ -62,6 +62,26 @@ class Instruction(Collectible, ABC):
             return text
 
 
+####### Single Qubit Gates #######
+
+
+class XGate(Instruction):
+    def __init__(self, qubit: int):
+        super(XGate, self).__init__(gates.XGate(), [qubit])
+
+    def name(self) -> str:
+        return "X"
+
+    def abbreviation(self, qubit: int = 0):
+        return " X "
+
+    def description(self) -> str:
+        return "An X Gate swaps the amplitudes of |0> and |1> - in the classical world it is an Inverter."
+
+    def copy(self) -> "Instruction":
+        return XGate(self._qargs[0])
+
+
 class HGate(Instruction):
     def __init__(self, qubit: int):
         super().__init__(gates.HGate(), qargs=[qubit])
@@ -69,7 +89,7 @@ class HGate(Instruction):
     def description(self) -> str:
         return "The Hadamard Gate is often used to get Qubits into Superposition."
 
-    def name(self):
+    def name(self) -> str:
         return "Hadamard"
 
     def abbreviation(self, qubit: int = 0):
@@ -79,6 +99,9 @@ class HGate(Instruction):
         return HGate(self._qargs[0])
 
 
+####### Double Qubit Gates #######
+
+
 class SwapGate(Instruction):
     def __init__(self, q0: int, q1: int):
         super().__init__(gates.SwapGate(), qargs=[q0, q1])
@@ -86,7 +109,7 @@ class SwapGate(Instruction):
     def description(self) -> str:
         return "As the name suggests, Swap Gates swap the amplitude between two Qubits."
 
-    def name(self):
+    def name(self) -> str:
         return "Swap"
 
     def abbreviation(self, qubit: int = 0):
@@ -97,3 +120,23 @@ class SwapGate(Instruction):
 
     def copy(self) -> "Instruction":
         return SwapGate(self._qargs[0], self._qargs[1])
+
+
+class CXGate(Instruction):
+    def __init__(self, q0: int, q1: int):
+        super().__init__(gates.CXGate(), [q0, q1])
+
+    def name(self) -> str:
+        return "CX"
+
+    def abbreviation(self, qubit: int = 0):
+        if qubit == self._qargs[0]:
+            return " C "
+        else:
+            return " X "
+
+    def copy(self) -> "Instruction":
+        return CXGate(self._qargs[0], self._qargs[1])
+
+    def description(self) -> str:
+        return f"Applies an X Gate onto q{self._qargs[1]} if q{self._qargs[0]} is True."
