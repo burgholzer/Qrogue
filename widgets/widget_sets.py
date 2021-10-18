@@ -106,9 +106,9 @@ class MenuWidgetSet(MyWidgetSet):
         map = Map(MapConfig.tutorial_seed(), self.__MAP_WIDTH, self.__MAP_HEIGHT, player_tile,
                   self.__start_fight_callback, self.__visit_shop_callback)
         self.__start_gameplay_callback(map)
-        msg =   "Try to move around with the arrow keys and go to the door (|) on the right! " \
+        msg =   "Try to move around with the arrow keys and go to the door (-) at the bottom! " \
                 "The fields with a \".\" will give you the next hints. " \
-                "Now press ENTER, ESC or SPACE to close this dialog."
+                "Now press ESC to close this dialog."
         Popup.message("Welcome to Qrogue!", msg)
 
     def __options(self) -> None:
