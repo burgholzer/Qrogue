@@ -14,7 +14,7 @@ from game.map.tiles import Player as PlayerTile
 from util.config import MapConfig
 from util.my_random import RandomManager
 from widgets.color_rules import ColorRules
-from widgets.my_popups import Popup
+from widgets.my_popups import Popup, CommonPopups
 from widgets.my_widgets import SelectionWidget, StateVectorWidget, CircuitWidget, MapWidget, SimpleWidget, HudWidget
 
 
@@ -258,10 +258,21 @@ class ReachTargetWidgetSet(MyWidgetSet, ABC):
 
     def __choices_adapt(self) -> bool:
         self._details.set_data(data=(
-            [str(instruction) for instruction in self._player.backpack],
-            [self._player.use_instruction]
+            [str(instruction) for instruction in self._player.backpack] + ["-Back-"],
+            [self.__use_instruction]
         ))
         return True
+
+    def __use_instruction(self, index: int):
+        if 0 <= index < self._player.backpack.size:
+            if self._player.use_instruction(index):
+                self.details.update_text(str(self._player.backpack.get(index)), index)
+                self.render()
+            else:
+                CommonPopups.NoCircuitSpace.show()
+            return False
+        else:
+            return True
 
     def __choices_commit(self) -> bool:
         if self._target is None:

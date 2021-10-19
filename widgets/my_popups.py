@@ -88,6 +88,7 @@ class CommonPopups(Enum):
     LockedDoor = ("Door is locked!", "Come back with a Key to open the Door.")
     TutorialBlocked = ("Halt!", "You should not go there yet! Finish the current step of the Tutorial first.")
     NotEnoughMoney = ("$$$", "You cannot afford that right now. Come back when you have enough money.")
+    NoCircuitSpace = ("Nope", "Your Circuit has no more space left. Remove a Gate to place another one.")
 
     def __init__(self, title: str, text: str, color: int = PopupConfig.default_color()):
         self.__title = title

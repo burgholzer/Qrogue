@@ -156,7 +156,7 @@ class StateVectorWidget(Widget):
 
 class SelectionWidget(Widget):
     FIGHT_CHOICE_COLUMNS = 2
-    FIGHT_DETAILS_COLUMNS = 1
+    FIGHT_DETAILS_COLUMNS = 3
     __COLUMN_SEPARATOR = "   "
 
     def __init__(self, widget: BlockLabel, columns: int = 1):
@@ -170,6 +170,10 @@ class SelectionWidget(Widget):
     @property
     def choice_length(self) -> int:
         return self.__choice_length
+
+    def update_text(self, text: str, index: int):
+        if 0 <= index < len(self.__choices):
+            self.__choices[index] = text
 
     def set_data(self, data: "tuple of list of str and list of SelectionCallbacks") -> None:
         self.render_reset()
