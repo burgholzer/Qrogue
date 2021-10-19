@@ -14,6 +14,10 @@ class Controls:
         self.__selection_down = KEY_DOWN_ARROW
         self.__selection_left = KEY_LEFT_ARROW
 
+        self.__popup_close = [KEY_ESCAPE, KEY_SPACE, KEY_ENTER]
+        self.__popup_scroll_up = KEY_UP_ARROW
+        self.__popup_scroll_down = KEY_DOWN_ARROW
+
         self.__action = KEY_SPACE
 
         self.__render = KEY_R_LOWER
@@ -50,6 +54,18 @@ class Controls:
     @property
     def selection_left(self) -> int:
         return self.__selection_left
+
+    @property
+    def popup_close(self) -> "list of ints":
+        return self.__popup_close
+
+    @property
+    def popup_scroll_up(self) -> int:
+        return self.__popup_scroll_up
+
+    @property
+    def popup_scroll_down(self) -> int:
+        return self.__popup_scroll_down
 
     @property
     def action(self) -> int:

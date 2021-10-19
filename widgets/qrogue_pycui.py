@@ -108,13 +108,10 @@ class QrogueCUI(py_cui.PyCUI):
 
     def __show_popup(self, title: str, text: str, color: int) -> None:
         self.__focused_widget = self.get_selected_widget()
-
-        self._popup = MultilinePopup(self, title, text, color, self._renderer, self._logger)
-        self.add_key_command(py_cui.keys.KEY_ESCAPE, self.close_popup)
+        self._popup = MultilinePopup(self, title, text, color, self._renderer, self._logger, self.__controls)
 
     def close_popup(self) -> None:
         super(QrogueCUI, self).close_popup()
-        self.add_key_command(py_cui.keys.KEY_ESCAPE, self.__dummy)
         self.move_focus(self.__focused_widget)
 
     def __dummy(self) -> None:
