@@ -4,7 +4,7 @@ from game.actors.factory import EnemyFactory, DummyFightDifficulty
 from game.actors.player import Player as PlayerActor
 from game.map.navigation import Coordinate, Direction
 from game.map.rooms import Room
-from game.map.tutorial import Tutorial
+from game.map.tutorial import Tutorial, TutorialPlayer
 from util.config import MapConfig
 from util.logger import Logger
 from util.my_random import RandomManager
@@ -41,7 +41,8 @@ class Map:
                 self.__player_pos = Coordinate(2, 3)
 
     def __build_tutorial_map(self):
-        self.__rooms, spawn_point = Tutorial().build_tutorial_map(self.__start_fight_callback,
+        self.__player = tiles.Player(TutorialPlayer())
+        self.__rooms, spawn_point = Tutorial().build_tutorial_map(self.__player, self.__start_fight_callback,
                                                                   self.__open_riddle_callback,
                                                                   self.__visit_shop_callback)
         self.__cur_room = self.__rooms[spawn_point.y][spawn_point.x]

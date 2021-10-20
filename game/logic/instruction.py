@@ -57,7 +57,7 @@ class Instruction(Collectible, ABC):
     def __str__(self):
         text = f"{self.name()} ({self._qargs}, {self.__cargs})"
         if self.is_used():
-            return f"({text})"
+            return f"{{{text}}}"
         else:
             return text
 

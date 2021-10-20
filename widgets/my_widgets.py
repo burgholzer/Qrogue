@@ -102,7 +102,7 @@ class CircuitWidget(Widget):
                     circ_str += row[i]
                     if i < len(row) - 1:
                          circ_str += "+"
-                circ_str += "< M |\n"
+                circ_str += "< out |\n"
             self.widget.set_title(circ_str)
 
     def render_reset(self) -> None:
@@ -155,8 +155,6 @@ class StateVectorWidget(Widget):
 
 
 class SelectionWidget(Widget):
-    FIGHT_CHOICE_COLUMNS = 2
-    FIGHT_DETAILS_COLUMNS = 3
     __COLUMN_SEPARATOR = "   "
 
     def __init__(self, widget: BlockLabel, columns: int = 1):

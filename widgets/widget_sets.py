@@ -106,9 +106,10 @@ class MenuWidgetSet(MyWidgetSet):
         map = Map(MapConfig.tutorial_seed(), self.__MAP_WIDTH, self.__MAP_HEIGHT, DummyPlayer(), self.__start_fight_callback,
                   self.__open_riddle_callback, self.__visit_shop_callback)
         self.__start_gameplay_callback(map)
-        msg =   "Try to move around with the arrow keys and go to the door (-) at the bottom! " \
-                "The fields with a \".\" will give you the next hints. " \
-                "Now press ESC to close this dialog."
+        msg =   "Try to move around with the arrow keys and go to the door (\"-\") at the bottom!\n" \
+                "The fields with a \".\" will give you the next hints. Some hints are too long to " \
+                "fit on the screen. If that's the case simply scroll up and down with your arrow keys.\n\n" \
+                "Now to close this dialog and start playing press ESC, SPACE or ENTER."
         Popup.message("Welcome to Qrogue!", msg)
 
     def __options(self) -> None:
@@ -171,6 +172,8 @@ class ExploreWidgetSet(MyWidgetSet):
 class ReachTargetWidgetSet(MyWidgetSet, ABC):
     __NUM_OF_ROWS = 9
     __NUM_OF_COLS = 9
+    __CHOICE_COLUMNS = 2
+    __DETAILS_COLUMNS = 2
 
     def __init__(self, logger, continue_exploration_callback: "()", choices: "list of str"):
         if len(choices) != 4:
@@ -195,12 +198,11 @@ class ReachTargetWidgetSet(MyWidgetSet, ABC):
         self.__stv_target = StateVectorWidget(stv, "Target State")
 
         circuit = self.add_block_label('Circuit', 5, 0, row_span=2, column_span=self.__NUM_OF_COLS, center=True)
-        circuit.toggle_border()
         self.__circuit = CircuitWidget(circuit)
 
         choices = self.add_block_label('Choices', 7, 0, row_span=2, column_span=3, center=True)
         choices.toggle_border()
-        self._choices = SelectionWidget(choices, columns=SelectionWidget.FIGHT_CHOICE_COLUMNS)
+        self._choices = SelectionWidget(choices, columns=self.__CHOICE_COLUMNS)
         self._choices.set_data(data=(
             self.__choice_strings,
             [self.__choices_adapt, self.__choices_commit, self.__choices_items, self._choices_flee]
@@ -208,7 +210,7 @@ class ReachTargetWidgetSet(MyWidgetSet, ABC):
 
         details = self.add_block_label('Details', 7, 3, row_span=2, column_span=6, center=True)
         details.toggle_border()
-        self._details = SelectionWidget(details, columns=SelectionWidget.FIGHT_DETAILS_COLUMNS)
+        self._details = SelectionWidget(details, columns=self.__DETAILS_COLUMNS)
 
         ColorRules.apply_stv_rules(self.__stv_player)
         ColorRules.apply_stv_rules(self.__stv_diff, diff_rules=True)
@@ -297,8 +299,11 @@ class ReachTargetWidgetSet(MyWidgetSet, ABC):
             return self._on_commit_fail()
 
     def __choices_items(self) -> bool:
-        print("items")
-        return False
+        self._details.set_data(data=(
+            ["You currently don't have any Items you could use!"],
+            [self._empty_callback]
+        ))
+        return True
 
     @abstractmethod
     def _on_commit_fail(self) -> bool:

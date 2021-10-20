@@ -1,19 +1,24 @@
 from game.actors.factory import EnemyFactory, FightDifficulty, DummyFightDifficulty
 from game.actors.enemy import Enemy as EnemyActor
 from game.actors.boss import Boss as BossActor
-from game.actors.player import Player as PlayerActor
+from game.actors.player import Player as PlayerActor, PlayerAttributes, Backpack
 from game.actors.riddle import Riddle
 from game.callbacks import OnWalkCallback
 from game.collectibles.collectible import ShopItem
 from game.collectibles.pickup import Coin, Key
-from game.logic.instruction import CXGate
-from game.logic.qubit import StateVector
+from game.logic.instruction import CXGate, HGate, XGate
+from game.logic.qubit import StateVector, DummyQubitSet
 from game.map import tiles
 from game.map.navigation import Coordinate, Direction
 from game.map.rooms import Room, SpawnRoom, GateRoom, WildRoom, BossRoom, ShopRoom, RiddleRoom
 from game.map.tiles import Door
 
 from widgets.my_popups import Popup, CommonPopups
+
+
+class TutorialPlayer(PlayerActor):
+    def __init__(self):
+        super(TutorialPlayer, self).__init__(PlayerAttributes(DummyQubitSet()), Backpack(content=[HGate(0), XGate(1)]))
 
 
 class TutorialDifficulty(FightDifficulty):
@@ -31,14 +36,14 @@ class TutorialEnemy(EnemyActor):
 
 class TutorialRiddle(Riddle):
     def __init__(self):
-        target = StateVector([1, 0, 0, 0, 0, 0, 0, 0])
+        target = StateVector([1, 0, 0, 0])
         reward = CXGate(0, 1)
         super().__init__(target, reward, attempts=7)
 
 
 class TutorialBoss(BossActor):
     def __init__(self):
-        target = StateVector([0, 0, 0, 1, 0, 0, 0, 0])
+        target = StateVector([0.707 + 0j, 0, 0, 0.707 + 0j])
         super().__init__(target, Coin(11))
 
     def get_img(self):
@@ -51,15 +56,19 @@ class TutorialEnemyFactory(EnemyFactory):
         super().__init__(start_fight_callback, self.__difficulty)
 
         self.__reward_index = 0
-        self.__rewards = [
-            Coin(3), Key(), Coin(2), Coin(1), Coin(5),
-            Coin(), Key(),
+        self.__enemy_data = [
+            (StateVector([0, 0, 1, 0]), Coin(2)),
+            (StateVector([0, 0, 1, 0]), Key()),
+            (StateVector([0, 0, 1, 0]), Coin(3)),
+            (StateVector([0, 0, 1, 0]), Coin(1)),
+            (StateVector([0.707 + 0j, 0, 0.707 + 0j, 0]), Coin(4)),
+            (StateVector([1, 0, 0, 0]), Coin(2)),
         ]
 
     def get_enemy(self, player: PlayerActor, flee_chance: float) -> EnemyActor:
-        stv = self.__difficulty.create_statevector(player)
-        enemy = TutorialEnemy(stv, self.__rewards[self.__reward_index])
-        self.__reward_index = (self.__reward_index + 1) % len(self.__rewards)
+        data = self.__enemy_data[self.__reward_index]
+        enemy = TutorialEnemy(data[0], data[1])
+        self.__reward_index = (self.__reward_index + 1) % len(self.__enemy_data)
         return enemy
 
 
@@ -139,6 +148,12 @@ class TutorialGateRoom(GateRoom):
 class Tutorial:
     def __init__(self):
         self.__cur_id = 0
+        self.__fight = None
+        self.__showed_fight_tutorial = False
+        self.__riddle = None
+        self.__showed_riddle_tutorial = False
+        self.__shop = None
+        self.__showed_shop_tutorial = False
 
     def is_active(self, id: int) -> bool:
         return self.__cur_id == id
@@ -149,18 +164,73 @@ class Tutorial:
     def progress(self):
         self.__cur_id += 1
 
-    def create_tutorial_map(self, player: tiles.Player, start_fight_callback: "void(Player, Enemy, Direction)",
-                            open_riddle_callback: "void(Player, Riddle",
-                            visit_shop_callback: "void(Player, list of ShopItems") -> "Room[][], Coordinate":
+    def fight(self, player: PlayerActor, enemy: EnemyActor, direction: Direction):
+        self.__fight(player, enemy, direction)
+        if not self.__showed_fight_tutorial:
+            Popup("Tutorial: Fight",
+                  "1) In the middle of the screen you see 3 StateVectors. The left one  (Current State) can be adapted "
+                  "by you while the right one (Target State) is constant and depending on the Enemy you fight. Between "
+                  "those two you also see the Difference: if it gets zero you win the Fight!\n"
+                  "2) Underneath the StateVectors is your Circuit. Currently you have 2 Qubits (q0, q1) and no Gates "
+                  "applied to them. The before mentioned Current State reflects the output (out) of your Circuit.\n"
+                  "3) On the left you can choose the action you want to take: \n"
+                  "Adapt - Change your Circuit with the Gates available to you (selection to the right)\n"
+                  "Commit - Commit your changes and update your StateVector. If Difference is not zero you lose 1 HP.\n"
+                  "Items - Use one of your Items to make the Fight easier (you don't have any Items yet!)\n"
+                  "Flee - Try to flee from the Fight. This is chance based and you lose 1 HP if you fail to flee (Note:"
+                  " for Tutorial purposes you cannot flee in this room!)\n"
+                  "4) The bottom right depends on the action you chose on the left side. E.g. you can choose the Gates "
+                  "you want to use in your Circuit.\n"
+                  "5) Use your arrow keys to navigate between you available options at the bottom and use SPACE to use "
+                  "an option. Again, your goal now is to reach the Target State of your Enemy. If you succeed, you "
+                  "will get a reward!")
+            self.__showed_fight_tutorial = True
+
+    def riddle(self, player: PlayerActor, riddle: Riddle):
+        self.__riddle(player, riddle)
+        if not self.__showed_riddle_tutorial:
+            Popup("Tutorial: Riddle",
+                  "Riddles are very similar to Fights. You have a Target State you need to reach (Difference is zero) "
+                  "by adapting your Circuit. The main difference is that you don't lose HP if you fail but instead an "
+                  "Attempt for solving the Riddle. When you have no more Attempts the Riddle vanishes together with "
+                  "its reward - which is usually much better than the rewards from Fights. Also fleeing (or in this "
+                  "case \"Give up\") will always succeed but obviously cost you your current Attempt which is why you "
+                  "are notified if you have no more Attempts left.")
+            self.__showed_riddle_tutorial = True
+
+    def shop(self, player: PlayerActor, items: "list of ShopItems"):
+        self.__shop(player, items)
+        if not self.__showed_shop_tutorial:
+            Popup("Tutorial: Shop",
+                  "In the Shop you can use the Coins you got (e.g. from Fights) to buy various Collectibles. On the "
+                  "left side is a list of everything you can buy. Navigate as usual with your arrow keys and select "
+                  "something with SPACE to see more details on the right side. There you can also buy it.\n"
+                  "\"-Leave-\" obviously makes you leave the Shop. You can re-enter it later as long as there is stuff "
+                  "left to buy.")
+            self.__showed_shop_tutorial = True
+
+    def boss_fight(self, player: PlayerActor, enemy: EnemyActor, direction: Direction):
+        self.__fight(player, enemy, direction)
+        Popup("Tutorial: Boss Fight",
+              "Now it's getting serious! You are fighting against Bell, the Master of Entanglement. For the State you "
+              "need to reach to defeat him your two Qubits will always be the same: either both 0 or both 1\n\n"
+              "Good luck!")
+
+    def build_tutorial_map(self, player: tiles.Player, start_fight_callback: "void(Player, Enemy, Direction)",
+                           open_riddle_callback: "void(Player, Riddle)",
+                           visit_shop_callback: "void(Player, list of ShopItems") -> "Room[][], Coordinate":
+        self.__fight = start_fight_callback
+        self.__riddle = open_riddle_callback
+        self.__shop = visit_shop_callback
         messages = [
-            "Great! The room you're about to enter gives you a new Gate you can use for your circuits. But it seems to "
+            "Great! The room you're about to enter gives you a new Gate you can use for your circuit. But it seems to "
             "be locked...",
 
-            "Beware! In the next room are some wild Enemies. Oh, maybe one of them has a key?",
+            "Beware! In the next room are some wild Enemies. Oh, but maybe one of them has a key?",
 
             "Here they are! The number indicates the group they belong to. In a group their behaviour is entangled: "
             "If one member runs away when you challenge them, all others will too. But if they decide to fight you...\n"
-            "Well, luckily the 0s are different. They are in no group and only care about themselves.\n"
+            "Well, luckily the zeros are different. They are in no group and only care about themselves.\n"
             "Now go ahead and challenge an Enemy by stepping onto it.",
 
             "Nice! Next step onto the \"c\" and collect your new Gate.\n"
@@ -188,13 +258,13 @@ class Tutorial:
 
         rooms = [[None for x in range(width)] for y in range(height)]
         rooms[spawn_y][spawn_x] = spawn
-        rooms[1][1] = CustomWildRoom(start_fight_callback, TutorialTile(popups[2], 2, self.is_active, self.progress),
+        rooms[1][1] = CustomWildRoom(self.fight, TutorialTile(popups[2], 2, self.is_active, self.progress),
                                      TutorialTile(popups[4], 4, self.is_active, self.progress, blocks=True))
         rooms[2][0] = TutorialGateRoom(TutorialTile(popups[3], 3, self.is_active, self.progress))
-        rooms[1][2] = WildRoom(factory, north_door=True, west_door=True, east_door=tiles.Door(Direction.East),
-                               south_door=tiles.Door(Direction.South))
+        rooms[1][2] = WildRoom(factory, chance=0.8, north_door=True, west_door=True,
+                               east_door=tiles.Door(Direction.East), south_door=tiles.Door(Direction.South))
         rooms[0][2] = BossRoom(tiles.Door(Direction.South), tiles.Boss(TutorialBoss(), start_fight_callback))
-        rooms[1][3] = RiddleRoom(tiles.Door(Direction.East), TutorialRiddle(), open_riddle_callback)
-        rooms[2][2] = ShopRoom(Door(Direction.North), [ShopItem(Key(2), 3), ShopItem(Key(1), 2)], visit_shop_callback)
+        rooms[1][3] = RiddleRoom(tiles.Door(Direction.West), TutorialRiddle(), self.riddle)
+        rooms[2][2] = ShopRoom(Door(Direction.North), [ShopItem(Key(2), 3), ShopItem(Key(1), 2)], self.shop)
 
         return rooms, Coordinate(spawn_x, spawn_y)
