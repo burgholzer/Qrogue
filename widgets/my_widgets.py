@@ -161,13 +161,12 @@ class SelectionWidget(Widget):
         super(SelectionWidget, self).__init__(widget)
         self.__columns = columns
         self.__index = 0
-        self.__choice_length = 0
         self.__choices = []
         self.__callbacks = []
 
     @property
-    def choice_length(self) -> int:
-        return self.__choice_length
+    def num_of_choices(self) -> int:
+        return len(self.__choices)
 
     def update_text(self, text: str, index: int):
         if 0 <= index < len(self.__choices):
@@ -177,16 +176,16 @@ class SelectionWidget(Widget):
         self.render_reset()
         self.__choices = data[0]
         self.__callbacks = data[1]
-        self.__choice_length = 0
+        choice_length = 0
         for choice in self.__choices:
-            if len(choice) > self.__choice_length:
-                self.__choice_length = len(choice)
+            if len(choice) > choice_length:
+                choice_length = len(choice)
         for i in range(len(self.__choices)):
-            self.__choices[i] = self.__choices[i].ljust(self.__choice_length)
+            self.__choices[i] = self.__choices[i].ljust(choice_length)
 
     def render(self) -> None:
         str_rep = ""
-        for i in range(len(self.__choices)):
+        for i in range(self.num_of_choices):
             if i == self.__index and self.widget.is_selected():
                 wrapper = "-> "
             else:
@@ -205,12 +204,16 @@ class SelectionWidget(Widget):
         self.__index = 0
 
     def up(self) -> None:
+        if self.num_of_choices <= 1:
+            return
         self.__index -= self.__columns
         if self.__index < 0:
-            self.__index += len(self.__choices)
+            self.__index += self.num_of_choices
         self.render()
 
     def right(self) -> None:
+        if self.num_of_choices <= 1:
+            return
         if self.__columns == 1:
             self.down()
         else:
@@ -221,12 +224,16 @@ class SelectionWidget(Widget):
                 self.render()
 
     def down(self) -> None:
+        if self.num_of_choices <= 1:
+            return
         self.__index += self.__columns
-        if self.__index >= len(self.__choices):
-            self.__index -= len(self.__choices)
+        if self.__index >= self.num_of_choices:
+            self.__index -= self.num_of_choices
         self.render()
 
     def left(self) -> None:
+        if self.num_of_choices <= 1:
+            return
         if self.__columns == 1:
             self.up()
         else:
@@ -241,7 +248,7 @@ class SelectionWidget(Widget):
         :return: True if the focus should move, False if the focus should stay in this SelectionWidget
         """
         # if only one callback is given, it needs the index as parameter
-        if len(self.__callbacks) == 1 and len(self.__choices) > 1:
+        if len(self.__callbacks) == 1 and self.num_of_choices > 1:
             ret = self.__callbacks[0](self.__index)
         else:
             ret = self.__callbacks[self.__index]()
