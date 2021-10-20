@@ -24,7 +24,11 @@ class MyRandom:
         index = self.get_int(min=0, max=len(iterable))
         if remove:
             elem = iterable[index]
-            iterable.remove(index)
+            try:
+                iterable.pop(index)
+            except ValueError:
+                from util.logger import Logger
+                Logger.instance().error(f"{iterable} doesn't contain {elem}")
             return elem
         else:
             return iterable[index]
