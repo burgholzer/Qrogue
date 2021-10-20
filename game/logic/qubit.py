@@ -29,8 +29,8 @@ class StateVector:
         #  (so the player can have more qubits than the enemy)
         if self.size > other.size:
             return False
-        self_value = self.to_value()
-        other_value = other.to_value()
+        self_value = self.__amplitudes #self.to_value()
+        other_value = other.__amplitudes #other.to_value()
         for i in range(len(self_value)):
             p_min = self_value[i] - tolerance/2
             p = other_value[i]
