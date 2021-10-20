@@ -11,6 +11,7 @@ from game.actors.target import Target
 from game.map.map import Map
 from game.map.navigation import Direction
 from game.map.tiles import Player as PlayerTile
+from game.map.tutorial import Tutorial
 from util.config import MapConfig
 from util.my_random import RandomManager
 from widgets.color_rules import ColorRules
@@ -106,11 +107,7 @@ class MenuWidgetSet(MyWidgetSet):
         map = Map(MapConfig.tutorial_seed(), self.__MAP_WIDTH, self.__MAP_HEIGHT, DummyPlayer(), self.__start_fight_callback,
                   self.__open_riddle_callback, self.__visit_shop_callback)
         self.__start_gameplay_callback(map)
-        msg =   "Try to move around with the arrow keys and go to the door (\"-\") at the bottom!\n" \
-                "The fields with a \".\" will give you the next hints. Some hints are too long to " \
-                "fit on the screen. If that's the case simply scroll up and down with your arrow keys.\n\n" \
-                "Now to close this dialog and start playing press ESC, SPACE or ENTER."
-        Popup.message("Welcome to Qrogue!", msg)
+        Popup.message("Welcome to Qrogue! (scroll with arrow keys)", Tutorial.WelcomeMessage)
 
     def __options(self) -> None:
         print("todo")

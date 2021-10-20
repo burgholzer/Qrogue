@@ -58,10 +58,10 @@ class TutorialEnemyFactory(EnemyFactory):
         self.__reward_index = 0
         self.__enemy_data = [
             (StateVector([0, 0, 1, 0]), Coin(2)),
-            (StateVector([0, 0, 1, 0]), Key()),
-            (StateVector([0, 0, 1, 0]), Coin(3)),
+            (StateVector([0.707 + 0j, 0.707 + 0j, 0, 0]), Key()),
             (StateVector([0, 0, 1, 0]), Coin(1)),
             (StateVector([0.707 + 0j, 0, 0.707 + 0j, 0]), Coin(4)),
+            (StateVector([0, 1, 0, 0]), Coin(3)),
             (StateVector([1, 0, 0, 0]), Coin(2)),
         ]
 
@@ -146,6 +146,21 @@ class TutorialGateRoom(GateRoom):
 
 
 class Tutorial:
+    WelcomeMessage = \
+        "Qrogue is a game about Quantum Computing. You will explore " \
+        "Dungeons with the help of Quantum Gates you can use for your " \
+        "Quantum Circuit. But you are not the only one in the Dungeons! " \
+        "There are Enemies challenging you to reach a certain Quantum " \
+        "State. Your goal is to expand your library of Quantum Gates " \
+        "which are hidden in Special Rooms in the Dungeon or guarded " \
+        "by a Boss - a special Enemy that wants to see a Quantum " \
+        "Algorithm from you...\n" \
+        "Now let's start! Try to move around with the arrow keys and " \
+        "go to the door (\"-\") at the bottom!\n" \
+        "The fields with a \".\" will show you the next steps. " \
+        "Now close this dialog and start playing by pressing SPACE."
+
+
     def __init__(self):
         self.__cur_id = 0
         self.__fight = None
@@ -181,8 +196,8 @@ class Tutorial:
                   " for Tutorial purposes you cannot flee in this room!)\n"
                   "4) The bottom right depends on the action you chose on the left side. E.g. you can choose the Gates "
                   "you want to use in your Circuit.\n"
-                  "5) Use your arrow keys to navigate between you available options at the bottom and use SPACE to use "
-                  "an option. Again, your goal now is to reach the Target State of your Enemy. If you succeed, you "
+                  "5) Use your arrow keys to navigate between your available options at the bottom and press SPACE to "
+                  "use one. Again, your goal now is to reach the Target State of the Enemy. If you succeed, you "
                   "will get a reward!")
             self.__showed_fight_tutorial = True
 
