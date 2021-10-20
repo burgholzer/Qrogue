@@ -220,25 +220,36 @@ class Player(ABC):
         self.__stv = StateVector(result.get_statevector(self.__circuit))
         return self.__stv
 
-    def use_instruction(self, instruction_index: int) -> bool:
+    def get_instruction(self, instruction_index: int) -> Instruction:
+        if 0 <= instruction_index < self.backpack.size:
+            return self.backpack.get(instruction_index)
+        return None
+
+    def is_space_left(self):
+        return self.__next_col < self.__attributes.space
+
+    def use_instruction(self, instruction: Instruction):
         """
         Tries to put the Instruction corresponding to the given index in the backpack into the player's circuit.
         If the Instruction is already in-use (put onto the circuit) it is removed instead.
 
-        :param instruction_index: index of the Instruction we want to use in the backpack
+        :param instruction: the Instruction we want to use
         :return: True if we were able to use the Instruction in our circuit
         """
+        if instruction.is_used():
+            self.__remove_instruction(instruction)
+        else:
+            if self.is_space_left():
+                self.__append_instruction(instruction)
+            else:
+                return False
+        return self.__apply_instructions()
+
+    def remove_instruction(self, instruction_index: int) -> bool:
         if 0 <= instruction_index < self.backpack.size:
             instruction = self.backpack.get(instruction_index)
-            if instruction.is_used():
-                self.__remove_instruction(instruction)
-            else:
-                if self.__next_col < self.__attributes.space:
-                    self.__append_instruction(instruction)
-                else:
-                    return False
-            return self.__apply_instructions()
-        return False
+            self.__remove_instruction(instruction)
+        return self.__apply_instructions()
 
     def __append_instruction(self, instruction: Instruction):
         self.__instructions.append(instruction)
@@ -313,7 +324,7 @@ class DummyPlayer(Player):
     def __init__(self):
         super(DummyPlayer, self).__init__(
             attributes=PlayerAttributes(DummyQubitSet()),
-            backpack=Backpack(5, [HGate(1), HGate(1), HGate(2)])
+            backpack=Backpack(5, [HGate(), HGate()])
         )
 
     def get_img(self):

@@ -15,5 +15,5 @@ class GateFactories:
     @staticmethod
     def standard_factory():
         return CollectibleFactory(pool=[
-            SwapGate(0, 1), SwapGate(1, 2), SwapGate(0, 2), SwapGate(2, 1)
+            SwapGate(), SwapGate(), SwapGate(), SwapGate()
         ])

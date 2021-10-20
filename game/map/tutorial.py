@@ -18,7 +18,7 @@ from widgets.my_popups import Popup, CommonPopups
 
 class TutorialPlayer(PlayerActor):
     def __init__(self):
-        super(TutorialPlayer, self).__init__(PlayerAttributes(DummyQubitSet()), Backpack(content=[HGate(0), XGate(1)]))
+        super(TutorialPlayer, self).__init__(PlayerAttributes(DummyQubitSet()), Backpack(content=[HGate(), XGate()]))
 
 
 class TutorialDifficulty(FightDifficulty):
@@ -37,7 +37,7 @@ class TutorialEnemy(EnemyActor):
 class TutorialRiddle(Riddle):
     def __init__(self):
         target = StateVector([1, 0, 0, 0])
-        reward = CXGate(0, 1)
+        reward = CXGate()
         super().__init__(target, reward, attempts=7)
 
 

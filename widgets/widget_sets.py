@@ -261,20 +261,52 @@ class ReachTargetWidgetSet(MyWidgetSet, ABC):
     def __choices_adapt(self) -> bool:
         self._details.set_data(data=(
             [str(instruction) for instruction in self._player.backpack] + ["-Back-"],
-            [self.__use_instruction]
+            [self.__choose_instruction]
         ))
         return True
 
-    def __use_instruction(self, index: int):
+    def __choose_instruction(self, index: int):
         if 0 <= index < self._player.backpack.size:
-            if self._player.use_instruction(index):
-                self.details.update_text(str(self._player.backpack.get(index)), index)
+            self.__cur_instruction = self._player.get_instruction(index)
+            if self.__cur_instruction is not None:
+                self.__cur_instruction.reset_qubits()
+                if self.__cur_instruction.is_used():
+                    self._player.remove_instruction(index)
+                    self.details.update_text(str(self._player.backpack.get(index)), index)
+                else:
+                    if self._player.is_space_left():
+                        self.details.set_data(data=(
+                            [self.__cur_instruction.preview_str(i) for i in range(self._player.num_of_qubits)],
+                            [self.__choose_qubit]
+                        ))
+                    else:
+                        CommonPopups.NoCircuitSpace.show()
                 self.render()
             else:
-                CommonPopups.NoCircuitSpace.show()
+                from util.logger import Logger
+                Logger.instance().error("Error! The selected instruction/index is out of range!")
             return False
         else:
             return True
+
+    def __choose_qubit(self, index: int = 0):
+        selection = list(range(self._player.num_of_qubits))
+        for q in self.__cur_instruction.qargs_iter():
+            selection.remove(q)
+        if self.__cur_instruction.use_qubit(selection[index]):
+            selection.pop(index)
+            self.details.set_data(data=(
+                [self.__cur_instruction.preview_str(i) for i in selection],
+                [self.__choose_qubit]
+            ))
+        else:
+            self._player.use_instruction(self.__cur_instruction)
+            self._details.set_data(data=(
+                [str(instruction) for instruction in self._player.backpack] + ["-Back-"],
+                [self.__choose_instruction]
+            ))
+        self.render()
+        return False
 
     def __choices_commit(self) -> bool:
         if self._target is None:

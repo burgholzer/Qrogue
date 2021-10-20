@@ -39,12 +39,17 @@ class FightDifficulty:
         num_of_qubits = player.num_of_qubits
         circuit = QuantumCircuit(num_of_qubits, num_of_qubits)
         rand = RandomManager.instance()
-        qubits = [i for i in range(num_of_qubits)]
-        cbits = [i for i in range(num_of_qubits)]
+        qubits = list(range(num_of_qubits))
 
         # choose random circuits on random qubits and cbits
         for i in range(self.__num_of_instructions):
             instruction = rand.get_element(player.get_available_instructions(), remove=False)
+            if instruction.num_of_qubits > 1:
+                while instruction.use_qubit(rand.get_element(qubits, remove=True)):
+                    pass
+                qubits = list(range(num_of_qubits))
+            else:
+                instruction.use_qubit(rand.get_element(qubits))
             instruction.append_to(circuit)
         simulator = StatevectorSimulator()
         compiled_circuit = transpile(circuit, simulator)

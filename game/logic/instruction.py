@@ -13,15 +13,31 @@ class Instruction(Collectible, ABC):
     """
     MAX_ABBREVIATION_LEN = 5
 
-    def __init__(self, instruction, qargs: "list of ints", cargs: "list of ints" = None):
+    def __init__(self, instruction, needed_qubits: int):
         super().__init__(CollectibleType.Gate)
         self.__instruction = instruction
-        self._qargs = qargs
+        self.__needed_qubits = needed_qubits
+        self._qargs = []
+        self._cargs = []
         self.__used = False
-        if cargs is None:
-            self.__cargs = []
-        else:
-            self.__cargs = cargs
+
+    @property
+    def num_of_qubits(self):
+        return self.__needed_qubits
+
+    def reset_qubits(self):
+        self._qargs = []
+
+    def use_qubit(self, qubit: int) -> bool:
+        """
+
+        :param qubit: the qubit to use for this Instruction
+        :return: True if more qubits are needed for the Instruction to work, False if there are enough
+        """
+        if len(self._qargs) >= self.__needed_qubits:
+            return False
+        self._qargs.append(qubit)
+        return len(self._qargs) < self.__needed_qubits
 
     def is_used(self) -> bool:
         return self.__used
@@ -30,17 +46,10 @@ class Instruction(Collectible, ABC):
         self.__used = used
 
     def append_to(self, circuit: QuantumCircuit):
-        circuit.append(self.__instruction, self._qargs, self.__cargs)
+        circuit.append(self.__instruction, self._qargs, self._cargs)
 
     def qargs_iter(self) -> "Iterator":
         return iter(self._qargs)
-
-    def qargs_enum(self) -> "Enumerator":
-        return enumerate(self._qargs)
-
-    @property
-    def cargs(self):
-        return self.__cargs
 
     @abstractmethod
     def name(self) -> str:
@@ -54,20 +63,37 @@ class Instruction(Collectible, ABC):
     def copy(self) -> "Instruction":
         pass
 
+    def preview_str(self, next_qubit: int) -> str:
+        self._qargs.append(next_qubit)
+        preview = str(self)
+        self._qargs.pop()
+        return preview
+
     def __str__(self):
-        text = f"{self.name()} ({self._qargs}, {self.__cargs})"
-        if self.is_used():
-            return f"{{{text}}}"
+        text = f"{self.name()} ("
+        for i in range(self.num_of_qubits-1):
+            if i < len(self._qargs):
+                text += f"{self._qargs[i]}, "
+            else:
+                text += "?, "
+        if self.num_of_qubits-1 < len(self._qargs):
+            text += f"{self._qargs[self.num_of_qubits-1]})"
         else:
-            return text
+            text += "?)"
+        return text
 
 
 ####### Single Qubit Gates #######
 
 
-class XGate(Instruction):
-    def __init__(self, qubit: int):
-        super(XGate, self).__init__(gates.XGate(), [qubit])
+class SingleQubitGate(Instruction, ABC):
+    def __init__(self, instruction):
+        super().__init__(instruction, needed_qubits=1)
+
+
+class XGate(SingleQubitGate):
+    def __init__(self):
+        super(XGate, self).__init__(gates.XGate())
 
     def name(self) -> str:
         return "X"
@@ -79,12 +105,12 @@ class XGate(Instruction):
         return "An X Gate swaps the amplitudes of |0> and |1> - in the classical world it is an Inverter."
 
     def copy(self) -> "Instruction":
-        return XGate(self._qargs[0])
+        return XGate()
 
 
-class HGate(Instruction):
-    def __init__(self, qubit: int):
-        super().__init__(gates.HGate(), qargs=[qubit])
+class HGate(SingleQubitGate):
+    def __init__(self):
+        super().__init__(gates.HGate())
 
     def description(self) -> str:
         return "The Hadamard Gate is often used to get Qubits into Superposition."
@@ -96,15 +122,20 @@ class HGate(Instruction):
         return " H "
 
     def copy(self) -> "Instruction":
-        return HGate(self._qargs[0])
+        return HGate()
 
 
 ####### Double Qubit Gates #######
 
 
-class SwapGate(Instruction):
-    def __init__(self, q0: int, q1: int):
-        super().__init__(gates.SwapGate(), qargs=[q0, q1])
+class DoubleQubitGate(Instruction, ABC):
+    def __init__(self, instruction):
+        super(DoubleQubitGate, self).__init__(instruction, needed_qubits=2)
+
+
+class SwapGate(DoubleQubitGate):
+    def __init__(self):
+        super().__init__(gates.SwapGate())
 
     def description(self) -> str:
         return "As the name suggests, Swap Gates swap the amplitude between two Qubits."
@@ -119,12 +150,12 @@ class SwapGate(Instruction):
             return " S1 "
 
     def copy(self) -> "Instruction":
-        return SwapGate(self._qargs[0], self._qargs[1])
+        return SwapGate()
 
 
-class CXGate(Instruction):
-    def __init__(self, q0: int, q1: int):
-        super().__init__(gates.CXGate(), [q0, q1])
+class CXGate(DoubleQubitGate):
+    def __init__(self):
+        super().__init__(gates.CXGate())
 
     def name(self) -> str:
         return "CX"
@@ -136,7 +167,7 @@ class CXGate(Instruction):
             return " X "
 
     def copy(self) -> "Instruction":
-        return CXGate(self._qargs[0], self._qargs[1])
+        return CXGate()
 
     def description(self) -> str:
-        return f"Applies an X Gate onto q{self._qargs[1]} if q{self._qargs[0]} is True."
+        return f"Applies an X Gate onto its second Qubit if its first Qubit is True."
