@@ -40,23 +40,33 @@ class ColorConfig:
     TILE_HIGHLIGHT = "01"
     OBJECT_HIGHLIGHT = "02"
     WORD_HIGHLIGHT = "03"
+    KEY_HIGHLIGHT = "04"
     __DIC = {
         TILE_HIGHLIGHT: py_cui.WHITE_ON_BLACK,
-        OBJECT_HIGHLIGHT: py_cui.CYAN_ON_RED,
+        OBJECT_HIGHLIGHT: py_cui.BLUE_ON_WHITE,
         WORD_HIGHLIGHT: py_cui.RED_ON_WHITE,
+        KEY_HIGHLIGHT: py_cui.MAGENTA_ON_WHITE,
     }
 
     @staticmethod
+    def __highlight(type: str, text) -> str:
+        return f"{ColorConfig.TEXT_HIGHLIGHT}{type}{text}{ColorConfig.TEXT_HIGHLIGHT}"
+
+    @staticmethod
     def highlight_tile(tile: str) -> str:
-        return f"{ColorConfig.TEXT_HIGHLIGHT}{ColorConfig.TILE_HIGHLIGHT}{tile}{ColorConfig.TEXT_HIGHLIGHT}"
+        return ColorConfig.__highlight(ColorConfig.TILE_HIGHLIGHT, tile)
 
     @staticmethod
     def highlight_object(obj: str) -> str:
-        return f"{ColorConfig.TEXT_HIGHLIGHT}{ColorConfig.OBJECT_HIGHLIGHT}{obj}{ColorConfig.TEXT_HIGHLIGHT}"
+        return ColorConfig.__highlight(ColorConfig.OBJECT_HIGHLIGHT, obj)
 
     @staticmethod
     def highlight_word(word: str) -> str:
-        return f"{ColorConfig.TEXT_HIGHLIGHT}{ColorConfig.WORD_HIGHLIGHT}{word}{ColorConfig.TEXT_HIGHLIGHT}"
+        return ColorConfig.__highlight(ColorConfig.WORD_HIGHLIGHT, word)
+
+    @staticmethod
+    def highlight_key(key: str) -> str:
+        return ColorConfig.__highlight(ColorConfig.KEY_HIGHLIGHT, key)
 
     @staticmethod
     def get(char: str):
