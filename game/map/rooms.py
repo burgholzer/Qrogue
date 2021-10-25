@@ -167,6 +167,15 @@ class SpawnRoom(Room):
 class WildRoom(Room):
     def __init__(self, factory: EnemyFactory, chance: float = 0.4, east_door: Door = None,
                  south_door: Door = None, west_door: bool = False, north_door: bool = False):
+        """
+
+        :param factory:
+        :param chance:
+        :param east_door: the Door connecting to the Room to the East of this one
+        :param south_door: the Door connecting to the Room to the South of this one
+        :param west_door: whether the Room to the West is having an east_door or not
+        :param north_door:  whether the Room to the North is having a south_door or not
+        """
         self.__dictionary = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [], 8: [], 9: [] }
         tile_list = []
         rm = RM.create_new()
