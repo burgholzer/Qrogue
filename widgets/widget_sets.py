@@ -1,3 +1,4 @@
+import time
 from abc import abstractmethod, ABC
 
 import py_cui
@@ -145,6 +146,14 @@ class ExploreWidgetSet(MyWidgetSet):
             self.__hud,
             self.__map_widget
         ]
+
+    def render(self) -> None:
+        start = time.time()
+        super(ExploreWidgetSet, self).render()
+        duration = time.time() - start
+        self.__hud.update_render_duration(duration)
+        print(duration)
+        self.__hud.render()
 
     def reset(self) -> None:
         self.__map_widget.widget.set_title("")

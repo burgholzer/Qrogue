@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from py_cui.widgets import BlockLabel
 
 from game.actors.player import Player as PlayerActor
-from game.logic.instruction import HGate, Instruction
+from game.logic.instruction import Instruction
 from game.logic.qubit import StateVector
 from game.map.map import Map
 from game.map.navigation import Direction
@@ -50,14 +50,20 @@ class HudWidget(Widget):
     def __init__(self, widget: BlockLabel):
         super().__init__(widget)
         self.__player = None
+        self.__render_duration = None
 
     def set_data(self, player:PlayerActor) -> None:
         self.__player = player
+
+    def update_render_duration(self, duration: float):
+        self.__render_duration = duration * 1000
 
     def render(self) -> None:
         if self.__player is not None:
             text = f"{self.__player.cur_hp} HP   \t" \
                    f"{self.__player.backpack.coin_count}$, {self.__player.backpack.key_count} keys"
+            if self.__render_duration is not None:
+                text += f"\t\t{self.__render_duration:.2f} ms"
             self.widget.set_title(text)
 
     def render_reset(self) -> None:
