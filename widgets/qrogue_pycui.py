@@ -10,6 +10,7 @@ from game.map.map import Map
 from game.map.navigation import Direction
 from util.config import PathConfig
 from util.logger import Logger
+from widgets.color_rules import MultiColorRenderer
 from widgets.my_popups import Popup, MultilinePopup
 from widgets.widget_sets import ExploreWidgetSet, FightWidgetSet, MyWidgetSet, MenuWidgetSet, ShopWidgetSet, \
     RiddleWidgetSet
@@ -38,6 +39,13 @@ class QrogueCUI(py_cui.PyCUI):
 
         self.__state_machine.change_state(State.Menu, None)
         self.render()
+
+    def _initialize_widget_renderer(self):
+        """Function that creates the renderer object that will draw each widget
+        """
+        if self._renderer is None:
+            self._renderer = MultiColorRenderer(self, self._stdscr, self._logger)
+        super(QrogueCUI, self)._initialize_widget_renderer()
 
     def __init_keys(self) -> None:
         # debugging stuff

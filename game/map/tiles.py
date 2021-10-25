@@ -361,19 +361,3 @@ class Boss(WalkTriggerTile):
     def boss(self):
         return self.__boss
 
-
-__color_manager = {
-    TileCode.Invalid: py_cui.RED_ON_BLUE,
-    TileCode.Void: py_cui.CYAN_ON_BLACK,
-    TileCode.Floor: py_cui.CYAN_ON_BLACK,
-    TileCode.Wall: py_cui.BLACK_ON_CYAN,
-    TileCode.Obstacle: py_cui.CYAN_ON_BLACK,
-    TileCode.FogOfWar: py_cui.CYAN_ON_BLACK,
-    TileCode.Door: py_cui.CYAN_ON_BLACK,
-    TileCode.Collectible: py_cui.CYAN_ON_BLACK,
-    TileCode.Player: py_cui.GREEN_ON_BLACK,
-    TileCode.Enemy: py_cui.RED_ON_BLACK,
-    TileCode.Boss: py_cui.BLACK_ON_RED,
-}
-def get_color(tile: TileCode) -> int:
-    return __color_manager[tile]
