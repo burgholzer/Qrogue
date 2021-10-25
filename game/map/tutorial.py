@@ -12,6 +12,7 @@ from game.map import tiles
 from game.map.navigation import Coordinate, Direction
 from game.map.rooms import Room, SpawnRoom, GateRoom, WildRoom, BossRoom, ShopRoom, RiddleRoom
 from game.map.tiles import Door
+from util.config import ColorConfig
 
 from widgets.my_popups import Popup, CommonPopups
 
@@ -146,8 +147,11 @@ class TutorialGateRoom(GateRoom):
 
 
 class Tutorial:
+    __QUANTUM_COMPUTING = "Quantum Computing"
+    __DOOR_TILE = "-"
+    __TUTORIAL_TILE = "."
     WelcomeMessage = \
-        "Qrogue is a game about Quantum Computing. You will explore " \
+        f"Qrogue is a game about {ColorConfig.highlight_word(__QUANTUM_COMPUTING)}. You will explore " \
         "Dungeons with the help of Quantum Gates you can use for your " \
         "Quantum Circuit. But you are not the only one in the Dungeons! " \
         "There are Enemies challenging you to reach a certain Quantum " \
@@ -156,10 +160,9 @@ class Tutorial:
         "by a Boss - a special Enemy that wants to see a Quantum " \
         "Algorithm from you...\n" \
         "Now let's start! Try to move around with the arrow keys and " \
-        "go to the door (\"-\") at the bottom!\n" \
-        "The fields with a \".\" will show you the next steps. " \
-        "Now close this dialog and start playing by pressing SPACE."
-
+        f"go to the door ({ColorConfig.highlight_tile(__DOOR_TILE)}) at the bottom!\n" \
+        f"The fields with a {ColorConfig.highlight_tile(__TUTORIAL_TILE)} will show you the next steps. " \
+        f"Now close this dialog and start playing by pressing SPACE."
 
     def __init__(self):
         self.__cur_id = 0

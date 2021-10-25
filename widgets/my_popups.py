@@ -2,7 +2,10 @@ from enum import Enum
 
 import py_cui
 import py_cui.ui
-from util.config import PopupConfig
+from py_cui import ColorRule
+
+from util.config import PopupConfig, ColorConfig
+from util.logger import Logger
 
 
 class Popup:
@@ -35,6 +38,14 @@ class Popup:
 
 
 class MultilinePopup(py_cui.popups.Popup, py_cui.ui.MenuImplementation):
+    @staticmethod
+    def __get_color_rules():
+        text = ColorConfig.TEXT_HIGHLIGHT
+        return [
+            ColorRule(f"{text}.*?{text}", 0, 0, "contains", "regex", [0, 1],
+                      False, Logger.instance())
+        ]
+
     @staticmethod
     def __split_text(text: str, width: int) -> "list of str":
         split_text = []
@@ -89,7 +100,7 @@ class MultilinePopup(py_cui.popups.Popup, py_cui.ui.MenuImplementation):
 
         self._renderer.set_color_mode(self._color)
         self._renderer.draw_border(self)
-        self._renderer.set_color_rules([])
+        self._renderer.set_color_rules(self.__get_color_rules())
         counter = self._pady + 1
         for i in range(self._top_view, len(self.__lines)):
             if counter > self.textbox_height:
