@@ -74,6 +74,9 @@ class Backpack:
     def coin_count(self) -> int:
         return self.__coin_count
 
+    def can_afford(self, price: int) -> bool:
+        return self.__coin_count >= price
+
     def give_coin(self, amount: int) -> bool:
         if amount > 0:
             self.__coin_count += amount
@@ -81,7 +84,7 @@ class Backpack:
         return False
 
     def use_coins(self, amount: int) -> bool:
-        if self.coin_count >= amount:
+        if self.can_afford(amount):
             self.__coin_count -= amount
             return True
         return False
