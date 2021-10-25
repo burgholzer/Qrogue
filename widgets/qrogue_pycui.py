@@ -8,6 +8,7 @@ from game.actors.riddle import Riddle
 from game.controls import Controls
 from game.map.map import Map
 from game.map.navigation import Direction
+from util.config import PathConfig
 from util.logger import Logger
 from widgets.my_popups import Popup, MultilinePopup
 from widgets.widget_sets import ExploreWidgetSet, FightWidgetSet, MyWidgetSet, MenuWidgetSet, ShopWidgetSet, \
@@ -84,7 +85,6 @@ class QrogueCUI(py_cui.PyCUI):
     def print_screen(self) -> None:
         import os
         from datetime import datetime
-        folder = os.path.join("Documents", "Studium", "Master", "3. Semester", "Qrogue", "screenprints")
         now = datetime.now()
         now_str = now.strftime("%d%m%Y_%H%M%S")
         file_name = f"screenshot_{now_str}.qrogue_screen"
@@ -94,10 +94,7 @@ class QrogueCUI(py_cui.PyCUI):
             text += str(my_widget) + "\n"
             text += my_widget.widget.get_title()
             text += "\n"
-
-        file = open("D:\\" + os.path.join(folder, file_name), "x")  # todo use config for path!
-        file.write(text)
-        file.close()
+        PathConfig.write(os.path.join("screenprints", file_name), text)
 
     def apply_widget_set(self, new_widget_set: MyWidgetSet) -> None:
         new_widget_set.reset()
