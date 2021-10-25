@@ -11,6 +11,9 @@ class Coin(Collectible):
     def amount(self):
         return self.__amount
 
+    def name(self) -> str:
+        return "Coin"
+
     def description(self) -> str:
         return "Coins are used to buy Collectibles from the Shop"
 
@@ -26,6 +29,9 @@ class Key(Collectible):
     @property
     def amount(self):
         return self.__amount
+
+    def name(self) -> str:
+        return "Key"
 
     def description(self) -> str:
         return "A Key is useful for opening locked doors."

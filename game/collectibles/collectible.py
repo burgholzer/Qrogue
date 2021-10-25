@@ -20,6 +20,10 @@ class Collectible(ABC):
         return self.__type
 
     @abstractmethod
+    def name(self) -> str:
+        pass
+
+    @abstractmethod
     def description(self) -> str:
         pass
 

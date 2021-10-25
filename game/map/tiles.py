@@ -275,7 +275,9 @@ class Collectible(WalkTriggerTile):
     def on_walk(self, direction: Direction, player: PlayerActor) -> None:
         if self.__active:
             player = player
-            player.give_collectible(self.__factory.produce())
+            collectible = self.__factory.produce()
+            Popup.message(collectible.name(), collectible.description())
+            player.give_collectible(collectible)
             self.__active = False
 
 

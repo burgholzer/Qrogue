@@ -52,10 +52,6 @@ class Instruction(Collectible, ABC):
         return iter(self._qargs)
 
     @abstractmethod
-    def name(self) -> str:
-        pass
-
-    @abstractmethod
     def abbreviation(self, qubit: int = 0):
         pass
 
