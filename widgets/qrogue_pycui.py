@@ -83,8 +83,8 @@ class QrogueCUI(py_cui.PyCUI):
         self.__fight.details.widget.add_key_command(self.__controls.action, self.__fight_details)
 
         # shop
-        self.__shop.inventory.widget.add_key_command(self.__controls.action, self.__use_inventory)
-        self.__shop.buy.widget.add_key_command(self.__controls.action, self.__use_buy)
+        self.__shop.inventory.widget.add_key_command(self.__controls.action, self.__shop_inventory)
+        self.__shop.buy.widget.add_key_command(self.__controls.action, self.__shop_buy)
 
         # riddle
         self.__riddle.choices.widget.add_key_command(self.__controls.action, self.__riddle_choices)
@@ -198,13 +198,12 @@ class QrogueCUI(py_cui.PyCUI):
             self.__riddle.details.render_reset()
             self.__riddle.render()   # needed for updating the StateVectors and the circuit
 
-    def __use_inventory(self) -> None:
+    def __shop_inventory(self) -> None:
         if self.__shop.inventory.use() and self.__cur_widget_set is self.__shop:
             self.move_focus(self.__shop.buy.widget, auto_press_buttons=False)
-            self.__shop.inventory.render()
-            self.__shop.buy.render()
+            self.__shop.render()
 
-    def __use_buy(self) -> None:
+    def __shop_buy(self) -> None:
         if self.__shop.buy.use() and self.__cur_widget_set is self.__shop:
             self.move_focus(self.__shop.inventory.widget, auto_press_buttons=False)
             self.__shop.inventory.render()
