@@ -2,8 +2,6 @@
 from abc import ABC, abstractmethod
 from enum import Enum
 
-import py_cui
-
 from game.actors.boss import Boss as BossActor
 from game.actors.factory import EnemyFactory
 from game.actors.player import Player as PlayerActor
@@ -235,8 +233,28 @@ class Door(WalkTriggerTile):
     def direction(self) -> Direction:
         return self.__direction
 
-    def unlock(self) -> None:   # todo
-        self.__locked = False
+    @property
+    def opened(self) -> bool:
+        return self.__opened
+
+
+class EntangledDoor(Door):
+    @staticmethod
+    def entangle(door1: "EntangledDoor", door2: "EntangledDoor"):
+        door1.__entangled_door = door2
+        door2.__entangled_door = door1
+
+    def __init__(self, direction: Direction):
+        super().__init__(direction)
+        self.__entangled_door = None
+        self.__closed = False
+
+    def is_walkable(self, direction: Direction, player: PlayerActor) -> bool:
+        # if the entangled door is open, this one can no longer we opened/walked on
+        if self.__entangled_door.opened:
+            CommonPopups.EntangledDoor.show()
+            return False
+        return super(EntangledDoor, self).is_walkable(direction, player)
 
 
 class Collectible(WalkTriggerTile):

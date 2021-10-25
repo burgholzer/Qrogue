@@ -114,6 +114,8 @@ class MultilinePopup(py_cui.popups.Popup, py_cui.ui.MenuImplementation):
 
 class CommonPopups(Enum):
     LockedDoor = ("Door is locked!", "Come back with a Key to open the Door.")
+    EntangledDoor = ("Door is entangled!", "The Door entangled with this one was opened. Therefore you can no longer "
+                                           "pass this Door.")
     TutorialBlocked = ("Halt!", "You should not go there yet! Finish the current step of the Tutorial first.")
     NotEnoughMoney = ("$$$", "You cannot afford that right now. Come back when you have enough money.")
     NoCircuitSpace = ("Nope", "Your Circuit has no more space left. Remove a Gate to place another one.")
