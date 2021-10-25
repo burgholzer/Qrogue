@@ -43,6 +43,7 @@ class SimpleWidget(Widget):
         self.widget.set_title(self.__text)
 
     def render_reset(self) -> None:
+        self.__text = ""
         self.widget.set_title("")
 
 
@@ -163,9 +164,10 @@ class StateVectorWidget(Widget):
 class SelectionWidget(Widget):
     __COLUMN_SEPARATOR = "   "
 
-    def __init__(self, widget: BlockLabel, columns: int = 1):
+    def __init__(self, widget: BlockLabel, columns: int = 1, is_second: bool = False):
         super(SelectionWidget, self).__init__(widget)
         self.__columns = columns
+        self.__is_second = is_second
         self.__index = 0
         self.__choices = []
         self.__callbacks = []
@@ -177,6 +179,11 @@ class SelectionWidget(Widget):
     def update_text(self, text: str, index: int):
         if 0 <= index < len(self.__choices):
             self.__choices[index] = text
+
+    def clear_text(self):
+        self.__choices = []
+        self.__callbacks = []
+        self.__index = 0
 
     def set_data(self, data: "tuple of list of str and list of SelectionCallbacks") -> None:
         self.render_reset()
@@ -207,7 +214,8 @@ class SelectionWidget(Widget):
 
     def render_reset(self) -> None:
         self.widget.set_title("")
-        self.__index = 0
+        if self.__is_second:
+            self.clear_text()
 
     def up(self) -> None:
         if self.num_of_choices <= 1:

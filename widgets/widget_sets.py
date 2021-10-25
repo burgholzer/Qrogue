@@ -216,7 +216,7 @@ class ReachTargetWidgetSet(MyWidgetSet, ABC):
 
         details = self.add_block_label('Details', 7, 3, row_span=2, column_span=6, center=True)
         details.toggle_border()
-        self._details = SelectionWidget(details, columns=self.__DETAILS_COLUMNS)
+        self._details = SelectionWidget(details, columns=self.__DETAILS_COLUMNS, is_second=True)
 
         ColorRules.apply_stv_rules(self.__stv_player)
         ColorRules.apply_stv_rules(self.__stv_diff, diff_rules=True)
@@ -423,7 +423,7 @@ class ShopWidgetSet(MyWidgetSet):
         details = self.add_block_label("Details", 1, inv_width, row_span=4, column_span=self.__NUM_OF_COLS - inv_width)
         self.__details = SimpleWidget(details)
         buy = self.add_block_label("Buy", 4, inv_width, row_span=1, column_span=self.__NUM_OF_COLS - inv_width)
-        self.__buy = SelectionWidget(buy)
+        self.__buy = SelectionWidget(buy, is_second=True)
 
     @property
     def inventory(self) -> SelectionWidget:
@@ -432,6 +432,10 @@ class ShopWidgetSet(MyWidgetSet):
     @property
     def buy(self) -> SelectionWidget:
         return self.__buy
+
+    @property
+    def details(self) -> SimpleWidget:
+        return self.__details
 
     def get_widget_list(self) -> "list of Widgets":
         return [
@@ -466,11 +470,17 @@ class ShopWidgetSet(MyWidgetSet):
 
         shop_item = self.__items[index]
         self.__cur_item = shop_item
-        self.__details.set_data(shop_item.collectible)
-        self.__buy.set_data(data=(
-            ["Buy!", "No thanks"],
-            [self.__buy_item, self.__back_to_inventory]
-        ))
+        self.__details.set_data(shop_item.collectible.description())
+        if self.__player.backpack.can_afford(shop_item.price):
+            self.__buy.set_data(data=(
+                ["Buy!", "No thanks"],
+                [self.__buy_item, self.__back_to_inventory]
+            ))
+        else:
+            self.__buy.set_data(data=(
+                ["You can't afford that!"],
+                [self.__back_to_inventory]
+            ))
         return True
 
     def __buy_item(self) -> bool:

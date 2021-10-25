@@ -206,8 +206,10 @@ class QrogueCUI(py_cui.PyCUI):
     def __shop_buy(self) -> None:
         if self.__shop.buy.use() and self.__cur_widget_set is self.__shop:
             self.move_focus(self.__shop.inventory.widget, auto_press_buttons=False)
-            self.__shop.inventory.render()
-            self.__shop.buy.render()
+            self.__shop.details.render_reset()
+            self.__shop.buy.render_reset()
+            self.__shop.buy.clear_text()
+            self.__shop.render()
 
 
 class State(Enum):
