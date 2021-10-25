@@ -148,21 +148,26 @@ class TutorialGateRoom(GateRoom):
 
 class Tutorial:
     __QUANTUM_COMPUTING = "Quantum Computing"
+    __ARROW_KEYS = "Arrow Keys"
+    __SPACE = "Space"
+    __ENEMIES = "Enemies"
+    __BOSS = "Boss"
+    __DOOR = "Door"
     __DOOR_TILE = "-"
     __TUTORIAL_TILE = "."
     WelcomeMessage = \
         f"Qrogue is a game about {ColorConfig.highlight_word(__QUANTUM_COMPUTING)}. You will explore " \
         "Dungeons with the help of Quantum Gates you can use for your " \
         "Quantum Circuit. But you are not the only one in the Dungeons! " \
-        "There are Enemies challenging you to reach a certain Quantum " \
+        f"There are {ColorConfig.highlight_object(__ENEMIES)} challenging you to reach a certain Quantum " \
         "State. Your goal is to expand your library of Quantum Gates " \
         "which are hidden in Special Rooms in the Dungeon or guarded " \
-        "by a Boss - a special Enemy that wants to see a Quantum " \
+        f"by a {ColorConfig.highlight_object(__BOSS)} - a special Enemy that wants to see a Quantum " \
         "Algorithm from you...\n" \
-        "Now let's start! Try to move around with the arrow keys and " \
-        f"go to the door ({ColorConfig.highlight_tile(__DOOR_TILE)}) at the bottom!\n" \
+        f"Now let's start! Try to move around with the {ColorConfig.highlight_key(__ARROW_KEYS)} and " \
+        f"go to the {ColorConfig.highlight_object(__DOOR)} ({ColorConfig.highlight_tile(__DOOR_TILE)}) at the bottom!\n" \
         f"The fields with a {ColorConfig.highlight_tile(__TUTORIAL_TILE)} will show you the next steps. " \
-        f"Now close this dialog and start playing by pressing SPACE."
+        f"Now close this dialog and start playing by pressing {ColorConfig.highlight_key(__SPACE)}."
 
     def __init__(self):
         self.__cur_id = 0
@@ -281,8 +286,15 @@ class Tutorial:
         rooms[2][0] = TutorialGateRoom(TutorialTile(popups[3], 3, self.is_active, self.progress))
         rooms[1][2] = WildRoom(factory, chance=0.8, north_door=True, west_door=True,
                                east_door=tiles.Door(Direction.East), south_door=tiles.Door(Direction.South))
-        rooms[0][2] = BossRoom(tiles.Door(Direction.South), tiles.Boss(TutorialBoss(), start_fight_callback))
-        rooms[1][3] = RiddleRoom(tiles.Door(Direction.West), TutorialRiddle(), self.riddle)
+        rooms[0][2] = RiddleRoom(tiles.Door(Direction.South), TutorialRiddle(), self.riddle)
         rooms[2][2] = ShopRoom(Door(Direction.North), [ShopItem(Key(2), 3), ShopItem(Key(1), 2)], self.shop)
+        entangled_east = tiles.EntangledDoor(Direction.East)
+        entangled_south = tiles.EntangledDoor(Direction.South)
+        tiles.EntangledDoor.entangle(entangled_east, entangled_south)
+        rooms[1][3] = WildRoom(factory, chance=0.7, north_door=True, west_door=True, east_door=entangled_east,
+                               south_door=entangled_south)
+        rooms[0][3] = BossRoom(tiles.Door(Direction.South), tiles.Boss(TutorialBoss(), start_fight_callback))
+        rooms[1][4] = WildRoom(factory, chance=0.5, west_door=True)
+        rooms[2][3] = WildRoom(factory, chance=0.6, north_door=True)
 
         return rooms, Coordinate(spawn_x, spawn_y)
