@@ -114,6 +114,51 @@ class MultiColorRenderer(py_cui.renderer.Renderer):
         super().__init__(root, stdscr, logger)
         PathConfig.delete(self.__FILE_NAME)
 
+    def _get_render_text(self, ui_element, line, centered, bordered, selected, start_pos):
+        """Internal function that computes the scope of the text that should be drawn
+
+        Parameters
+        ----------
+        ui_element : py_cui.ui.UIElement
+            The ui_element being drawn
+        line : str
+            the line of text being drawn
+        centered : bool
+            flag to set if the text should be centered
+        bordered : bool
+            a flag to set if the text should be bordered
+        start_pos : int
+            position to start rendering the text from.
+
+        Returns
+        -------
+        render_text : str
+            The text shortened to fit within given space
+        """
+
+        padx, _       = ui_element.get_padding()
+        _, width      = ui_element.get_absolute_dimensions()
+
+        render_text_length = width - (2 * padx)
+        # this line is the only difference to the original (super) function
+        render_text_length += ColorConfig.count_meta_characters(line, render_text_length, self._logger)
+
+        if bordered:
+            render_text_length = render_text_length - 4
+
+        if len(line) - start_pos < render_text_length:
+            if centered:
+                render_text = '{}'.format(  line[start_pos:].center(render_text_length,
+                                            ' '))
+            else:
+                render_text = '{}{}'.format(line[start_pos:],
+                                            ' ' * (render_text_length - len(line[start_pos:])))
+        else:
+            render_text = line[start_pos:start_pos + render_text_length]
+
+        render_text_fragments = self._generate_text_color_fragments(ui_element, line, render_text, selected)
+        return render_text_fragments
+
     def _generate_text_color_fragments(self, ui_element, line, render_text, selected):
         """Function that applies color rules to text, dividing them if match is found
 
@@ -131,7 +176,6 @@ class MultiColorRenderer(py_cui.renderer.Renderer):
         fragments : list of [int, str]
             list of text - color code combinations to write
         """
-        #start_time = time.time()
         if selected:
             meta_fragments = FragmentStorage(render_text, ui_element.get_selected_color())
         else:
@@ -148,20 +192,11 @@ class MultiColorRenderer(py_cui.renderer.Renderer):
                     cur_pos += len(text)
                     meta_fragments.append(Fragment(start, text, color))
         meta_fragments.sort()
-        #print("Full:")
-        #print(full)
-        #print()
-        #print("Frags:")
         full = meta_fragments.fill_blanks()
         text = ""
         for frag in full:
             text += str(frag)
         text += "\n"
-        PathConfig.write(self.__FILE_NAME, text, append=True)
-        #"""
-        #duration = time.time() - start_time
-        #print(duration)
-        #print()
         return full
 
 

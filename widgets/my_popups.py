@@ -4,7 +4,7 @@ import py_cui
 import py_cui.ui
 from py_cui import ColorRule
 
-from util.config import PopupConfig, ColorConfig
+from util.config import PopupConfig, ColorConfig as CC
 from util.logger import Logger
 
 
@@ -40,36 +40,68 @@ class Popup:
 class MultilinePopup(py_cui.popups.Popup, py_cui.ui.MenuImplementation):
     @staticmethod
     def __get_color_rules():
-        text = ColorConfig.TEXT_HIGHLIGHT
+        text = CC.TEXT_HIGHLIGHT
         return [
             ColorRule(f"{text}.*?{text}", 0, 0, "contains", "regex", [0, 1],
                       False, Logger.instance())
         ]
 
     @staticmethod
-    def __split_text(text: str, width: int) -> "list of str":
+    def __split_text(text: str, width: int, logger) -> "list of str":
+        """
+
+        :param text: text to split into multiple lines
+        :param width: the maximum width of one line
+        :return: list of text parts with a maximum of #width characters
+        """
         split_text = []
         for paragraph in text.splitlines():
             index = 0
+            prepend = None
             while index + width < len(paragraph):
-                last_whitespace = paragraph.rfind(" ", index + 1, index + width)
+                cur_part = paragraph[index:]
+                # check if the previous line ended with a color rule and prepend it
+                if prepend:
+                    prev_len = len(cur_part)
+                    cur_part = prepend + cur_part.lstrip()
+                    # we have to adapt the index since we potentially remove whitespace in front and therefore have
+                    # the possibility of a longer line which leads to a higher increment of the index and furthermore
+                    # to the potential loss of some characters in the beginning of the new_line
+                    # prepend also needs to be part of this adaption because it will be counted in character_removals
+                    index -= (len(cur_part) - prev_len)
+                    prepend = None
+                character_removals = CC.count_meta_characters(cur_part, width, logger)
+
+                last_whitespace = cur_part.rfind(" ", 1, width + character_removals)
                 if last_whitespace == -1:
-                    cur_width = width
+                    cur_width = width + character_removals
                 else:
-                    cur_width = last_whitespace - index
-                next_line = paragraph[index:index + cur_width].strip()
+                    cur_width = last_whitespace
+
+                next_line = cur_part[:cur_width].lstrip()
                 if len(next_line) > 0:
+                    # check if next_line ends with an un-terminated color rule
+                    last_slash = next_line.rfind(CC.TEXT_HIGHLIGHT)
+                    if 0 <= last_slash <= len(next_line) - 3:
+                        # if so, terminate it and remember to continue it in the next line
+                        if CC.is_number(next_line[last_slash + 1:last_slash + CC.CODE_WIDTH + 1]):
+                            next_line += "/"
+                            prepend = next_line[last_slash:last_slash + 3]
                     split_text.append(next_line)
                 index += cur_width
-            # The last line is appended as it is
-            split_text.append(paragraph[index:index + width].strip())
+
+            # The last line is appended as it is (maybe with additional color rule prepend from the previous line)
+            if prepend:
+                split_text.append(prepend + paragraph[index:].strip())
+            else:
+                split_text.append(paragraph[index:].strip())
         return split_text
 
     def __init__(self, root, title, text, color, renderer, logger, controls):
         super().__init__(root, title, text, color, renderer, logger)
         self.__controls = controls
         self._top_view = 0
-        self.__lines = MultilinePopup.__split_text(text, self._width - 6)
+        self.__lines = MultilinePopup.__split_text(text, self._width - 6, logger)
 
     @property
     def textbox_height(self) -> int:
@@ -112,13 +144,31 @@ class MultilinePopup(py_cui.popups.Popup, py_cui.ui.MenuImplementation):
         self._renderer.reset_cursor(self)
 
 
+def _locked_door() -> str:
+    key = CC.highlight_object("Key")
+    door = CC.highlight_object("Door")
+    return f"Come back with a {key} to open the {door}."
+def _entangled_door() -> str:
+    door = CC.highlight_object("Door")
+    entangled = CC.highlight_word("entangled")
+    return f"The {door} {entangled} with this one was opened. Therefore you can no longer pass this {door}."
+def _tutorial_blocked() -> str:
+    step = CC.highlight_word("current step")
+    tutorial = CC.highlight_word("Tutorial")
+    return f"You should not go there yet! Finish the {step} of the {tutorial} first."
+def _not_enough_money() -> str:
+    return "You cannot afford that right now. Come back when you have enough money."
+def _no_space() -> str:
+    circ = CC.highlight_object("Circuit")
+    space = CC.highlight_word("no more space")
+    gate = CC.highlight_object("Gate")
+    return f"Your {circ} has {space} left. Remove a {gate} to place another one."
 class CommonPopups(Enum):
-    LockedDoor = ("Door is locked!", "Come back with a Key to open the Door.")
-    EntangledDoor = ("Door is entangled!", "The Door entangled with this one was opened. Therefore you can no longer "
-                                           "pass this Door.")
-    TutorialBlocked = ("Halt!", "You should not go there yet! Finish the current step of the Tutorial first.")
-    NotEnoughMoney = ("$$$", "You cannot afford that right now. Come back when you have enough money.")
-    NoCircuitSpace = ("Nope", "Your Circuit has no more space left. Remove a Gate to place another one.")
+    LockedDoor = ("Door is locked!", _locked_door())
+    EntangledDoor = ("Door is entangled!", _entangled_door())
+    TutorialBlocked = ("Halt!", _tutorial_blocked())
+    NotEnoughMoney = ("$$$", _not_enough_money())
+    NoCircuitSpace = ("Nope", _no_space())
 
     def __init__(self, title: str, text: str, color: int = PopupConfig.default_color()):
         self.__title = title
