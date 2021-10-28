@@ -218,45 +218,72 @@ class SelectionWidget(Widget):
         if self.__is_second:
             self.clear_text()
 
+    def __single_next(self) -> None:
+        self.__index += 1
+        if self.__index >= self.num_of_choices:
+            self.__index = 0
+
+    def __single_prev(self) -> None:
+        self.__index -= 1
+        if self.__index < 0:
+            self.__index = self.num_of_choices - 1
+
     def up(self) -> None:
         if self.num_of_choices <= 1:
             return
-        self.__index -= self.__columns
-        if self.__index < 0:
-            self.__index += self.num_of_choices
+        if self.num_of_choices <= self.__columns or self.__columns == 1:
+            self.__single_prev()
+        else:
+            # special case for first line
+            if self.__index < self.__columns:
+                left_most = self.num_of_choices - self.num_of_choices % self.__columns
+                self.__index = left_most + min(self.__index, self.num_of_choices % self.__columns - 1)
+            else:
+                self.__index -= self.__columns
         self.render()
 
     def right(self) -> None:
         if self.num_of_choices <= 1:
             return
-        if self.__columns == 1:
-            self.down()
+        if self.__columns == 1 or self.num_of_choices <= self.__columns:
+            self.__single_next()
         else:
             self.__index += 1
-            if self.__index % self.__columns == 0:
-                self.up()
-            else:
-                self.render()
+            if self.__index >= self.num_of_choices:
+                self.__index -= (self.__index % self.__columns)
+            elif self.__index % self.__columns == 0:
+                self.__index -= self.__columns
+        self.render()
 
     def down(self) -> None:
         if self.num_of_choices <= 1:
             return
-        self.__index += self.__columns
-        if self.__index >= self.num_of_choices:
-            self.__index -= self.num_of_choices
+        if self.num_of_choices <= self.__columns or self.__columns == 1:
+            self.__single_next()
+        else:
+            # special case if we are currently in the last line
+            if self.__index >= self.num_of_choices - (self.num_of_choices % self.__columns):
+                self.__index = self.__index % self.__columns
+            else:
+                self.__index += self.__columns
+                if self.__index >= self.num_of_choices:
+                    self.__index = self.num_of_choices - 1
         self.render()
 
     def left(self) -> None:
         if self.num_of_choices <= 1:
             return
-        if self.__columns == 1:
-            self.up()
+        if self.__columns == 1 or self.num_of_choices <= self.__columns:
+            self.__single_prev()
         else:
-            self.__index -= 1
-            if self.__index % self.__columns == self.__columns - 1:
-                self.down()
+            # special case if we are currently in the last line
+            if self.__index >= self.num_of_choices - (self.num_of_choices % self.__columns):
+                self.__index = self.num_of_choices - 1
             else:
-                self.render()
+                self.__index -= 1
+                if self.__index < 0:
+                    self.__index += self.__columns
+        self.render()
 
     def use(self) -> bool:
         """
