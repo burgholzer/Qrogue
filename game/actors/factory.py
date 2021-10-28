@@ -42,8 +42,9 @@ class FightDifficulty:
         qubits = list(range(num_of_qubits))
 
         # choose random circuits on random qubits and cbits
+        instruction_pool = player.get_available_instructions()
         for i in range(self.__num_of_instructions):
-            instruction = rand.get_element(player.get_available_instructions(), remove=False)
+            instruction = rand.get_element(instruction_pool, remove=True)
             if instruction.num_of_qubits > 1:
                 while instruction.use_qubit(rand.get_element(qubits, remove=True)):
                     pass
