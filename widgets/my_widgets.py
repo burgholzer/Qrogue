@@ -164,10 +164,11 @@ class StateVectorWidget(Widget):
 class SelectionWidget(Widget):
     __COLUMN_SEPARATOR = "   "
 
-    def __init__(self, widget: BlockLabel, columns: int = 1, is_second: bool = False):
+    def __init__(self, widget: BlockLabel, columns: int = 1, is_second: bool = False, stay_selected: bool = False):
         super(SelectionWidget, self).__init__(widget)
         self.__columns = columns
         self.__is_second = is_second
+        self.__stay_selected = stay_selected
         self.__index = 0
         self.__choices = []
         self.__callbacks = []
@@ -198,7 +199,7 @@ class SelectionWidget(Widget):
     def render(self) -> None:
         str_rep = ""
         for i in range(self.num_of_choices):
-            if i == self.__index and self.widget.is_selected():
+            if i == self.__index and (self.widget.is_selected() or self.__stay_selected):
                 wrapper = "-> "
             else:
                 wrapper = "   "

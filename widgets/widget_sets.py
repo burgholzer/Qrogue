@@ -440,7 +440,7 @@ class ShopWidgetSet(MyWidgetSet):
 
         inv_width = 4
         inventory = self.add_block_label("Inventory", 1, 0, row_span=7, column_span=inv_width)
-        self.__inventory = SelectionWidget(inventory)
+        self.__inventory = SelectionWidget(inventory, stay_selected=True)
 
         details = self.add_block_label("Details", 1, inv_width, row_span=4, column_span=self.__NUM_OF_COLS - inv_width)
         self.__details = SimpleWidget(details)
