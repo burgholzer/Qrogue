@@ -2,18 +2,19 @@ from enum import Enum
 
 import py_cui
 
+from game.actors.boss import Boss
 from game.actors.enemy import Enemy
 from game.actors.player import Player as PlayerActor
 from game.actors.riddle import Riddle
 from game.controls import Controls
 from game.map.map import Map
 from game.map.navigation import Direction
-from util.config import PathConfig
+from util.config import PathConfig, ColorConfig
 from util.logger import Logger
 from widgets.color_rules import MultiColorRenderer
 from widgets.my_popups import Popup, MultilinePopup
 from widgets.widget_sets import ExploreWidgetSet, FightWidgetSet, MyWidgetSet, MenuWidgetSet, ShopWidgetSet, \
-    RiddleWidgetSet
+    RiddleWidgetSet, BossFightWidgetSet
 
 
 class QrogueCUI(py_cui.PyCUI):
@@ -27,10 +28,12 @@ class QrogueCUI(py_cui.PyCUI):
         self.__controls = controls
         self.__focused_widget = None
 
-        self.__menu = MenuWidgetSet(Logger.instance(), self.__start_gameplay, self.__start_fight, self.__open_riddle,
-                                    self.__visit_shop)
+        self.__menu = MenuWidgetSet(Logger.instance(), self.__start_gameplay, self.__start_fight,
+                                    self.__start_boss_fight, self.__open_riddle, self.__visit_shop)
         self.__explore = ExploreWidgetSet(Logger.instance())
         self.__fight = FightWidgetSet(Logger.instance(), self.__continue_explore, self.__end_of_gameplay)
+        self.__boss_fight = BossFightWidgetSet(Logger.instance(), self.__continue_explore, self.__end_of_gameplay,
+                                               self.__won_tutorial)
         self.__riddle = RiddleWidgetSet(Logger.instance(), self.__continue_explore)
         self.__shop = ShopWidgetSet(Logger.instance(), self.__continue_explore)
 
@@ -53,11 +56,13 @@ class QrogueCUI(py_cui.PyCUI):
         self.__menu.get_main_widget().add_key_command(self.__controls.print_screen, self.print_screen)
         self.__explore.get_main_widget().add_key_command(self.__controls.print_screen, self.print_screen)
         self.__fight.get_main_widget().add_key_command(self.__controls.print_screen, self.print_screen)
+        self.__boss_fight.get_main_widget().add_key_command(self.__controls.print_screen, self.print_screen)
 
         # all selections
         selection_widgets = [
             self.__menu.selection,
             self.__fight.choices, self.__fight.details,
+            self.__boss_fight.choices, self.__boss_fight.details,
             self.__shop.inventory, self.__shop.buy,
             self.__riddle.choices, self.__riddle.details,
         ]
@@ -81,6 +86,8 @@ class QrogueCUI(py_cui.PyCUI):
         # fight
         self.__fight.choices.widget.add_key_command(self.__controls.action, self.__fight_choices)
         self.__fight.details.widget.add_key_command(self.__controls.action, self.__fight_details)
+        self.__boss_fight.choices.widget.add_key_command(self.__controls.action, self.__boss_fight_choices)
+        self.__boss_fight.details.widget.add_key_command(self.__controls.action, self.__boss_fight_details)
 
         # shop
         self.__shop.inventory.widget.add_key_command(self.__controls.action, self.__shop_inventory)
@@ -131,8 +138,16 @@ class QrogueCUI(py_cui.PyCUI):
     def __end_of_gameplay(self) -> None:
         self.switch_to_menu(None)
 
+    def __won_tutorial(self) -> None:
+        self.switch_to_menu(None)
+        bell = ColorConfig.highlight_word("Bell")
+        Popup.message("You won!", f"Congratulations, you defeated {bell} and won the Tutorial!")
+
     def __start_fight(self, player: PlayerActor, enemy: Enemy, direction: Direction) -> None:
         self.__state_machine.change_state(State.Fight, (enemy, player))
+
+    def __start_boss_fight(self, player: PlayerActor, boss: Boss, direction: Direction):
+        self.__state_machine.change_state(State.BossFight, (player, boss))
 
     def switch_to_explore(self, data) -> None:
         if data is not None:
@@ -148,6 +163,12 @@ class QrogueCUI(py_cui.PyCUI):
         player = data[1]
         self.__fight.set_data(player, enemy)
         self.apply_widget_set(self.__fight)
+
+    def switch_to_boss_fight(self, data) -> None:
+        player = data[0]
+        boss = data[1]
+        self.__boss_fight.set_data(player, boss)
+        self.apply_widget_set(self.__boss_fight)
 
     def __open_riddle(self, player: PlayerActor, riddle: Riddle):
         self.__state_machine.change_state(State.Riddle, (player, riddle))
@@ -186,6 +207,18 @@ class QrogueCUI(py_cui.PyCUI):
             self.__fight.details.render_reset()
             self.__fight.render()   # needed for updating the StateVectors and the circuit
 
+    def __boss_fight_choices(self) -> None:
+        if self.__boss_fight.choices.use() and self.__cur_widget_set is self.__boss_fight:
+            self.move_focus(self.__boss_fight.details.widget, auto_press_buttons=False)
+            self.__boss_fight.choices.render()
+            self.__boss_fight.details.render()
+
+    def __boss_fight_details(self) -> None:
+        if self.__boss_fight.details.use() and self.__cur_widget_set is self.__boss_fight:
+            self.move_focus(self.__boss_fight.choices.widget, auto_press_buttons=False)
+            self.__boss_fight.details.render_reset()
+            self.__boss_fight.render()   # needed for updating the StateVectors and the circuit
+
     def __riddle_choices(self):
         if self.__riddle.choices.use() and self.__cur_widget_set is self.__riddle:
             self.move_focus(self.__riddle.details.widget, auto_press_buttons=False)
@@ -219,6 +252,7 @@ class State(Enum):
     Fight = 3
     Shop = 4
     Riddle = 5
+    BossFight = 6
 
 
 class StateMachine:
@@ -249,5 +283,7 @@ class StateMachine:
             self.__renderer.switch_to_riddle(data)
         elif self.__cur_state == State.Shop:
             self.__renderer.switch_to_shop(data)
+        elif self.__cur_state == State.BossFight:
+            self.__renderer.switch_to_boss_fight(data)
         #elif self.__cur_state == State.Pause:
         #    self.__game.init_pause_screen()

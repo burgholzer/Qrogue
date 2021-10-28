@@ -372,12 +372,11 @@ class Boss(WalkTriggerTile):
         self.__on_walk_callback = on_walk_callback
 
     def on_walk(self, direction: Direction, player: PlayerActor) -> None:
-        self.__on_walk_callback(player, self.boss, direction)
+        if not self.__boss.is_defeated:
+            self.__on_walk_callback(player, self.__boss, direction)
 
     def get_img(self):
-        return "B"
-
-    @property
-    def boss(self):
-        return self.__boss
-
+        if self.__boss.is_defeated:
+            return self._invisible
+        else:
+            return "B"

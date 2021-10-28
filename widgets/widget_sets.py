@@ -4,6 +4,7 @@ from abc import abstractmethod, ABC
 import py_cui
 from py_cui.widget_set import WidgetSet
 
+from game.actors.boss import Boss
 from game.actors.enemy import Enemy
 from game.actors.player import Player as PlayerActor
 from game.actors.player import DummyPlayer
@@ -59,13 +60,16 @@ class MenuWidgetSet(MyWidgetSet):
     __MAP_HEIGHT = 14
 
     def __init__(self, logger, start_gameplay_callback: "void(Map, tiles.Player)",
-                 start_fight_callback: "void(Player, Enemy, Direction)", open_riddle_callback: "void(Player, Riddle)",
+                 start_fight_callback: "void(Player, Enemy, Direction)",
+                 start_boss_fight_callback: "void(Player, Boss, Direction)",
+                 open_riddle_callback: "void(Player, Riddle)",
                  visit_shop_callback: "void(Player, list of ShopItems)"):
         super().__init__(self.__NUM_OF_ROWS, self.__NUM_OF_COLS, logger)
         self.__start_gameplay_callback = start_gameplay_callback
 
         self.__seed = 7
         self.__start_fight_callback = start_fight_callback
+        self.__start_boss_fight_callback = start_boss_fight_callback
         self.__open_riddle_callback = open_riddle_callback
         self.__visit_shop_callback = visit_shop_callback
 
@@ -101,17 +105,18 @@ class MenuWidgetSet(MyWidgetSet):
         player = DummyPlayer()   # todo use real player
         seed = MapConfig.tutorial_seed() # todo and real seed
         map = Map(seed, self.__MAP_WIDTH, self.__MAP_HEIGHT, player, self.__start_fight_callback,
-                  self.__open_riddle_callback, self.__visit_shop_callback)
+                  self.__start_boss_fight_callback, self.__open_riddle_callback, self.__visit_shop_callback)
         self.__start_gameplay_callback(map)
 
     def __tutorial(self) -> None:
-        map = Map(MapConfig.tutorial_seed(), self.__MAP_WIDTH, self.__MAP_HEIGHT, DummyPlayer(), self.__start_fight_callback,
-                  self.__open_riddle_callback, self.__visit_shop_callback)
+        map = Map(MapConfig.tutorial_seed(), self.__MAP_WIDTH, self.__MAP_HEIGHT, DummyPlayer(),
+                  self.__start_fight_callback, self.__start_boss_fight_callback, self.__open_riddle_callback,
+                  self.__visit_shop_callback)
         self.__start_gameplay_callback(map)
         Popup.message("Welcome to Qrogue! (scroll with arrow keys)", Tutorial.WelcomeMessage)
 
     def __options(self) -> None:
-        print("todo")
+        Popup.message("TODO", "The options are not implemented yet!")
 
     def __exit(self) -> None:
         #GameHandler.instance().stop()
@@ -152,7 +157,6 @@ class ExploreWidgetSet(MyWidgetSet):
         super(ExploreWidgetSet, self).render()
         duration = time.time() - start
         self.__hud.update_render_duration(duration)
-        print(duration)
         self.__hud.render()
 
     def reset(self) -> None:
@@ -361,6 +365,7 @@ class FightWidgetSet(ReachTargetWidgetSet):
                                              ["Adapt", "Commit", "Items", "Flee"])
         self.__random = RandomManager.create_new()
         self.__game_over_callback = game_over_callback
+        self.__flee_chance = 0
 
     def set_data(self, player: PlayerActor, target: Enemy):
         super(FightWidgetSet, self).set_data(player, target)
@@ -400,6 +405,23 @@ class FightWidgetSet(ReachTargetWidgetSet):
                     [self.__game_over_callback]
                 ))
         return True
+
+
+class BossFightWidgetSet(FightWidgetSet):
+    def __init__(self, logger, continue_exploration_callback: "()", game_over_callback: "()",
+                 tutorial_won_callback: "()"):
+        self.__continue_exploration_callback = continue_exploration_callback
+        self.__tutorial_won = tutorial_won_callback
+        super().__init__(logger, self.__continue_exploration, game_over_callback)
+
+    def set_data(self, player: PlayerActor, target: Boss):
+        super(BossFightWidgetSet, self).set_data(player, target)
+
+    def __continue_exploration(self):
+        if self._target.is_defeated:
+            self.__tutorial_won()
+        else:
+            self.__continue_exploration_callback()
 
 
 class ShopWidgetSet(MyWidgetSet):

@@ -183,7 +183,6 @@ class SelectionWidget(Widget):
     def clear_text(self):
         self.__choices = []
         self.__callbacks = []
-        self.__index = 0
 
     def set_data(self, data: "tuple of list of str and list of SelectionCallbacks") -> None:
         self.render_reset()
@@ -214,6 +213,7 @@ class SelectionWidget(Widget):
 
     def render_reset(self) -> None:
         self.widget.set_title("")
+        self.__index = 0
         if self.__is_second:
             self.clear_text()
 

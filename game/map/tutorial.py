@@ -259,20 +259,22 @@ class Tutorial:
                   "stuff left to buy.")
             self.__showed_shop_tutorial = True
 
-    def boss_fight(self, player: PlayerActor, enemy: EnemyActor, direction: Direction):
-        self.__fight(player, enemy, direction)
+    def boss_fight(self, player: PlayerActor, boss: BossActor, direction: Direction):
+        self.__boss_fight(player, boss, direction)
         bell = CC.highlight_word("Bell, the Master of Entanglement")
         both0 = CC.highlight_word("both 0")
         both1 = CC.highlight_word("both 1")
         Popup("Tutorial: Boss Fight",
               f"Now it's getting serious! You are fighting against {bell}. For the State you need to reach to defeat "
-              f"him your two Qubits will always have to be the same: either {both0} or {both1}\n\n"
+              f"him your two Qubits will always have to be the same: either {both0} or {both1}.\n\n"
               "Good luck!")
 
     def build_tutorial_map(self, player: tiles.Player, start_fight_callback: "void(Player, Enemy, Direction)",
+                           start_boss_fight_callback: "void(Player, Boss, Direction)",
                            open_riddle_callback: "void(Player, Riddle)",
                            visit_shop_callback: "void(Player, list of ShopItems") -> "Room[][], Coordinate":
         self.__fight = start_fight_callback
+        self.__boss_fight = start_boss_fight_callback
         self.__riddle = open_riddle_callback
         self.__shop = visit_shop_callback
         w = [CC.highlight_object("Gate"), CC.highlight_object("Circuit"), CC.highlight_word("locked"),
@@ -333,7 +335,7 @@ class Tutorial:
         tiles.EntangledDoor.entangle(entangled_east, entangled_south)
         rooms[1][3] = WildRoom(factory, chance=0.7, north_door=True, west_door=True, east_door=entangled_east,
                                south_door=entangled_south)
-        rooms[0][3] = BossRoom(tiles.Door(Direction.South), tiles.Boss(TutorialBoss(), start_fight_callback))
+        rooms[0][3] = BossRoom(tiles.Door(Direction.South), tiles.Boss(TutorialBoss(), self.boss_fight))
         rooms[1][4] = WildRoom(factory, chance=0.5, west_door=True)
         rooms[2][3] = WildRoom(factory, chance=0.6, north_door=True)
 
