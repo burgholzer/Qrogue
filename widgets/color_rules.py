@@ -214,7 +214,8 @@ class ColorRules:
         stv_widget.widget.add_text_color_rule("~.*~", py_cui.colors.CYAN_ON_BLACK, 'contains', match_type='regex')
 
         if diff_rules:
-            stv_widget.widget.add_text_color_rule("0j", py_cui.colors.BLACK_ON_GREEN, "startswith", match_type="regex")
+            stv_widget.widget.add_text_color_rule("-?0j?", py_cui.colors.GREEN_ON_BLACK, "startswith",
+                                                  match_type="regex")
 
     @staticmethod
     def apply_selection_rules(sel_widget: SelectionWidget) -> None:
@@ -225,7 +226,7 @@ class ColorRules:
     @staticmethod
     def apply_circuit_rules(circuit_widget: CircuitWidget) -> None:
         regex = "(\{.*?\}|\|.*?\>|\<.*?\|)"
-        circuit_widget.widget.add_text_color_rule(regex, py_cui.colors.BLACK_ON_WHITE, 'contains', match_type='regex')
+        circuit_widget.widget.add_text_color_rule(regex, py_cui.colors.CYAN_ON_BLACK, 'contains', match_type='regex')
         #circuit_widget.widget.add_text_color_rule("\|.*?\>", py_cui.colors.BLACK_ON_YELLOW,
         #                                      'contains', match_type='regex')
         #circuit_widget.widget.add_text_color_rule("\<.*?\|", py_cui.colors.BLACK_ON_YELLOW,

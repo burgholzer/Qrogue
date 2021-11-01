@@ -196,7 +196,7 @@ class ReachTargetWidgetSet(MyWidgetSet, ABC):
         self._target = None
 
     def init_widgets(self) -> None:
-        hud = self.add_block_label('HUD', 0, 0, row_span=1, column_span=self.__NUM_OF_COLS, center=True)
+        hud = self.add_block_label('HUD', 0, 0, row_span=1, column_span=self.__NUM_OF_COLS, center=False)
         hud.toggle_border()
         self.__hud = HudWidget(hud)
 
@@ -208,7 +208,7 @@ class ReachTargetWidgetSet(MyWidgetSet, ABC):
         stv = self.add_block_label('Target StV', stv_row, 6, row_span=3, column_span=3, center=True)
         self.__stv_target = StateVectorWidget(stv, "Target State")
 
-        circuit = self.add_block_label('Circuit', 5, 0, row_span=2, column_span=self.__NUM_OF_COLS, center=True)
+        circuit = self.add_block_label('Circuit', 6, 0, row_span=1, column_span=self.__NUM_OF_COLS, center=True)
         self.__circuit = CircuitWidget(circuit)
 
         choices = self.add_block_label('Choices', 7, 0, row_span=2, column_span=3, center=True)
@@ -436,7 +436,7 @@ class ShopWidgetSet(MyWidgetSet):
         self.__items = None
 
     def init_widgets(self) -> None:
-        hud = self.add_block_label("HUD", 0, 0, row_span=1, column_span=self.__NUM_OF_COLS)
+        hud = self.add_block_label("HUD", 0, 0, row_span=1, column_span=self.__NUM_OF_COLS, center=False)
         self.__hud = HudWidget(hud)
 
         inv_width = 4

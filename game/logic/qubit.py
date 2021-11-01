@@ -117,7 +117,7 @@ class EmptyQubitSet(QubitSet):
 
 class DummyQubitSet(QubitSet):
     __SIZE = 2
-    __HP_0 = 5
+    __HP_0 = 10
     __HP_1 = 4
 
     def __init__(self):

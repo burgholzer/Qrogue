@@ -141,7 +141,7 @@ class QrogueCUI(py_cui.PyCUI):
     def __won_tutorial(self) -> None:
         self.switch_to_menu(None)
         bell = ColorConfig.highlight_word("Bell")
-        Popup.message("You won!", f"Congratulations, you defeated {bell} and won the Tutorial!")
+        Popup.message("You won!", f"Congratulations, you defeated {bell} and successfully played the Tutorial!")
 
     def __start_fight(self, player: PlayerActor, enemy: Enemy, direction: Direction) -> None:
         self.__state_machine.change_state(State.Fight, (enemy, player))
