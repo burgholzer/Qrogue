@@ -138,6 +138,27 @@ class CustomWildRoom(Room):
         return "cWR"
 
 
+class CustomWildRoom2(WildRoom):
+    def __init__(self, factory: EnemyFactory, chance: float = 0.4, east_door: Door = None,
+                 south_door: Door = None, west_door: bool = False, north_door: bool = False):
+        super().__init__(factory, chance, east_door, south_door, west_door, north_door)
+        special = CC.highlight_word("special")
+        doors = CC.highlight_object("Doors")
+        entangled = CC.highlight_word("entangled")
+        enemy = CC.highlight_object("Enemy")
+        groups = CC.highlight_word("groups")
+        opposite = CC.highlight_word("opposite")
+        open = CC.highlight_word("open")
+        closed = CC.highlight_word("closed forever")
+        boss = CC.highlight_object("Boss")
+        text = f"In this Room are two {doors} with a {special} property: they are {entangled}. You already heard " \
+               f"about this phenomenon when you were introduced to {enemy} {groups}. But instead of behaving equally " \
+               f"the {doors} behave the exact {opposite} - if you {open} one of them the other will be {closed}. " \
+               f"But in this Dungeon it is not obligatory to go into one of the rooms behind these {doors}...\n" \
+               f"...because the {boss} is already waiting for you in the North."
+        self._set_tile(tiles.Message(Popup("Tutorial: Entangled Doors", text)), 0, Room.MID_Y)
+
+
 class TutorialGateRoom(GateRoom):
     def __init__(self, tutorial_tile):
         tile_dic = {
@@ -197,25 +218,38 @@ class Tutorial:
         self.__fight(player, enemy, direction)
         w = [CC.highlight_word("Fight"), CC.highlight_word("1)"), CC.highlight_object("StateVectors"),
              CC.highlight_word("Difference"), CC.highlight_word("zero"), CC.highlight_word("win"),
-             CC.highlight_word("2)"), CC.highlight_object("Circuit"), CC.highlight_object("Qubits"), "3)", "4)", "5)"]
+             CC.highlight_word("2)"), CC.highlight_object("Circuit"), CC.highlight_object("Qubits"),
+             CC.highlight_object("Gates"), CC.highlight_object("State"), CC.highlight_word("3)"),
+             CC.highlight_word("action"), CC.highlight_word("Adapt"), CC.highlight_word("Commit"),
+             CC.highlight_word("not zero"), CC.highlight_word("1 HP"), CC.highlight_word("Items"),
+             CC.highlight_word("easier"), CC.highlight_word("Flee"), CC.highlight_word("chance based"),
+             CC.highlight_word("cannot flee"), CC.highlight_word("4)"), CC.highlight_word("depends"),
+             CC.highlight_word("5)"), CC.highlight_word("navigate"), CC.highlight_word("use"),
+             CC.highlight_word("Reward")]
+        enemy = CC.highlight_object("Enemy")
+        removed = CC.highlight_word("removed")
         if not self.__showed_fight_tutorial:
-            Popup(f"Tutorial: {w[0]}",
+            Popup("Tutorial: Fight",
                   f"{w[1]} In the middle of the screen you see 3 {w[2]}. The left one (Current State) can be adapted by "
-                  "you while the right one (Target State) is constant and depending on the Enemy you fight. Between "
+                  f"you while the right one (Target State) is constant and depending on the {enemy} you fight. Between "
                   f"those two you also see the {w[3]}: If it gets {w[4]} you {w[5]} the Fight!\n"
-                  f"{w[6]} Underneath the StateVectors is your {w[7]}. Currently you have 2 {w[8]} (q0, q1) and no "
-                  "Gates applied to them. The before mentioned Current State reflects the output (out) of your Circuit.\n"
-                  "3) On the left you can choose the action you want to take: \n"
-                  "Adapt - Change your Circuit with the Gates available to you (selection to the right)\n"
-                  "Commit - Commit your changes and update your StateVector. If Difference is not zero you lose 1 HP.\n"
-                  "Items - Use one of your Items to make the Fight easier (you don't have any Items yet!)\n"
-                  "Flee - Try to flee from the Fight. This is chance based and you lose 1 HP if you fail to flee (Note:"
-                  " for Tutorial purposes you cannot flee in this room!)\n"
-                  "4) The bottom right depends on the action you chose on the left side. E.g. you can choose the Gates "
-                  "you want to use in your Circuit.\n"
-                  "5) Use your arrow keys to navigate between your available options at the bottom and press SPACE to "
-                  "use one. Again, your goal now is to reach the Target State of the Enemy. If you succeed, you "
-                  "will get a reward!")
+                  f"{w[6]} Underneath the StateVectors is your {w[7]}. Currently you have 2 {w[8]} (q0, q1) and 0 out "
+                  f"of 3 "
+                  f"{w[9]} applied to them. The before mentioned Current {w[10]} reflects the output (out) of your "
+                  f"{w[7]}.\n"
+                  f"{w[11]} On the left you can choose the {w[12]} you want to take: \n"
+                  f"{w[13]} - Change your {w[7]} with the {w[9]} available to you (selection to the right). After "
+                  f"selecting a {w[9]} you are asked on which {w[8]} you want to place it. If you select an already "
+                  f"used one it will be {removed} from your Circuit instead.\n"
+                  f"{w[14]} - Commit your changes and update your {w[10]}. If Difference is {w[15]} you lose {w[16]}.\n"
+                  f"{w[17]} - Use one of your Items to make the Fight {w[18]} (you don't have any Items yet!)\n"
+                  f"{w[19]} - Try to flee from the Fight. This is {w[20]} and you lose {w[16]} if you fail to flee "
+                  f"(Note: for Tutorial purposes you {w[21]} in this Room!)\n"
+                  f"{w[22]} The bottom right {w[23]} on the action you chose on the left side. E.g. you can choose "
+                  f"the {w[9]} you want to use in your {w[7]}.\n"
+                  f"{w[24]} Use your {self.__ARROW_KEYS} to {w[25]} between your available options at the bottom and "
+                  f"press {self.__SPACE} to {w[26]} the selected one. Again, your goal now is to reach the Target "
+                  f"{w[10]} of the {enemy}. If you succeed, you will get a {w[27]}!")
             self.__showed_fight_tutorial = True
 
     def riddle(self, player: PlayerActor, riddle: Riddle):
@@ -233,9 +267,9 @@ class Tutorial:
                   f"{riddles} are very similar to {fights}. You have a {state} you need to reach (Difference is zero) "
                   f"by adapting your {circuit}. The main difference is that you {hp} if you fail but instead an "
                   f"{attempt} for solving the Riddle. When you have no more Attempts the Riddle {vanishes} together "
-                  "with its reward - which is usually much better than the rewards from Fights. Also fleeing (or in "
-                  f"this case {give_up}) will always succeed but obviously cost you your current Attempt which is why "
-                  "you are notified if you have no more Attempts left.")
+                  "with its reward - which is usually much better than the ones from Fights. Also fleeing (or in "
+                  f"this case {give_up}) will always succeed but obviously cost you your current {attempt} which is "
+                  f"why you are notified if you have no more Attempts left.")
             self.__showed_riddle_tutorial = True
 
     def shop(self, player: PlayerActor, items: "list of ShopItems"):
@@ -261,12 +295,17 @@ class Tutorial:
 
     def boss_fight(self, player: PlayerActor, boss: BossActor, direction: Direction):
         self.__boss_fight(player, boss, direction)
+        serious = CC.highlight_word("serious")
         bell = CC.highlight_word("Bell, the Master of Entanglement")
+        state = CC.highlight_object("State")
+        qubits = CC.highlight_object("Qubits")
         both0 = CC.highlight_word("both 0")
         both1 = CC.highlight_word("both 1")
+        entanglement = CC.highlight_word("Entanglement")
         Popup("Tutorial: Boss Fight",
-              f"Now it's getting serious! You are fighting against {bell}. For the State you need to reach to defeat "
-              f"him your two Qubits will always have to be the same: either {both0} or {both1}.\n\n"
+              f"Now it's getting {serious}! You are fighting against {bell}. For the {state} you need to reach to "
+              f"defeat Bell your two {qubits} will always have to be the same: either {both0} or {both1}.\n"
+              f"This is called {entanglement}.\n\n"
               "Good luck!")
 
     def build_tutorial_map(self, player: tiles.Player, start_fight_callback: "void(Player, Enemy, Direction)",
@@ -291,7 +330,8 @@ class Tutorial:
             f"Beware! In the next room are some wild {w[3]}. Oh, but maybe one of them has a "
             f"{w[4]}?",
 
-            f"Here they are! The {w[5]} indicates the {w[6]} they belong to. In a group their behaviour is {w[7]}: \n"
+            f"The numbers are {w[3]}! The {w[5]} indicates the {w[6]} they belong to. In a group their behaviour is "
+            f"{w[7]}: \n"
             f"If one member runs away when you challenge them, {w[8]}. But if they decide to fight you...\n"
             f"Well, luckily the {w[9]}. They are in {w[10]} and only care about themselves.\n"
             f"Now go ahead and challenge an {enemy} by {w[11]}.",
@@ -333,7 +373,7 @@ class Tutorial:
         entangled_east = tiles.EntangledDoor(Direction.East)
         entangled_south = tiles.EntangledDoor(Direction.South)
         tiles.EntangledDoor.entangle(entangled_east, entangled_south)
-        rooms[1][3] = WildRoom(factory, chance=0.7, north_door=True, west_door=True, east_door=entangled_east,
+        rooms[1][3] = CustomWildRoom2(factory, chance=0.7, north_door=True, west_door=True, east_door=entangled_east,
                                south_door=entangled_south)
         rooms[0][3] = BossRoom(tiles.Door(Direction.South), tiles.Boss(TutorialBoss(), self.boss_fight))
         rooms[1][4] = WildRoom(factory, chance=0.5, west_door=True)
