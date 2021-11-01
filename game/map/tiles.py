@@ -12,6 +12,7 @@ from game.map.navigation import Direction
 from util.logger import Logger
 from util.my_random import RandomManager
 from widgets.my_popups import Popup, CommonPopups
+from game.collectibles.collectible import type_str
 
 
 class TileCode(Enum):
@@ -276,7 +277,9 @@ class Collectible(WalkTriggerTile):
         if self.__active:
             player = player
             collectible = self.__factory.produce()
-            Popup.message(collectible.name(), collectible.description())
+            name = collectible.name() + type_str(collectible.type)
+            desc = collectible.description()
+            Popup.message(collectible.name(), f"You picked up a {name}.\n{desc}")
             player.give_collectible(collectible)
             self.__active = False
 

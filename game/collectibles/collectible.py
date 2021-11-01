@@ -11,6 +11,13 @@ class CollectibleType(Enum):
     Key = 6
 
 
+def type_str(type: CollectibleType) -> str:
+    if type is CollectibleType.Gate:
+        return " Gate"
+    else:
+        return ""
+
+
 class Collectible(ABC):
     def __init__(self, type: CollectibleType):
         self.__type = type
