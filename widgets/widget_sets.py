@@ -84,6 +84,7 @@ class MenuWidgetSet(MyWidgetSet):
             ["PLAY", "TUTORIAL", "OPTIONS", "EXIT"],
             [self.__play, self.__tutorial, self.__options, self.__exit]
         ))
+        ColorRules.apply_selection_rules(self.__selection)
 
     def get_widget_list(self) -> "list of Widgets":
         return [
@@ -446,6 +447,9 @@ class ShopWidgetSet(MyWidgetSet):
         self.__details = SimpleWidget(details)
         buy = self.add_block_label("Buy", 4, inv_width, row_span=1, column_span=self.__NUM_OF_COLS - inv_width)
         self.__buy = SelectionWidget(buy, is_second=True)
+
+        ColorRules.apply_selection_rules(self.__inventory)
+        ColorRules.apply_selection_rules(self.__buy)
 
     @property
     def inventory(self) -> SelectionWidget:
