@@ -161,6 +161,45 @@ class StateVectorWidget(Widget):
         self.widget.set_title("")
 
 
+class QubitInfoWidget(Widget):
+    def __init__(self, widget: BlockLabel, left_aligned: bool):
+        super(QubitInfoWidget, self).__init__(widget)
+        self.__left_aligned = left_aligned
+        self.__text = ""
+
+    def set_data(self, num_of_qubits: int) -> None:
+        head = ""
+        body = ""
+        if self.__left_aligned:
+            head_range = range(num_of_qubits-1, -1, -1)
+        else:
+            head_range = range(num_of_qubits)
+
+        for i in head_range:
+            head += f" q{i} "
+        head = "~" + head[1:-1] + "~"
+
+        for i in range(2 ** num_of_qubits):
+            bin_num = bin(i)[2:]    # get rid of the '0b' at the beginning of the binary representation
+            bin_num = bin_num.rjust(num_of_qubits, '0')     # add 0s to the beginning (left) by justifying the text to
+                                                            # the right
+            row = "   ".join(bin_num)  # separate the digits in the string with spaces
+            if self.__left_aligned:
+                body += row[::-1] + " \n"   # [::-1] reverses the list
+            else:
+                body += row + "\n"
+
+        self.__text = head + "\n" + body
+        self.widget.set_title(self.__text)
+
+    def render(self) -> None:
+        #self.widget.set_title(self.__text)
+        pass
+
+    def render_reset(self) -> None:
+        self.widget.set_title("")
+
+
 class SelectionWidget(Widget):
     __COLUMN_SEPARATOR = "   "
 

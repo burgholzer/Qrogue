@@ -18,7 +18,8 @@ from util.config import MapConfig
 from util.my_random import RandomManager
 from widgets.color_rules import ColorRules
 from widgets.my_popups import Popup, CommonPopups
-from widgets.my_widgets import SelectionWidget, StateVectorWidget, CircuitWidget, MapWidget, SimpleWidget, HudWidget
+from widgets.my_widgets import SelectionWidget, StateVectorWidget, CircuitWidget, MapWidget, SimpleWidget, HudWidget, \
+    QubitInfoWidget
 
 
 class MyWidgetSet(WidgetSet, ABC):
@@ -201,12 +202,19 @@ class ReachTargetWidgetSet(MyWidgetSet, ABC):
         self.__hud = HudWidget(hud)
 
         stv_row = 1
-        stv = self.add_block_label('Player StV', stv_row, 0, row_span=4, column_span=3, center=True)
+        row_span = 3
+        qi_player = self.add_block_label('Qubit Info', stv_row, 0, row_span=row_span, column_span=1, center=True)
+        self.__qi_player = QubitInfoWidget(qi_player, left_aligned=False)
+        stv = self.add_block_label('Player StV', stv_row, 1, row_span=row_span, column_span=2, center=True)
         self.__stv_player = StateVectorWidget(stv, "Current State")
-        stv = self.add_block_label('Diff StV', stv_row, 3, row_span=3, column_span=3, center=True)
+
+        stv = self.add_block_label('Diff StV', stv_row, 3, row_span=row_span, column_span=3, center=True)
         self.__stv_diff = StateVectorWidget(stv, "Difference")
-        stv = self.add_block_label('Target StV', stv_row, 6, row_span=3, column_span=3, center=True)
+
+        stv = self.add_block_label('Target StV', stv_row, 6, row_span=row_span, column_span=2, center=True)
         self.__stv_target = StateVectorWidget(stv, "Target State")
+        qi_target = self.add_block_label('Qubit Info', stv_row, 8, row_span=row_span, column_span=1, center=True)
+        self.__qi_target = QubitInfoWidget(qi_target, left_aligned=True)
 
         circuit = self.add_block_label('Circuit', 6, 0, row_span=1, column_span=self.__NUM_OF_COLS, center=True)
         self.__circuit = CircuitWidget(circuit)
@@ -223,9 +231,11 @@ class ReachTargetWidgetSet(MyWidgetSet, ABC):
         details.toggle_border()
         self._details = SelectionWidget(details, columns=self.__DETAILS_COLUMNS, is_second=True)
 
+        ColorRules.apply_qi_rules(self.__qi_player)
         ColorRules.apply_stv_rules(self.__stv_player)
         ColorRules.apply_stv_rules(self.__stv_diff, diff_rules=True)
         ColorRules.apply_stv_rules(self.__stv_target)
+        ColorRules.apply_qi_rules(self.__qi_target)
         ColorRules.apply_circuit_rules(self.__circuit)
         ColorRules.apply_selection_rules(self._choices)
         ColorRules.apply_selection_rules(self._details)
@@ -242,16 +252,20 @@ class ReachTargetWidgetSet(MyWidgetSet, ABC):
 
         p_stv = player.state_vector
         t_stv = target.statevector
+        self.__qi_player.set_data(p_stv.num_of_qubits)
         self.__stv_player.set_data(p_stv)
         self.__stv_diff.set_data(p_stv.get_diff(t_stv))
         self.__stv_target.set_data(t_stv)
+        self.__qi_target.set_data(p_stv.num_of_qubits)
 
     def get_widget_list(self) -> "list of Widgets":
         return [
             self.__hud,
+            self.__qi_player,
             self.__stv_player,
             self.__stv_diff,
             self.__stv_target,
+            self.__qi_target,
             self.__circuit,
             self._choices,
             self._details

@@ -2,8 +2,7 @@ import py_cui.colors
 
 from game.map.tiles import TileCode
 from util.config import PathConfig, ColorConfig
-from widgets.my_widgets import MapWidget, StateVectorWidget, SelectionWidget, CircuitWidget
-
+from widgets.my_widgets import MapWidget, StateVectorWidget, SelectionWidget, CircuitWidget, QubitInfoWidget
 
 __color_manager = {
     TileCode.Invalid: py_cui.RED_ON_BLUE,
@@ -216,6 +215,10 @@ class ColorRules:
         if diff_rules:
             stv_widget.widget.add_text_color_rule("-?0j?", py_cui.colors.GREEN_ON_BLACK, "startswith",
                                                   match_type="regex")
+
+    @staticmethod
+    def apply_qi_rules(qi_widget: QubitInfoWidget) -> None:
+        qi_widget.widget.add_text_color_rule("~.*~", py_cui.colors.CYAN_ON_BLACK, 'contains', match_type='regex')
 
     @staticmethod
     def apply_selection_rules(sel_widget: SelectionWidget) -> None:
