@@ -187,9 +187,9 @@ class QubitInfoWidget(Widget):
                                                             # the right
             row = "   ".join(bin_num)  # separate the digits in the string with spaces
             if self.__left_aligned:
-                body += row[::-1] + " \n"   # [::-1] reverses the list
+                body += row + " \n"
             else:
-                body += row + "\n"
+                body += row[::-1] + "\n"    # [::-1] reverses the list so q0 is on the left
 
         self.__text = head + "\n" + body
         self.widget.set_title(self.__text)
