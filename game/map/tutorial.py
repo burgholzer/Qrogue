@@ -3,7 +3,7 @@ from game.actors.enemy import Enemy as EnemyActor
 from game.actors.boss import Boss as BossActor
 from game.actors.player import Player as PlayerActor, PlayerAttributes, Backpack
 from game.actors.riddle import Riddle
-from game.callbacks import OnWalkCallback
+from game.callbacks import OnWalkCallback, CallbackPack
 from game.collectibles.collectible import ShopItem
 from game.collectibles.pickup import Coin, Key
 from game.logic.instruction import CXGate, HGate, XGate
@@ -308,14 +308,11 @@ class Tutorial:
               f"This is called {entanglement}.\n\n"
               "Good luck!")
 
-    def build_tutorial_map(self, player: tiles.Player, start_fight_callback: "void(Player, Enemy, Direction)",
-                           start_boss_fight_callback: "void(Player, Boss, Direction)",
-                           open_riddle_callback: "void(Player, Riddle)",
-                           visit_shop_callback: "void(Player, list of ShopItems") -> "Room[][], Coordinate":
-        self.__fight = start_fight_callback
-        self.__boss_fight = start_boss_fight_callback
-        self.__riddle = open_riddle_callback
-        self.__shop = visit_shop_callback
+    def build_tutorial_map(self, player: tiles.Player, cbp: CallbackPack) -> "Room[][], Coordinate":
+        self.__fight = cbp.start_fight
+        self.__boss_fight = cbp.start_boss_fight
+        self.__riddle = cbp.open_riddle
+        self.__shop = cbp.visit_shop
         w = [CC.highlight_object("Gate"), CC.highlight_object("Circuit"), CC.highlight_word("locked"),
              CC.highlight_object("Enemies"), CC.highlight_object("Key"), CC.highlight_word("number"),
              CC.highlight_word("group"), CC.highlight_word("entangled"), CC.highlight_word("all others will too"),
@@ -359,7 +356,7 @@ class Tutorial:
         spawn_y = 1
         width = 5
         height = 5
-        factory = EnemyFactory(start_fight_callback, DummyFightDifficulty())
+        factory = EnemyFactory(cbp.start_fight, DummyFightDifficulty())
 
         rooms = [[None for x in range(width)] for y in range(height)]
         rooms[spawn_y][spawn_x] = spawn

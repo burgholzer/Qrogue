@@ -6,10 +6,11 @@ from game.actors.boss import Boss
 from game.actors.enemy import Enemy
 from game.actors.player import Player as PlayerActor
 from game.actors.riddle import Riddle
+from game.callbacks import CallbackPack
 from game.controls import Controls, Pausing
 from game.map.map import Map
 from game.map.navigation import Direction
-from util.config import PathConfig, ColorConfig
+from util.config import PathConfig, ColorConfig, CheatConfig
 from util.logger import Logger
 from widgets.color_rules import MultiColorRenderer
 from widgets.my_popups import Popup, MultilinePopup
@@ -22,14 +23,16 @@ class QrogueCUI(py_cui.PyCUI):
         super().__init__(width, height)
         Logger.instance().set_popup(self.show_message_popup, self.show_error_popup)
         Popup.update_popup_functions(self.__show_popup)
+        CheatConfig.set_popup_callback(self.__show_cheat_popup)
 
         self.__state_machine = StateMachine(self)
         self.__seed = seed
         self.__controls = controls
         self.__focused_widget = None
 
-        self.__menu = MenuWidgetSet(Logger.instance(), self.__start_gameplay, self.__start_fight,
-                                    self.__start_boss_fight, self.__open_riddle, self.__visit_shop)
+        cbp = CallbackPack(self.__start_gameplay, self.__start_fight, self.__start_boss_fight, self.__open_riddle,
+                           self.__visit_shop)
+        self.__menu = MenuWidgetSet(Logger.instance(), cbp)
         self.__pause = PauseMenuWidgetSet(Logger.instance(), self.__general_continue, self.switch_to_menu)
         self.__explore = ExploreWidgetSet(Logger.instance())
         self.__fight = FightWidgetSet(Logger.instance(), self.__continue_explore, self.__end_of_gameplay)
@@ -58,6 +61,8 @@ class QrogueCUI(py_cui.PyCUI):
         self.__explore.get_main_widget().add_key_command(self.__controls.print_screen, self.print_screen)
         self.__fight.get_main_widget().add_key_command(self.__controls.print_screen, self.print_screen)
         self.__boss_fight.get_main_widget().add_key_command(self.__controls.print_screen, self.print_screen)
+
+        self.__pause.get_main_widget().add_key_command(self.__controls.cheat, CheatConfig.cheat_input)
 
         # all selections
         selection_widgets = [
@@ -127,6 +132,17 @@ class QrogueCUI(py_cui.PyCUI):
     def __show_popup(self, title: str, text: str, color: int) -> None:
         self.__focused_widget = self.get_selected_widget()
         self._popup = MultilinePopup(self, title, text, color, self._renderer, self._logger, self.__controls)
+
+    def __show_cheat_popup(self, title: str, color: int) -> None:
+        self.__focused_widget = self.get_selected_widget()
+        self._popup = py_cui.popups.TextBoxPopup(self, title, color, self.__use_cheat, self._renderer, False,
+                                                 self._logger)
+
+    def __use_cheat(self, input: str):
+        if CheatConfig.use_cheat(input):
+            Popup.message("Cheats", f"Successfully used the Cheat \"{input}\"")
+        else:
+            Popup.message("Cheats", "This is not a valid Cheat!")
 
     def close_popup(self) -> None:
         super(QrogueCUI, self).close_popup()

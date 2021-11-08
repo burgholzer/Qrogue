@@ -2,6 +2,7 @@
 import game.map.tiles as tiles
 from game.actors.factory import EnemyFactory, DummyFightDifficulty
 from game.actors.player import Player as PlayerActor
+from game.callbacks import CallbackPack
 from game.map.navigation import Coordinate, Direction
 from game.map.rooms import Room
 from game.map.tutorial import Tutorial, TutorialPlayer
@@ -14,17 +15,10 @@ class Map:
     WIDTH = 5
     HEIGHT = 5
 
-    def __init__(self, seed: int, width: int, height: int, player: PlayerActor,
-                 start_fight_callback: "void(Player, Enemy, Direction)",
-                 start_boss_fight_callback: "void(Player, Boss, Direction)",
-                 open_riddle_callback: "void(Player, Riddle)",
-                 visit_shop_callback: "void(Player, list of ShopItems)"):
+    def __init__(self, seed: int, width: int, height: int, player: PlayerActor, cbp: CallbackPack):
         self.__player = tiles.Player(player)
-        self.__start_fight_callback = start_fight_callback
-        self.__start_boss_fight_callback = start_boss_fight_callback
-        self.__open_riddle_callback = open_riddle_callback
-        self.__visit_shop_callback = visit_shop_callback
-        self.__enemy_factory = EnemyFactory(self.__start_fight_callback, DummyFightDifficulty())
+        self.__cbp = cbp
+        self.__enemy_factory = EnemyFactory(cbp.start_fight, DummyFightDifficulty())
 
         if seed == MapConfig.tutorial_seed():
             self.__build_tutorial_map()
@@ -44,10 +38,7 @@ class Map:
 
     def __build_tutorial_map(self):
         self.__player = tiles.Player(TutorialPlayer())
-        self.__rooms, spawn_point = Tutorial().build_tutorial_map(self.__player, self.__start_fight_callback,
-                                                                  self.__start_boss_fight_callback,
-                                                                  self.__open_riddle_callback,
-                                                                  self.__visit_shop_callback)
+        self.__rooms, spawn_point = Tutorial().build_tutorial_map(self.__player, self.__cbp)
         self.__cur_room = self.__rooms[spawn_point.y][spawn_point.x]
         self.__player_pos = Map.__calculate_pos(spawn_point, Coordinate(Room.MID_X, Room.MID_Y))
         self.__cur_room.enter()
