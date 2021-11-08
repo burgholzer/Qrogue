@@ -1,6 +1,8 @@
 
 from py_cui.keys import *
 
+from game.actors.player import Player
+
 
 class Controls:
     def __init__(self):
@@ -78,3 +80,28 @@ class Controls:
     @property
     def print_screen(self) -> int:
         return self.__print_screen
+
+
+class Pausing:
+    __instance = None
+
+    @staticmethod
+    def instance() -> "Pausing":
+        if Pausing.__instance is None:
+            raise Exception("This singleton has not been initialized yet!")
+        return Pausing.__instance
+
+    @staticmethod
+    def pause():
+        if Pausing.__instance is not None:
+            self = Pausing.__instance
+            self.__callback(self.__player)
+
+    def __init__(self, player: Player, callback: "()"):
+        self.__player = player
+        self.__callback = callback
+        Pausing.__instance = self
+
+    @staticmethod
+    def key() -> int:
+        return KEY_P_LOWER

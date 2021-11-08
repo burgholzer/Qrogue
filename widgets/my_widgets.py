@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from py_cui.widgets import BlockLabel
 
 from game.actors.player import Player as PlayerActor
+from game.controls import Pausing
 from game.logic.instruction import Instruction
 from game.logic.qubit import StateVector
 from game.map.map import Map
@@ -13,6 +14,7 @@ from widgets.renderer import TileRenderer
 class Widget(ABC):
     def __init__(self, widget: BlockLabel):
         self.__widget = widget
+        self.__widget.add_key_command(Pausing.key(), Pausing.pause)
 
     @property
     def widget(self) -> BlockLabel:

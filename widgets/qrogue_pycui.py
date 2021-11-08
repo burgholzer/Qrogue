@@ -6,7 +6,7 @@ from game.actors.boss import Boss
 from game.actors.enemy import Enemy
 from game.actors.player import Player as PlayerActor
 from game.actors.riddle import Riddle
-from game.controls import Controls
+from game.controls import Controls, Pausing
 from game.map.map import Map
 from game.map.navigation import Direction
 from util.config import PathConfig, ColorConfig
@@ -14,7 +14,7 @@ from util.logger import Logger
 from widgets.color_rules import MultiColorRenderer
 from widgets.my_popups import Popup, MultilinePopup
 from widgets.widget_sets import ExploreWidgetSet, FightWidgetSet, MyWidgetSet, MenuWidgetSet, ShopWidgetSet, \
-    RiddleWidgetSet, BossFightWidgetSet
+    RiddleWidgetSet, BossFightWidgetSet, PauseMenuWidgetSet
 
 
 class QrogueCUI(py_cui.PyCUI):
@@ -30,6 +30,7 @@ class QrogueCUI(py_cui.PyCUI):
 
         self.__menu = MenuWidgetSet(Logger.instance(), self.__start_gameplay, self.__start_fight,
                                     self.__start_boss_fight, self.__open_riddle, self.__visit_shop)
+        self.__pause = PauseMenuWidgetSet(Logger.instance(), self.__general_continue, self.switch_to_menu)
         self.__explore = ExploreWidgetSet(Logger.instance())
         self.__fight = FightWidgetSet(Logger.instance(), self.__continue_explore, self.__end_of_gameplay)
         self.__boss_fight = BossFightWidgetSet(Logger.instance(), self.__continue_explore, self.__end_of_gameplay,
@@ -65,6 +66,7 @@ class QrogueCUI(py_cui.PyCUI):
             self.__boss_fight.choices, self.__boss_fight.details,
             self.__shop.inventory, self.__shop.buy,
             self.__riddle.choices, self.__riddle.details,
+            self.__pause.choices, self.__pause.details,
         ]
         for my_widget in selection_widgets:
             widget = my_widget.widget
@@ -75,6 +77,10 @@ class QrogueCUI(py_cui.PyCUI):
 
         # menu
         self.__menu.selection.widget.add_key_command(self.__controls.action, self.__use_menu_selection)
+
+        # pause
+        self.__pause.choices.widget.add_key_command(self.__controls.action, self.__pause_choices)
+        self.__pause.details.widget.add_key_command(self.__controls.action, self.__pause_details)
 
         # explore
         w = self.__explore.get_main_widget()
@@ -129,10 +135,14 @@ class QrogueCUI(py_cui.PyCUI):
     def __dummy(self) -> None:
         pass
 
-    def switch_to_menu(self, data) -> None:
+    def __general_continue(self):
+        self.__state_machine.change_state(self.__state_machine.prev_state, None)
+
+    def switch_to_menu(self, data=None) -> None:
         self.apply_widget_set(self.__menu)
 
     def __start_gameplay(self, map: Map) -> None:
+        Pausing(map.player.player, self.__pause_game)
         self.__state_machine.change_state(State.Explore, map)
 
     def __end_of_gameplay(self) -> None:
@@ -149,6 +159,15 @@ class QrogueCUI(py_cui.PyCUI):
     def __start_boss_fight(self, player: PlayerActor, boss: Boss, direction: Direction):
         self.__state_machine.change_state(State.BossFight, (player, boss))
 
+    def switch_to_pause(self, data: PlayerActor) -> None:
+        if data is not None:
+            player = data
+            self.__pause.set_data(player)
+        self.apply_widget_set(self.__pause)
+
+    def __pause_game(self, player: PlayerActor) -> None:
+        self.__state_machine.change_state(State.Pause, player)
+
     def switch_to_explore(self, data) -> None:
         if data is not None:
             map = data
@@ -159,33 +178,37 @@ class QrogueCUI(py_cui.PyCUI):
         self.__state_machine.change_state(State.Explore, None)
 
     def switch_to_fight(self, data) -> None:
-        enemy = data[0]
-        player = data[1]
-        self.__fight.set_data(player, enemy)
+        if data is not None:
+            enemy = data[0]
+            player = data[1]
+            self.__fight.set_data(player, enemy)
         self.apply_widget_set(self.__fight)
 
     def switch_to_boss_fight(self, data) -> None:
-        player = data[0]
-        boss = data[1]
-        self.__boss_fight.set_data(player, boss)
+        if data is not None:
+            player = data[0]
+            boss = data[1]
+            self.__boss_fight.set_data(player, boss)
         self.apply_widget_set(self.__boss_fight)
 
     def __open_riddle(self, player: PlayerActor, riddle: Riddle):
         self.__state_machine.change_state(State.Riddle, (player, riddle))
 
     def switch_to_riddle(self, data) -> None:
-        player = data[0]
-        riddle = data[1]
-        self.__riddle.set_data(player, riddle)
+        if data is not None:
+            player = data[0]
+            riddle = data[1]
+            self.__riddle.set_data(player, riddle)
         self.apply_widget_set(self.__riddle)
 
     def __visit_shop(self, player: PlayerActor, items: "list of ShopItems"):
         self.__state_machine.change_state(State.Shop, (player, items))
 
     def switch_to_shop(self, data) -> None:
-        player = data[0]
-        items = data[1]
-        self.__shop.set_data(player, items)
+        if data is not None:
+            player = data[0]
+            items = data[1]
+            self.__shop.set_data(player, items)
         self.apply_widget_set(self.__shop)
 
     def render(self) -> None:
@@ -194,6 +217,18 @@ class QrogueCUI(py_cui.PyCUI):
     def __use_menu_selection(self) -> None:
         if self.__menu.selection.use() and self.__cur_widget_set is self.__menu:
             self.render()
+
+    def __pause_choices(self) -> None:
+        if self.__pause.choices.use() and self.__cur_widget_set is self.__pause:
+            self.move_focus(self.__pause.details.widget, auto_press_buttons=False)
+            self.__pause.choices.render()
+            self.__pause.details.render()
+
+    def __pause_details(self) -> None:
+        if self.__pause.details.use() and self.__cur_widget_set is self.__pause:
+            self.move_focus(self.__pause.choices.widget, auto_press_buttons=False)
+            self.__pause.details.render_reset()
+            self.__pause.render()
 
     def __fight_choices(self) -> None:
         if self.__fight.choices.use() and self.__cur_widget_set is self.__fight:
@@ -285,5 +320,5 @@ class StateMachine:
             self.__renderer.switch_to_shop(data)
         elif self.__cur_state == State.BossFight:
             self.__renderer.switch_to_boss_fight(data)
-        #elif self.__cur_state == State.Pause:
-        #    self.__game.init_pause_screen()
+        elif self.__cur_state == State.Pause:
+            self.__renderer.switch_to_pause(data)

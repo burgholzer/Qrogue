@@ -125,20 +125,111 @@ class MenuWidgetSet(MyWidgetSet):
         exit()
 
 
+class PauseMenuWidgetSet(MyWidgetSet):
+    __NUM_OF_COLS = 9
+    __NUM_OF_ROWS = 9
+
+    def __init__(self, logger, continue_callback: "()", exit_run_callback: "()"):
+        super().__init__(9, self.__NUM_OF_COLS, logger)
+        self.__continue_callback = continue_callback
+        self.__exit_run = exit_run_callback
+
+    def init_widgets(self) -> None:
+        hud = self.add_block_label('HUD', 0, 0, row_span=1, column_span=self.__NUM_OF_COLS, center=False)
+        hud.toggle_border()
+        self.__hud = HudWidget(hud)
+
+        choices = self.add_block_label('Choices', 1, 0, row_span= self.__NUM_OF_ROWS-1, column_span=3, center=True)
+        self.__choices = SelectionWidget(choices, stay_selected=True)
+        self.__choices.set_data(data=(
+            ["Continue", "Options", "Help", "Exit"],
+            [self.__continue, self.__options, self.__help, self.__exit]
+        ))
+
+        details = self.add_block_label('Details', 1, 3, row_span=self.__NUM_OF_ROWS-1, column_span=self.__NUM_OF_COLS-3,
+                                       center=True)
+        self.__details = SelectionWidget(details, is_second=True)
+
+    @property
+    def choices(self) -> SelectionWidget:
+        return self.__choices
+
+    @property
+    def details(self) -> SelectionWidget:
+        return self.__details
+
+    def __continue(self) -> bool:
+        self.__continue_callback()
+        return False
+
+    def __options(self) -> bool:
+        self.__details.set_data(data=(
+            ["Background Color", "Font", "Font Size", "-Back-"],
+            [self.__options_text]
+        ))
+        return True
+
+    def __options_text(self, index: int = 0) -> bool:
+        if index < 3:
+            Popup.message(f"Option #{index}", "Todo: Implement")
+        return True
+
+    def __help(self) -> bool:
+        self.__details.set_data(data=(
+            ["Move", "Fight", "Shop", "Riddle", "Boss", "-Back-"],
+            [self.__help_text]
+        ))
+        return True
+
+    def __help_text(self, index: int = 0) -> bool:
+        texts = [
+            "Move with Arrow Keys",
+            "Reach the Target State",
+            "Buy Consumables",
+            "Solve a Puzzle for a nice reward",
+            "Create a Quantum Algorithm"
+        ]
+        if index < len(texts):
+            Popup.message(f"Tutorial #{index}", texts[index])
+            return False
+        return True
+
+    def __exit(self) -> bool:
+        self.__exit_run()
+        return True
+
+    def get_widget_list(self) -> "list of Widgets":
+        return [
+            self.__hud,
+            self.__choices,
+            self.__details,
+        ]
+
+    def get_main_widget(self) -> py_cui.widgets.Widget:
+        return self.__choices.widget
+
+    def set_data(self, player: PlayerActor):
+        self.__hud.set_data(player)
+
+    def reset(self) -> None:
+        self.__choices.render_reset()
+        self.__details.render_reset()
+
+
 class ExploreWidgetSet(MyWidgetSet):
     __NUM_OF_ROWS = 8
     __NUM_OF_COLS = 9
 
     def __init__(self, logger):
         super().__init__(self.__NUM_OF_ROWS, self.__NUM_OF_COLS, logger)
+
+    def init_widgets(self) -> None:
         hud = self.add_block_label('HUD', 0, 0, row_span=1, column_span=self.__NUM_OF_COLS, center=False)
         hud.toggle_border()
         self.__hud = HudWidget(hud)
 
-    def init_widgets(self) -> None:
         map_widget = self.add_block_label('MAP', 1, 0, row_span=self.__NUM_OF_ROWS-1, column_span=self.__NUM_OF_COLS, center=True)
         self.__map_widget = MapWidget(map_widget)
-
         ColorRules.apply_map_rules(self.__map_widget)
     
     def get_main_widget(self) -> py_cui.widgets.Widget:
@@ -162,7 +253,7 @@ class ExploreWidgetSet(MyWidgetSet):
         self.__hud.render()
 
     def reset(self) -> None:
-        self.__map_widget.widget.set_title("")
+        self.__map_widget.render_reset()
 
     def move_up(self) -> None:
         if self.__map_widget.move(Direction.Up):
