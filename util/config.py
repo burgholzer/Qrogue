@@ -160,3 +160,31 @@ class PopupConfig:
     @staticmethod
     def default_color() -> int:
         return py_cui.BLACK_ON_WHITE
+
+
+class CheatConfig:
+    __GOD_MODE = "Qod-Mode"
+    __CHEATS = {
+        __GOD_MODE: False
+    }
+    __popup = None
+
+    @staticmethod
+    def set_popup_callback(callback: "(str, int)"):
+        CheatConfig.__popup = callback
+
+    @staticmethod
+    def in_god_mode() -> bool:
+        return CheatConfig.__CHEATS[CheatConfig.__GOD_MODE]
+
+    @staticmethod
+    def cheat_input():
+        if CheatConfig.__popup is not None:
+            CheatConfig.__popup("Input your Cheat:", py_cui.BLACK_ON_RED)
+
+    @staticmethod
+    def use_cheat(code: str) -> bool:
+        if code in CheatConfig.__CHEATS:
+            CheatConfig.__CHEATS[code] = True
+            return True
+        return False

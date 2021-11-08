@@ -24,6 +24,7 @@ class Controls:
 
         self.__render = KEY_R_LOWER
         self.__print_screen = KEY_CTRL_P
+        self.__cheat = KEY_CTRL_Q
 
     @property
     def move_up(self) -> int:
@@ -80,6 +81,10 @@ class Controls:
     @property
     def print_screen(self) -> int:
         return self.__print_screen
+
+    @property
+    def cheat(self) -> int:
+        return self.__cheat
 
 
 class Pausing:
