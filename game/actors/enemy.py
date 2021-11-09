@@ -14,11 +14,7 @@ class Enemy(Target):
         return self.__flee_chance
 
     def __str__(self):
-        string = "Enemy ["
-        for q in self.__target.to_value():
-            string += f"{q} "
-        string += "]"
-        return string
+        return "Enemy " + super(Enemy, self).__str__()
 
 
 class DummyEnemy(Enemy):

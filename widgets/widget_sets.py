@@ -424,7 +424,7 @@ class ReachTargetWidgetSet(MyWidgetSet, ABC):
         self.__stv_diff.set_data(result.get_diff(self._target.statevector))
         self.render()
 
-        if CheatConfig.in_god_mode() or self._target.is_reached(result):
+        if self._target.is_reached(result):
             reward = self._target.get_reward()
             self._player.give_collectible(reward)
             self._details.set_data(data=(
@@ -513,6 +513,7 @@ class BossFightWidgetSet(FightWidgetSet):
         super(BossFightWidgetSet, self).set_data(player, target)
 
     def __continue_exploration(self):
+        print(self._target.is_defeated)
         if self._target.is_defeated:
             self.__tutorial_won()
         else:

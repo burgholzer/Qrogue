@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 
 from game.collectibles.collectible import Collectible
 from game.logic.qubit import StateVector
+from util.config import CheatConfig
 
 
 class Target(ABC):
@@ -27,10 +28,17 @@ class Target(ABC):
         return None
 
     def is_reached(self, state_vector: StateVector) -> bool:
-        if self.__target.is_equal_to(state_vector):
+        if CheatConfig.in_god_mode() or self.__target.is_equal_to(state_vector):
             self._on_reached()
             return True
         return False
 
     def _on_reached(self):
         pass
+
+    def __str__(self):
+        string = "["
+        for q in self.__target.to_value():
+            string += f"{q} "
+        string += "]"
+        return string
