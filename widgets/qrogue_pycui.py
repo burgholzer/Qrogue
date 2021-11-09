@@ -23,7 +23,7 @@ class QrogueCUI(py_cui.PyCUI):
         super().__init__(width, height)
         Logger.instance().set_popup(self.show_message_popup, self.show_error_popup)
         Popup.update_popup_functions(self.__show_popup)
-        CheatConfig.set_popup_callback(self.__show_cheat_popup)
+        CheatConfig.init(self.__show_popup, self.__show_cheat_popup)
 
         self.__state_machine = StateMachine(self)
         self.__seed = seed
@@ -62,7 +62,8 @@ class QrogueCUI(py_cui.PyCUI):
         self.__fight.get_main_widget().add_key_command(self.__controls.print_screen, self.print_screen)
         self.__boss_fight.get_main_widget().add_key_command(self.__controls.print_screen, self.print_screen)
 
-        self.__pause.get_main_widget().add_key_command(self.__controls.cheat, CheatConfig.cheat_input)
+        self.__pause.get_main_widget().add_key_command(CheatConfig.INPUT_CHEAT_KEY, CheatConfig.cheat_input)
+        self.__pause.get_main_widget().add_key_command(CheatConfig.CHEAT_LIST_KEY, CheatConfig.cheat_list)
 
         # all selections
         selection_widgets = [
@@ -165,6 +166,7 @@ class QrogueCUI(py_cui.PyCUI):
         self.switch_to_menu(None)
 
     def __won_tutorial(self) -> None:
+        print("adfasdf")
         self.switch_to_menu(None)
         bell = ColorConfig.highlight_word("Bell")
         Popup.message("You won!", f"Congratulations, you defeated {bell} and successfully played the Tutorial!")

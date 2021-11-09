@@ -12,7 +12,7 @@ from game.collectibles.pickup import Coin, Key
 from game.logic.instruction import Instruction, HGate
 from game.logic.qubit import QubitSet, EmptyQubitSet, DummyQubitSet, StateVector
 # from jkq import ddsim
-from util.logger import Logger
+from util.config import CheatConfig
 
 
 class PlayerAttributes:
@@ -72,10 +72,13 @@ class Backpack:
 
     @property
     def coin_count(self) -> int:
+        if CheatConfig.got_inf_resources():
+            return 999
+
         return self.__coin_count
 
     def can_afford(self, price: int) -> bool:
-        return self.__coin_count >= price
+        return self.coin_count >= price
 
     def give_coin(self, amount: int) -> bool:
         if amount > 0:
@@ -84,6 +87,9 @@ class Backpack:
         return False
 
     def use_coins(self, amount: int) -> bool:
+        if CheatConfig.got_inf_resources():
+            return True
+
         if self.can_afford(amount):
             self.__coin_count -= amount
             return True
@@ -91,6 +97,9 @@ class Backpack:
 
     @property
     def key_count(self) -> int:
+        if CheatConfig.got_inf_resources():
+            return 999
+
         return self.__key_count
 
     def give_key(self, amount: int) -> bool:
@@ -100,6 +109,9 @@ class Backpack:
         return False
 
     def use_key(self) -> bool:
+        if CheatConfig.got_inf_resources():
+            return True
+
         if self.key_count > 0:
             self.__key_count -= 1
             return True

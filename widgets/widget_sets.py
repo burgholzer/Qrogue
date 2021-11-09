@@ -15,7 +15,7 @@ from game.map.map import Map
 from game.map.navigation import Direction
 from game.map.tiles import Player as PlayerTile
 from game.map.tutorial import Tutorial
-from util.config import MapConfig
+from util.config import MapConfig, CheatConfig
 from util.my_random import RandomManager
 from widgets.color_rules import ColorRules
 from widgets.my_popups import Popup, CommonPopups
@@ -424,7 +424,7 @@ class ReachTargetWidgetSet(MyWidgetSet, ABC):
         self.__stv_diff.set_data(result.get_diff(self._target.statevector))
         self.render()
 
-        if self._target.is_reached(result):
+        if CheatConfig.in_god_mode() or self._target.is_reached(result):
             reward = self._target.get_reward()
             self._player.give_collectible(reward)
             self._details.set_data(data=(

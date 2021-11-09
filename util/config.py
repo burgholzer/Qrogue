@@ -163,28 +163,73 @@ class PopupConfig:
 
 
 class CheatConfig:
+    INPUT_CHEAT_KEY = py_cui.keys.KEY_CTRL_Q
+    CHEAT_LIST_KEY = py_cui.keys.KEY_CTRL_L
+    __ALL = "aLL"
     __GOD_MODE = "Qod-Mode"
+    __SCARED_RABBIT = "Rabbit_Tunnel"
+    __INF_RESOURCES = "Rich"
+    __NONE = "n0n3"
     __CHEATS = {
-        __GOD_MODE: False
+        __GOD_MODE: False,
+        __SCARED_RABBIT: False,
+        __INF_RESOURCES: False,
     }
+    __cheated = False
     __popup = None
+    __input_popup = None
 
     @staticmethod
-    def set_popup_callback(callback: "(str, int)"):
-        CheatConfig.__popup = callback
+    def init(popup_callback: "(str, str, int)", input_popup_callback: "(str, int)"):
+        CheatConfig.__cheated = False
+        CheatConfig.__popup = popup_callback
+        CheatConfig.__input_popup = input_popup_callback
+        for key in CheatConfig.__CHEATS:
+            CheatConfig.__CHEATS[key] = False
+
+    @staticmethod
+    def did_cheat() -> bool:
+        return CheatConfig.__cheated
 
     @staticmethod
     def in_god_mode() -> bool:
         return CheatConfig.__CHEATS[CheatConfig.__GOD_MODE]
 
     @staticmethod
+    def is_scared_rabbit() -> bool:
+        return CheatConfig.__CHEATS[CheatConfig.__SCARED_RABBIT]
+
+    @staticmethod
+    def got_inf_resources() -> bool:
+        return CheatConfig.__CHEATS[CheatConfig.__INF_RESOURCES]
+
+    @staticmethod
     def cheat_input():
-        if CheatConfig.__popup is not None:
-            CheatConfig.__popup("Input your Cheat:", py_cui.BLACK_ON_RED)
+        if CheatConfig.__input_popup is not None:
+            CheatConfig.__input_popup("Input your Cheat:", py_cui.BLACK_ON_RED)
+
+    @staticmethod
+    def cheat_list():
+        text = ""
+        for key in CheatConfig.__CHEATS:
+            text += f"{key}: \t\t"
+            if CheatConfig.__CHEATS[key]:
+                text += "Active\n"
+            else:
+                text += "Inactive\n"
+        CheatConfig.__popup("List of Cheats", text, PopupConfig.default_color())
 
     @staticmethod
     def use_cheat(code: str) -> bool:
-        if code in CheatConfig.__CHEATS:
-            CheatConfig.__CHEATS[code] = True
-            return True
-        return False
+        ret = False
+        if code == CheatConfig.__ALL or code == CheatConfig.__NONE:
+            for key in CheatConfig.__CHEATS:
+                CheatConfig.__CHEATS[key] = code == CheatConfig.__ALL
+            ret = True
+        elif code in CheatConfig.__CHEATS:
+            CheatConfig.__CHEATS[code] = not CheatConfig.__CHEATS[code]
+            ret = True
+
+        if ret:
+            CheatConfig.__cheated = True
+        return ret

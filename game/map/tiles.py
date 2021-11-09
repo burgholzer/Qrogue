@@ -9,6 +9,7 @@ from game.actors.riddle import Riddle
 from game.callbacks import OnWalkCallback
 from game.collectibles.factory import CollectibleFactory
 from game.map.navigation import Direction
+from util.config import CheatConfig
 from util.logger import Logger
 from util.my_random import RandomManager
 from widgets.my_popups import Popup, CommonPopups
@@ -326,9 +327,12 @@ class Enemy(WalkTriggerTile):
                 else:
                     self.__state = _EnemyState.FLED
             elif self.__state == _EnemyState.FIGHT:
-                enemy = self.__factory.get_enemy(player, 1 - self.__amplitude)
-                self.__factory.callback(player, enemy, direction)
-                self.__state = _EnemyState.DEAD
+                if CheatConfig.is_scared_rabbit():
+                    self.__state = _EnemyState.FLED
+                else:
+                    enemy = self.__factory.get_enemy(player, 1 - self.__amplitude)
+                    self.__factory.callback(player, enemy, direction)
+                    self.__state = _EnemyState.DEAD
             elif self.__state == _EnemyState.FREE:
                 self.__state = _EnemyState.FLED
 
@@ -348,9 +352,14 @@ class Enemy(WalkTriggerTile):
         if self.__state == _EnemyState.UNDECIDED:
             self.__state = val
         else:
+            if CheatConfig.did_cheat():
+                return
             raise RuntimeError("Illegal program state!")
 
     def measure(self):
+        if CheatConfig.is_scared_rabbit():
+            return False
+
         if 0 < self.__id <= 9:
             entangled_tiles = self.__get_entangled_tiles(self.__id)
         else:
