@@ -37,7 +37,9 @@ class MapConfig:
 
 class ColorConfig:
     ERROR_COLOR = py_cui.RED_ON_BLUE
-    TEXT_HIGHLIGHT = "/"
+    TEXT_HIGHLIGHT = "//"
+    REGEX_TEXT_HIGHLIGHT = "//"
+    HIGHLIGHT_WIDTH = len(TEXT_HIGHLIGHT)
     CODE_WIDTH = 2
     TILE_HIGHLIGHT = "01"
     OBJECT_HIGHLIGHT = "02"
@@ -63,6 +65,12 @@ class ColorConfig:
         return char in [".", ",", "!", "?", ":", "\""]
 
     @staticmethod
+    def __find(paragraph: str, start: int, end: int) -> int:
+        # adapt end because meta characters are not printed and therefore they can be directly after end
+        end += ColorConfig.HIGHLIGHT_WIDTH - 1
+        return paragraph.find(ColorConfig.TEXT_HIGHLIGHT, start, end)
+
+    @staticmethod
     def count_meta_characters(paragraph: str, width: int, logger) -> int:
         """
         Counts how many meta characters (i.e. not printed characters) there are in the first #width characters of
@@ -76,36 +84,40 @@ class ColorConfig:
         """
         character_removals = 0
         # check how many meta-characters (indicating color rules) we have in our line
-        highlight_index = paragraph.find(ColorConfig.TEXT_HIGHLIGHT, 0, width)
+        highlight_index = ColorConfig.__find(paragraph, 0, width)
         start = True    # whether we search for the start of a highlighted section or an end
         while highlight_index > -1:
-            highlight_index += 1
+            highlight_index += ColorConfig.HIGHLIGHT_WIDTH
             if start:
                 if highlight_index + ColorConfig.CODE_WIDTH <= len(paragraph) and \
                         ColorConfig.is_number(paragraph[highlight_index:highlight_index + ColorConfig.CODE_WIDTH]):
                     last_whitespace = paragraph.rfind(" ", highlight_index,
                                                       width + character_removals + 1 + ColorConfig.CODE_WIDTH)
                     if last_whitespace > -1:
-                        character_removals += 1 + ColorConfig.CODE_WIDTH
+                        character_removals += ColorConfig.HIGHLIGHT_WIDTH + ColorConfig.CODE_WIDTH
                         start = False
-                    elif paragraph[-1] == ColorConfig.TEXT_HIGHLIGHT:
+                    elif paragraph.endswith(ColorConfig.TEXT_HIGHLIGHT):
                         # due to splitting a line in the middle of a color rule it can happen that there is no " "
                         # at the end but a "/" and therefore it would still fit
-                        character_removals += 1 + ColorConfig.CODE_WIDTH + 1
+                        character_removals += ColorConfig.HIGHLIGHT_WIDTH + ColorConfig.CODE_WIDTH \
+                                              + ColorConfig.HIGHLIGHT_WIDTH
                         break
                     elif ColorConfig.is_punctuation(paragraph[-1]): # TODO I don't think -1 is correct, because it is
                                                                     # todo the very end, but somehow it works
                         # if the very last word is highlighted we also have no whitespace at the end
-                        character_removals += 1 + ColorConfig.CODE_WIDTH + 1
+                        character_removals += ColorConfig.HIGHLIGHT_WIDTH + ColorConfig.CODE_WIDTH \
+                                              + ColorConfig.HIGHLIGHT_WIDTH
                         break
                     else:
                         break
                 else:
-                    logger.error(f"Illegal start index = {highlight_index} for \"{paragraph}\"")
+                    logger.error(f"Illegal start index = {highlight_index} for \"{paragraph}\". Make sure no text"
+                                 f" contains \"{ColorConfig.TEXT_HIGHLIGHT}\" or a 2 or more digit number directly"
+                                 f" after a highlighting (space in-between is okay)!")
             else:
-                character_removals += 1
+                character_removals += ColorConfig.HIGHLIGHT_WIDTH
                 start = True
-            highlight_index = paragraph.find(ColorConfig.TEXT_HIGHLIGHT, highlight_index, width + character_removals)
+            highlight_index = ColorConfig.__find(paragraph, highlight_index, width + character_removals)
         return character_removals
 
     @staticmethod
@@ -233,3 +245,11 @@ class CheatConfig:
         if ret:
             CheatConfig.__cheated = True
         return ret
+
+
+class GameplayConfig:
+    __AUTO_RESET_CIRCUIT = True
+
+    @staticmethod
+    def auto_reset_circuit() -> bool:
+        return GameplayConfig.__AUTO_RESET_CIRCUIT

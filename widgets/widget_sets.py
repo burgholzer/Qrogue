@@ -15,7 +15,7 @@ from game.map.map import Map
 from game.map.navigation import Direction
 from game.map.tiles import Player as PlayerTile
 from game.map.tutorial import Tutorial
-from util.config import MapConfig, CheatConfig
+from util.config import MapConfig, GameplayConfig
 from util.my_random import RandomManager
 from widgets.color_rules import ColorRules
 from widgets.my_popups import Popup, CommonPopups
@@ -267,10 +267,8 @@ class ReachTargetWidgetSet(MyWidgetSet, ABC):
     __CHOICE_COLUMNS = 2
     __DETAILS_COLUMNS = 2
 
-    def __init__(self, logger, continue_exploration_callback: "()", choices: "list of str"):
-        if len(choices) != 4:
-            raise RuntimeError("Created a ReachTargetWidgetSet with more or less than 4 choices!")
-        self.__choice_strings = choices
+    def __init__(self, logger, continue_exploration_callback: "()", flee_choice: str = "Flee"):
+        self.__choice_strings = ["Add/Remove", "Commit", "Reset", "Items", flee_choice]
         super().__init__(self.__NUM_OF_ROWS, self.__NUM_OF_COLS, logger)
         self._continue_exploration_callback = continue_exploration_callback
         self._player = None
@@ -304,7 +302,8 @@ class ReachTargetWidgetSet(MyWidgetSet, ABC):
         self._choices = SelectionWidget(choices, columns=self.__CHOICE_COLUMNS)
         self._choices.set_data(data=(
             self.__choice_strings,
-            [self.__choices_adapt, self.__choices_commit, self.__choices_items, self._choices_flee]
+            [self.__choices_adapt, self.__choices_commit, self.__choices_reset, self.__choices_items,
+             self._choices_flee]
         ))
 
         details = self.add_block_label('Details', 7, 3, row_span=2, column_span=6, center=True)
@@ -324,6 +323,11 @@ class ReachTargetWidgetSet(MyWidgetSet, ABC):
         return self._choices.widget
 
     def set_data(self, player: PlayerActor, target: Target) -> None:
+        # from a code readers perspective the reset would make more sense in switch_to_fight() etc. but then we would
+        # have to add it to multiple locations and have the risk of forgetting to add it for new ReachTargetWidgetSets
+        if GameplayConfig.auto_reset_circuit():
+            player.reset_circuit()
+
         self._player = player
         self._target = target
 
@@ -374,7 +378,6 @@ class ReachTargetWidgetSet(MyWidgetSet, ABC):
         if 0 <= index < self._player.backpack.size:
             self.__cur_instruction = self._player.get_instruction(index)
             if self.__cur_instruction is not None:
-                self.__cur_instruction.reset_qubits()
                 if self.__cur_instruction.is_used():
                     self._player.remove_instruction(index)
                     self.details.update_text(str(self._player.backpack.get(index)), index)
@@ -435,6 +438,14 @@ class ReachTargetWidgetSet(MyWidgetSet, ABC):
         else:
             return self._on_commit_fail()
 
+    def __choices_reset(self):
+        self._player.reset_circuit()
+        pstv = self._player.state_vector
+        self.__stv_player.set_data(pstv)
+        self.__stv_diff.set_data(pstv.get_diff(self._target.statevector))
+        self.render()
+        return False
+
     def __choices_items(self) -> bool:
         self._details.set_data(data=(
             ["You currently don't have any Items you could use!"],
@@ -456,8 +467,7 @@ class ReachTargetWidgetSet(MyWidgetSet, ABC):
 
 class FightWidgetSet(ReachTargetWidgetSet):
     def __init__(self, logger, continue_exploration_callback: "()", game_over_callback: "()"):
-        super(FightWidgetSet, self).__init__(logger, continue_exploration_callback,
-                                             ["Adapt", "Commit", "Items", "Flee"])
+        super(FightWidgetSet, self).__init__(logger, continue_exploration_callback)
         self.__random = RandomManager.create_new()
         self.__game_over_callback = game_over_callback
         self.__flee_chance = 0
@@ -624,7 +634,7 @@ class RiddleWidgetSet(ReachTargetWidgetSet):
     __NUM_OF_COLS = 9
 
     def __init__(self, logger, continue_exploration_callback: "()"):
-        super().__init__(logger, continue_exploration_callback, ["Adapt", "Commit", "Items", "Give up"])
+        super().__init__(logger, continue_exploration_callback, "Give Up")
 
     def set_data(self, player: PlayerActor, target: Riddle) -> None:
         super(RiddleWidgetSet, self).set_data(player, target)

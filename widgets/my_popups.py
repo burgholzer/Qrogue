@@ -40,9 +40,9 @@ class Popup:
 class MultilinePopup(py_cui.popups.Popup, py_cui.ui.MenuImplementation):
     @staticmethod
     def __get_color_rules():
-        text = CC.TEXT_HIGHLIGHT
+        regex = CC.REGEX_TEXT_HIGHLIGHT
         return [
-            ColorRule(f"{text}.*?{text}", 0, 0, "contains", "regex", [0, 1],
+            ColorRule(f"{regex}.*?{regex}", 0, 0, "contains", "regex", [0, 1],
                       False, Logger.instance())
         ]
 
@@ -81,12 +81,16 @@ class MultilinePopup(py_cui.popups.Popup, py_cui.ui.MenuImplementation):
                 next_line = cur_part[:cur_width].lstrip()
                 if len(next_line) > 0:
                     # check if next_line ends with an un-terminated color rule
-                    last_slash = next_line.rfind(CC.TEXT_HIGHLIGHT)
-                    if 0 <= last_slash <= len(next_line) - 3:
+                    last_highlight = next_line.rfind(CC.TEXT_HIGHLIGHT)
+                    if 0 <= last_highlight < len(next_line) - CC.HIGHLIGHT_WIDTH:
                         # if so, terminate it and remember to continue it in the next line
-                        if CC.is_number(next_line[last_slash + 1:last_slash + CC.CODE_WIDTH + 1]):
-                            next_line += "/"
-                            prepend = next_line[last_slash:last_slash + 3]
+                        code_start = last_highlight + CC.HIGHLIGHT_WIDTH
+                        # TODO a highlighted number can potentially lead to problems here! (at least theoretically,
+                        # todo but somehow I couldn't produce a breaking example so I might be wrong)
+                        # todo also if we place an at-least-2-digits number directly after a highlight
+                        if CC.is_number(next_line[code_start:code_start + CC.CODE_WIDTH]):
+                            next_line += CC.TEXT_HIGHLIGHT
+                            prepend = next_line[last_highlight:code_start + CC.CODE_WIDTH]
                     split_text.append(next_line)
                 index += cur_width
 
@@ -101,7 +105,7 @@ class MultilinePopup(py_cui.popups.Popup, py_cui.ui.MenuImplementation):
         super().__init__(root, title, text, color, renderer, logger)
         self.__controls = controls
         self._top_view = 0
-        self.__lines = MultilinePopup.__split_text(text, self._width - 6, logger)
+        self.__lines = MultilinePopup.__split_text(text, self._width - 6, logger)  # 6: based on PyCUI "padding" I think
 
     @property
     def textbox_height(self) -> int:

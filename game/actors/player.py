@@ -240,10 +240,10 @@ class Player(ABC):
             return self.backpack.get(instruction_index)
         return None
 
-    def is_space_left(self):
+    def is_space_left(self) -> bool:
         return self.__next_col < self.__attributes.space
 
-    def use_instruction(self, instruction: Instruction):
+    def use_instruction(self, instruction: Instruction) -> bool:
         """
         Tries to put the Instruction corresponding to the given index in the backpack into the player's circuit.
         If the Instruction is already in-use (put onto the circuit) it is removed instead.
@@ -266,14 +266,21 @@ class Player(ABC):
             self.__remove_instruction(instruction)
         return self.__apply_instructions()
 
+    def reset_circuit(self):
+        temp = self.__instructions.copy()
+        for instruction in temp:
+            self.__remove_instruction(instruction)
+        self.__apply_instructions()
+        self.update_statevector()
+
     def __append_instruction(self, instruction: Instruction):
         self.__instructions.append(instruction)
-        instruction.set_used(True)
+        instruction.use()
         self.__next_col += 1
 
     def __remove_instruction(self, instruction: Instruction):
         self.__instructions.remove(instruction)
-        instruction.set_used(False)
+        instruction.reset()
         self.__next_col -= 1
 
     def get_available_instructions(self) -> "list of Instructions":

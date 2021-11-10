@@ -49,8 +49,9 @@ class Fragment:
 
     def format(self) -> "[str, int]":
         if self.text.startswith(ColorConfig.TEXT_HIGHLIGHT) and self.text.endswith(ColorConfig.TEXT_HIGHLIGHT):
-            color = ColorConfig.get(self.text[1:3])
-            text = self.text[3:-1]
+            hl = len(ColorConfig.TEXT_HIGHLIGHT)
+            color = int(ColorConfig.get(self.text[hl:hl + ColorConfig.CODE_WIDTH]))
+            text = self.text[hl + ColorConfig.CODE_WIDTH:-hl]
             return [text, color]
         return [self.text, self.color]
 

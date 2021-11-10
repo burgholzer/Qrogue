@@ -25,9 +25,6 @@ class Instruction(Collectible, ABC):
     def num_of_qubits(self):
         return self.__needed_qubits
 
-    def reset_qubits(self):
-        self._qargs = []
-
     def use_qubit(self, qubit: int) -> bool:
         """
 
@@ -42,8 +39,12 @@ class Instruction(Collectible, ABC):
     def is_used(self) -> bool:
         return self.__used
 
-    def set_used(self, used: bool):
-        self.__used = used
+    def use(self):
+        self.__used = True
+
+    def reset(self):
+        self.__used = False
+        self._qargs = []
 
     def append_to(self, circuit: QuantumCircuit):
         circuit.append(self.__instruction, self._qargs, self._cargs)
