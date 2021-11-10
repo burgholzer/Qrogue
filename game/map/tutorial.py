@@ -223,11 +223,12 @@ class Tutorial:
              CC.highlight_word("action"), CC.highlight_word("Adapt"), CC.highlight_word("Commit"),
              CC.highlight_word("not zero"), CC.highlight_word("1 HP"), CC.highlight_word("Items"),
              CC.highlight_word("easier"), CC.highlight_word("Flee"), CC.highlight_word("chance based"),
-             CC.highlight_word("cannot flee"), CC.highlight_word("4)"), CC.highlight_word("depends"),
+             CC.highlight_word("cannot flee"), CC.highlight_word("4)"), CC.highlight_word("displays details"),
              CC.highlight_word("5)"), CC.highlight_word("navigate"), CC.highlight_word("use"),
              CC.highlight_word("Reward")]
         enemy = CC.highlight_object("Enemy")
         removed = CC.highlight_word("removed")
+        gate = CC.highlight_object("Gate")
         if not self.__showed_fight_tutorial:
             Popup("Tutorial: Fight",
                   f"{w[1]} In the middle of the screen you see 3 {w[2]}. The left one (Current State) can be adapted by "
@@ -239,14 +240,14 @@ class Tutorial:
                   f"{w[7]}.\n"
                   f"{w[11]} On the left you can choose the {w[12]} you want to take: \n"
                   f"{w[13]} - Change your {w[7]} with the {w[9]} available to you (selection to the right). After "
-                  f"selecting a {w[9]} you are asked on which {w[8]} you want to place it. If you select an already "
+                  f"selecting a {gate} you are asked on which {w[8]} you want to place it. If you select an already "
                   f"used one it will be {removed} from your Circuit instead.\n"
                   f"{w[14]} - Commit your changes and update your {w[10]}. If Difference is {w[15]} you lose {w[16]}.\n"
                   f"{w[17]} - Use one of your Items to make the Fight {w[18]} (you don't have any Items yet!)\n"
                   f"{w[19]} - Try to flee from the Fight. This is {w[20]} and you lose {w[16]} if you fail to flee "
                   f"(Note: for Tutorial purposes you {w[21]} in this Room!)\n"
-                  f"{w[22]} The bottom right {w[23]} on the action you chose on the left side. E.g. you can choose "
-                  f"the {w[9]} you want to use in your {w[7]}.\n"
+                  f"{w[22]} The bottom right {w[23]} based on the action you chose on the left side. E.g. you can "
+                  f"select the {w[9]} you want to use in your {w[7]}.\n"
                   f"{w[24]} Use your {self.__ARROW_KEYS} to {w[25]} between your available options at the bottom and "
                   f"press {self.__SPACE} to {w[26]} the selected one. Again, your goal now is to reach the Target "
                   f"{w[10]} of the {enemy}. If you succeed, you will get a {w[27]}!")
@@ -268,7 +269,7 @@ class Tutorial:
                   f"by adapting your {circuit}. The main difference is that you {hp} if you fail but instead an "
                   f"{attempt} for solving the Riddle. When you have no more Attempts the Riddle {vanishes} together "
                   "with its reward - which is usually much better than the ones from Fights. Also fleeing (or in "
-                  f"this case {give_up}) will always succeed but obviously cost you your current {attempt} which is "
+                  f"this case {give_up}) will always work but obviously cost you your current {attempt} which is "
                   f"why you are notified if you have no more Attempts left.")
             self.__showed_riddle_tutorial = True
 
