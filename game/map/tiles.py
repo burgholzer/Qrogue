@@ -278,7 +278,7 @@ class Collectible(WalkTriggerTile):
         if self.__active:
             player = player
             collectible = self.__factory.produce()
-            name = collectible.name() + type_str(collectible.type)
+            name = collectible.name()
             desc = collectible.description()
             Popup.message(collectible.name(), f"You picked up a {name}.\n{desc}")
             player.give_collectible(collectible)

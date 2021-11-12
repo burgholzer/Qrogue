@@ -13,6 +13,7 @@ from game.map.navigation import Coordinate, Direction
 from game.map.rooms import Room, SpawnRoom, GateRoom, WildRoom, BossRoom, ShopRoom, RiddleRoom
 from game.map.tiles import Door
 from util.config import ColorConfig as CC
+from util.help_texts import HelpText, HelpTextType
 
 from widgets.my_popups import Popup, CommonPopups
 
@@ -168,35 +169,17 @@ class TutorialGateRoom(GateRoom):
 
 
 class Tutorial:
-    __QUANTUM_COMPUTING = CC.highlight_word("Quantum Computing")
-    __QUANTUM_GATES = CC.highlight_object("Quantum Gates")
-    __QUANTUM_CIRCUIT = CC.highlight_object("Quantum Circuit")
-    __ENEMIES = CC.highlight_object("Enemies")
-    __QUANTUM_STATE = CC.highlight_object("Quantum State")
-    __SPECIAL_ROOMS = CC.highlight_object("Special Rooms")
-    __BOSS = CC.highlight_object("Boss")
-    __QUANTUM_ALGORITHM = CC.highlight_word("Quantum Algorithm")
-    __ARROW_KEYS = CC.highlight_key("Arrow Keys")
-    __DOOR = CC.highlight_object("Door")
-    __DOOR_TILE = CC.highlight_tile("-")
-    __TUTORIAL_TILE = CC.highlight_tile(".")
-    __SPACE = CC.highlight_key("Space")
-    WelcomeMessage = \
-        f"Qrogue is a game about {__QUANTUM_COMPUTING}. You will explore " \
-        f"Dungeons with the help of {__QUANTUM_GATES} you can use for your " \
-        f"{__QUANTUM_CIRCUIT}. But you are not the only one in the Dungeons! " \
-        f"There are {__ENEMIES} challenging you to reach a certain " \
-        f"{__QUANTUM_STATE}. Your goal is to expand your library of " \
-        f"{__QUANTUM_GATES} which are hidden in " \
-        f"{__SPECIAL_ROOMS} in the Dungeon or guarded " \
-        f"by a {__BOSS} - a special Enemy that wants to see a " \
-        f"{__QUANTUM_ALGORITHM} from you...\n" \
-        f"Now let's start! Try to move around with the {__ARROW_KEYS} and " \
-        f"go to the {__DOOR} ({__DOOR_TILE}) at the bottom!" \
-        f"\nThe fields with a {__TUTORIAL_TILE} will show you the next steps. " \
-        f"Now close this dialog and start playing by pressing {__SPACE}."
+    __SHOW_PAUSE_TUTORIAL = False
+
+    @staticmethod
+    def show_pause_tutorial() -> bool:
+        if Tutorial.__SHOW_PAUSE_TUTORIAL:
+            Tutorial.__SHOW_PAUSE_TUTORIAL = False
+            return True
+        return False
 
     def __init__(self):
+        Tutorial.__SHOW_PAUSE_TUTORIAL = True
         self.__cur_id = 0
         self.__fight = None
         self.__showed_fight_tutorial = False
@@ -216,98 +199,25 @@ class Tutorial:
 
     def fight(self, player: PlayerActor, enemy: EnemyActor, direction: Direction):
         self.__fight(player, enemy, direction)
-        w = [CC.highlight_word("Fight"), CC.highlight_word("1)"), CC.highlight_object("StateVectors"),
-             CC.highlight_word("Difference"), CC.highlight_word("zero"), CC.highlight_word("win"),
-             CC.highlight_word("2)"), CC.highlight_object("Circuit"), CC.highlight_object("Qubits"),
-             CC.highlight_object("Gates"), CC.highlight_object("State"), CC.highlight_word("3)"),
-             CC.highlight_word("action"), CC.highlight_word("Adapt"), CC.highlight_word("Commit"),
-             CC.highlight_word("not zero"), CC.highlight_word("1 HP"), CC.highlight_word("Items"),
-             CC.highlight_word("easier"), CC.highlight_word("Flee"), CC.highlight_word("chance based"),
-             CC.highlight_word("cannot flee"), CC.highlight_word("4)"), CC.highlight_word("displays details"),
-             CC.highlight_word("5)"), CC.highlight_word("navigate"), CC.highlight_word("use"),
-             CC.highlight_word("Reward")]
-        enemy = CC.highlight_object("Enemy")
-        removed = CC.highlight_word("removed")
-        gate = CC.highlight_object("Gate")
         if not self.__showed_fight_tutorial:
-            Popup("Tutorial: Fight",
-                  f"{w[1]} In the middle of the screen you see 3 {w[2]}. The left one (Current State) can be adapted by "
-                  f"you while the right one (Target State) is constant and depending on the {enemy} you fight. Between "
-                  f"those two you also see the {w[3]}: If it gets {w[4]} you {w[5]} the Fight!\n"
-                  f"{w[6]} Underneath the StateVectors is your {w[7]}. Currently you have 2 {w[8]} (q0, q1) and 0 out "
-                  f"of 3 "
-                  f"{w[9]} applied to them. The before mentioned Current {w[10]} reflects the output (out) of your "
-                  f"{w[7]}.\n"
-                  f"{w[11]} On the left you can choose the {w[12]} you want to take: \n"
-                  f"{w[13]} - Change your {w[7]} with the {w[9]} available to you (selection to the right). After "
-                  f"selecting a {gate} you are asked on which {w[8]} you want to place it. If you select an already "
-                  f"used one it will be {removed} from your Circuit instead.\n"
-                  f"{w[14]} - Commit your changes and update your {w[10]}. If Difference is {w[15]} you lose {w[16]}.\n"
-                  f"{w[17]} - Use one of your Items to make the Fight {w[18]} (you don't have any Items yet!)\n"
-                  f"{w[19]} - Try to flee from the Fight. This is {w[20]} and you lose {w[16]} if you fail to flee "
-                  f"(Note: for Tutorial purposes you {w[21]} in this Room!)\n"
-                  f"{w[22]} The bottom right {w[23]} based on the action you chose on the left side. E.g. you can "
-                  f"select the {w[9]} you want to use in your {w[7]}.\n"
-                  f"{w[24]} Use your {self.__ARROW_KEYS} to {w[25]} between your available options at the bottom and "
-                  f"press {self.__SPACE} to {w[26]} the selected one. Again, your goal now is to reach the Target "
-                  f"{w[10]} of the {enemy}. If you succeed, you will get a {w[27]}!")
+            Popup("Tutorial: Fight", HelpText.get(HelpTextType.Fight))
             self.__showed_fight_tutorial = True
 
     def riddle(self, player: PlayerActor, riddle: Riddle):
         self.__riddle(player, riddle)
-        riddles = CC.highlight_object("Riddles")
-        fights = CC.highlight_object("Fights")
-        state = CC.highlight_object("Target State")
-        circuit = CC.highlight_object("Circuit")
-        hp = CC.highlight_word("don't lose HP")
-        attempt = CC.highlight_word("Attempt")
-        vanishes = CC.highlight_word("vanishes")
-        give_up = CC.highlight_word("\"Give up\"")
         if not self.__showed_riddle_tutorial:
-            Popup("Tutorial: Riddle",
-                  f"{riddles} are very similar to {fights}. You have a {state} you need to reach (Difference is zero) "
-                  f"by adapting your {circuit}. The main difference is that you {hp} if you fail but instead an "
-                  f"{attempt} for solving the Riddle. When you have no more Attempts the Riddle {vanishes} together "
-                  "with its reward - which is usually much better than the ones from Fights. Also fleeing (or in "
-                  f"this case {give_up}) will always work but obviously cost you your current {attempt} which is "
-                  f"why you are notified if you have no more Attempts left.")
+            Popup("Tutorial: Riddle", HelpText.get(HelpTextType.Riddle))
             self.__showed_riddle_tutorial = True
 
     def shop(self, player: PlayerActor, items: "list of ShopItems"):
         self.__shop(player, items)
-        shop = CC.highlight_object("Shop")
-        coins = CC.highlight_object("Coins")
-        collec = CC.highlight_object("Collectibles")
-        list_ = CC.highlight_word("list")
-        buy = CC.highlight_word("buy")
-        keys = CC.highlight_key("Arrow Keys")
-        space = CC.highlight_key("Space")
-        details = CC.highlight_word("details")
-        leave = CC.highlight_word("\"-Leave-\"")
-        reenter = CC.highlight_word("re-enter")
         if not self.__showed_shop_tutorial:
-            Popup("Tutorial: Shop",
-                  f"In the {shop} you can use {coins} you got (e.g. from Fights) to buy various {collec}. On the "
-                  f"left side is a {list_} of everything you can {buy}. Navigate as usual with your {keys} and select "
-                  f"something with {space} to see more {details} on the right side. There you can also buy it.\n"
-                  f"{leave} obviously makes you leave the {shop}. You can {reenter} it later as long as there is "
-                  "stuff left to buy.")
+            Popup("Tutorial: Shop", HelpText.get(HelpTextType.Shop))
             self.__showed_shop_tutorial = True
 
     def boss_fight(self, player: PlayerActor, boss: BossActor, direction: Direction):
         self.__boss_fight(player, boss, direction)
-        serious = CC.highlight_word("serious")
-        bell = CC.highlight_word("Bell, the Master of Entanglement")
-        state = CC.highlight_object("State")
-        qubits = CC.highlight_object("Qubits")
-        both0 = CC.highlight_word("both 0")
-        both1 = CC.highlight_word("both 1")
-        entanglement = CC.highlight_word("Entanglement")
-        Popup("Tutorial: Boss Fight",
-              f"Now it's getting {serious}! You are fighting against {bell}. For the {state} you need to reach to "
-              f"defeat Bell your two {qubits} will always have to be the same: either {both0} or {both1}.\n"
-              f"This is called {entanglement}.\n\n"
-              "Good luck!")
+        Popup("Tutorial: Boss Fight", HelpText.get(HelpTextType.BossFight))
 
     def build_tutorial_map(self, player: tiles.Player, cbp: CallbackPack) -> "Room[][], Coordinate":
         self.__fight = cbp.start_fight

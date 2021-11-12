@@ -52,6 +52,13 @@ class Instruction(Collectible, ABC):
     def qargs_iter(self) -> "Iterator":
         return iter(self._qargs)
 
+    def name(self) -> str:
+        return self.short_name() + " Gate"
+
+    @abstractmethod
+    def short_name(self) -> str:
+        pass
+
     @abstractmethod
     def abbreviation(self, qubit: int = 0):
         pass
@@ -67,7 +74,8 @@ class Instruction(Collectible, ABC):
         return preview
 
     def __str__(self):
-        text = f"{self.name()} ("
+        # Gate (qX, qY, ?, ...)
+        text = f"{self.short_name()} ("
         for i in range(self.num_of_qubits-1):
             if i < len(self._qargs):
                 text += f"{self._qargs[i]}, "
@@ -92,7 +100,7 @@ class XGate(SingleQubitGate):
     def __init__(self):
         super(XGate, self).__init__(gates.XGate())
 
-    def name(self) -> str:
+    def short_name(self) -> str:
         return "X"
 
     def abbreviation(self, qubit: int = 0):
@@ -112,7 +120,7 @@ class HGate(SingleQubitGate):
     def description(self) -> str:
         return "The Hadamard Gate is often used to get Qubits into Superposition."
 
-    def name(self) -> str:
+    def short_name(self) -> str:
         return "Hadamard"
 
     def abbreviation(self, qubit: int = 0):
@@ -137,7 +145,7 @@ class SwapGate(DoubleQubitGate):
     def description(self) -> str:
         return "As the name suggests, Swap Gates swap the amplitude between two Qubits."
 
-    def name(self) -> str:
+    def short_name(self) -> str:
         return "Swap"
 
     def abbreviation(self, qubit: int = 0):
@@ -154,7 +162,7 @@ class CXGate(DoubleQubitGate):
     def __init__(self):
         super().__init__(gates.CXGate())
 
-    def name(self) -> str:
+    def short_name(self) -> str:
         return "CX"
 
     def abbreviation(self, qubit: int = 0):

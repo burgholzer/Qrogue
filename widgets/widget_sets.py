@@ -16,6 +16,7 @@ from game.map.navigation import Direction
 from game.map.tiles import Player as PlayerTile
 from game.map.tutorial import Tutorial
 from util.config import MapConfig, GameplayConfig
+from util.help_texts import HelpText, HelpTextType
 from util.my_random import RandomManager
 from widgets.color_rules import ColorRules
 from widgets.my_popups import Popup, CommonPopups
@@ -104,7 +105,7 @@ class MenuWidgetSet(MyWidgetSet):
     def __tutorial(self) -> None:
         map = Map(MapConfig.tutorial_seed(), self.__MAP_WIDTH, self.__MAP_HEIGHT, DummyPlayer(), self.__cbp)
         self.__cbp.start_gameplay(map)
-        Popup.message("Welcome to Qrogue! (scroll with arrow keys)", Tutorial.WelcomeMessage)
+        Popup.message("Welcome to Qrogue! (scroll with arrow keys)", HelpText.get(HelpTextType.Welcome))
 
     def __options(self) -> None:
         Popup.message("TODO", "The options are not implemented yet!")
@@ -117,6 +118,22 @@ class MenuWidgetSet(MyWidgetSet):
 class PauseMenuWidgetSet(MyWidgetSet):
     __NUM_OF_COLS = 9
     __NUM_OF_ROWS = 9
+    __HELP_TEXTS = (
+        [
+            "Game",
+            "Move", "Fight",
+            "Riddle", "Shop",
+            "Boss Fight", "Pause",
+            "Options",
+        ],
+        [
+            HelpText.get(HelpTextType.Game),
+            HelpText.get(HelpTextType.Controls), HelpText.get(HelpTextType.Fight),
+            HelpText.get(HelpTextType.Riddle), HelpText.get(HelpTextType.Shop),
+            HelpText.get(HelpTextType.BossFight), HelpText.get(HelpTextType.Pause),
+            HelpText.get(HelpTextType.Options),
+         ]
+    )
 
     def __init__(self, logger, continue_callback: "()", exit_run_callback: "()"):
         super().__init__(9, self.__NUM_OF_COLS, logger)
@@ -165,21 +182,14 @@ class PauseMenuWidgetSet(MyWidgetSet):
 
     def __help(self) -> bool:
         self.__details.set_data(data=(
-            ["Move", "Fight", "Shop", "Riddle", "Boss", "-Back-"],
+            PauseMenuWidgetSet.__HELP_TEXTS[0] + ["-Back-"],
             [self.__help_text]
         ))
         return True
 
     def __help_text(self, index: int = 0) -> bool:
-        texts = [
-            "Move with Arrow Keys",
-            "Reach the Target State",
-            "Buy Consumables",
-            "Solve a Puzzle for a nice reward",
-            "Create a Quantum Algorithm"
-        ]
-        if index < len(texts):
-            Popup.message(f"Tutorial #{index}", texts[index])
+        if index < len(PauseMenuWidgetSet.__HELP_TEXTS[0]):
+            Popup.message(f"{PauseMenuWidgetSet.__HELP_TEXTS[0][index]}", PauseMenuWidgetSet.__HELP_TEXTS[1][index])
             return False
         return True
 
@@ -199,6 +209,8 @@ class PauseMenuWidgetSet(MyWidgetSet):
 
     def set_data(self, player: PlayerActor):
         self.__hud.set_data(player)
+        if Tutorial.show_pause_tutorial():
+            Popup.message("Pause", HelpText.get(HelpTextType.Pause))
 
     def reset(self) -> None:
         self.__choices.render_reset()
@@ -268,7 +280,7 @@ class ReachTargetWidgetSet(MyWidgetSet, ABC):
     __DETAILS_COLUMNS = 2
 
     def __init__(self, logger, continue_exploration_callback: "()", flee_choice: str = "Flee"):
-        self.__choice_strings = ["Add/Remove", "Commit", "Reset", "Items", flee_choice]
+        self.__choice_strings = ["Add/Remove", "Commit", "Reset", "Items", "Help", flee_choice]
         super().__init__(self.__NUM_OF_ROWS, self.__NUM_OF_COLS, logger)
         self._continue_exploration_callback = continue_exploration_callback
         self._player = None
@@ -303,7 +315,7 @@ class ReachTargetWidgetSet(MyWidgetSet, ABC):
         self._choices.set_data(data=(
             self.__choice_strings,
             [self.__choices_adapt, self.__choices_commit, self.__choices_reset, self.__choices_items,
-             self._choices_flee]
+             self.__choices_help, self._choices_flee]
         ))
 
         details = self.add_block_label('Details', 7, 3, row_span=2, column_span=6, center=True)
@@ -438,19 +450,40 @@ class ReachTargetWidgetSet(MyWidgetSet, ABC):
         else:
             return self._on_commit_fail()
 
-    def __choices_reset(self):
-        self._player.reset_circuit()
-        pstv = self._player.state_vector
-        self.__stv_player.set_data(pstv)
-        self.__stv_diff.set_data(pstv.get_diff(self._target.statevector))
-        self.render()
-        return False
+    def __choices_reset(self) -> bool:
+        if self._player.has_empty_circuit():
+            self._details.set_data(data=(
+                ["Nothing to reset"],
+                [self._empty_callback]
+            ))
+            return True
+        else:
+            self._player.reset_circuit()
+            pstv = self._player.state_vector
+            self.__stv_player.set_data(pstv)
+            self.__stv_diff.set_data(pstv.get_diff(self._target.statevector))
+            self.render()
+            return False
 
     def __choices_items(self) -> bool:
         self._details.set_data(data=(
             ["You currently don't have any Items you could use!"],
             [self._empty_callback]
         ))
+        return True
+
+    def __choices_help(self) -> bool:
+        self._details.set_data(data=(
+            [str(instruction) for instruction in self._player.backpack] + ["-Back-"],
+            [self.__show_help_popup]
+        ))
+        return True
+
+    def __show_help_popup(self, index: int = 0) -> bool:
+        if 0 <= index < self._player.backpack.size:
+            instruction = self._player.backpack.get(index)
+            Popup.message(instruction.name(), instruction.description())
+            return False
         return True
 
     @abstractmethod

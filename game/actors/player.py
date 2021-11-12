@@ -240,6 +240,9 @@ class Player(ABC):
             return self.backpack.get(instruction_index)
         return None
 
+    def has_empty_circuit(self) -> bool:
+        return self.__next_col == 0
+
     def is_space_left(self) -> bool:
         return self.__next_col < self.__attributes.space
 
