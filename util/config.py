@@ -37,6 +37,10 @@ class MapConfig:
 
 class ColorConfig:
     SELECTION_HIGHLIGHT = py_cui.BLACK_ON_WHITE
+    QUBIT_INFO_COLOR = py_cui.CYAN_ON_BLACK
+    STV_HEADING_COLOR = py_cui.CYAN_ON_BLACK
+    CORRECT_AMPLITUDE_COLOR = py_cui.GREEN_ON_BLACK
+    CIRCUIT_COLOR = py_cui.CYAN_ON_BLACK
 
     ERROR_COLOR = py_cui.RED_ON_BLUE
     TEXT_HIGHLIGHT = "//"

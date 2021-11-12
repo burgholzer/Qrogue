@@ -82,6 +82,9 @@ class CircuitWidget(Widget):
     def __init__(self, widget: MyBaseWidget):
         super().__init__(widget)
         self.__player = None
+        # highlight everything between {} (gates), |> (start) or <| (end)
+        widget.add_text_color_rule("(\{.*?\}|\|.*?\>|\<.*?\|)", ColorConfig.CIRCUIT_COLOR, 'contains',
+                                   match_type='regex')
 
     def set_data(self, player: PlayerActor) -> None:
         self.__player = player
@@ -151,10 +154,13 @@ class MapWidget(Widget):
 
 
 class StateVectorWidget(Widget):
-    def __init__(self, widget: MyBaseWidget, headline: str):
+    def __init__(self, widget: MyBaseWidget, headline: str, diff: bool = False):
         super().__init__(widget)
         self.__headline = headline
         self.__state_vector = None
+        widget.add_text_color_rule("~.*~", ColorConfig.STV_HEADING_COLOR, 'contains', match_type='regex')
+        if diff:
+            widget.add_text_color_rule("-?0j?", ColorConfig.CORRECT_AMPLITUDE_COLOR, "startswith", match_type="regex")
 
     def set_data(self, state_vector: StateVector) -> None:
         self.__state_vector = state_vector
@@ -173,6 +179,7 @@ class QubitInfoWidget(Widget):
         super(QubitInfoWidget, self).__init__(widget)
         self.__left_aligned = left_aligned
         self.__text = ""
+        widget.add_text_color_rule("~.*~", ColorConfig.QUBIT_INFO_COLOR, 'contains', match_type='regex')
 
     def set_data(self, num_of_qubits: int) -> None:
         head = ""

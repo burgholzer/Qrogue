@@ -2,7 +2,7 @@ import py_cui.colors
 
 from game.map.tiles import TileCode
 from util.config import PathConfig, ColorConfig
-from widgets.my_widgets import MapWidget, StateVectorWidget, SelectionWidget, CircuitWidget, QubitInfoWidget
+from widgets.my_widgets import MapWidget
 
 __color_manager = {
     TileCode.Invalid: py_cui.RED_ON_BLUE,
@@ -208,24 +208,3 @@ class ColorRules:
         w.add_text_color_rule('B', get_color(TileCode.Boss), 'contains', match_type='regex')
         w.add_text_color_rule('\d', get_color(TileCode.Enemy), 'contains', match_type='regex')
         w.add_text_color_rule('#', get_color(TileCode.Wall), 'contains', match_type='regex')
-
-    @staticmethod
-    def apply_stv_rules(stv_widget: StateVectorWidget, diff_rules: bool = False) -> None:
-        stv_widget.widget.add_text_color_rule("~.*~", py_cui.colors.CYAN_ON_BLACK, 'contains', match_type='regex')
-
-        if diff_rules:
-            stv_widget.widget.add_text_color_rule("-?0j?", py_cui.colors.GREEN_ON_BLACK, "startswith",
-                                                  match_type="regex")
-
-    @staticmethod
-    def apply_qi_rules(qi_widget: QubitInfoWidget) -> None:
-        qi_widget.widget.add_text_color_rule("~.*~", py_cui.colors.CYAN_ON_BLACK, 'contains', match_type='regex')
-
-    @staticmethod
-    def apply_circuit_rules(circuit_widget: CircuitWidget) -> None:
-        regex = "(\{.*?\}|\|.*?\>|\<.*?\|)"
-        circuit_widget.widget.add_text_color_rule(regex, py_cui.colors.CYAN_ON_BLACK, 'contains', match_type='regex')
-        #circuit_widget.widget.add_text_color_rule("\|.*?\>", py_cui.colors.BLACK_ON_YELLOW,
-        #                                      'contains', match_type='regex')
-        #circuit_widget.widget.add_text_color_rule("\<.*?\|", py_cui.colors.BLACK_ON_YELLOW,
-        #                                      'contains', match_type='regex')

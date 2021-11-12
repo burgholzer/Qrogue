@@ -121,7 +121,6 @@ class MenuWidgetSet(MyWidgetSet):
             ["PLAY", "TUTORIAL", "OPTIONS", "EXIT"],
             [self.__play, self.__tutorial, self.__options, self.__exit]
         ))
-        ColorRules.apply_selection_rules(self.__selection)
 
     def get_widget_list(self) -> "list of Widgets":
         return [
@@ -342,7 +341,7 @@ class ReachTargetWidgetSet(MyWidgetSet, ABC):
         self.__stv_player = StateVectorWidget(stv, "Current State")
 
         stv = self.add_block_label('Diff StV', stv_row, 3, row_span=row_span, column_span=3, center=True)
-        self.__stv_diff = StateVectorWidget(stv, "Difference")
+        self.__stv_diff = StateVectorWidget(stv, "Difference", diff=True)
 
         stv = self.add_block_label('Target StV', stv_row, 6, row_span=row_span, column_span=2, center=True)
         self.__stv_target = StateVectorWidget(stv, "Target State")
@@ -364,15 +363,6 @@ class ReachTargetWidgetSet(MyWidgetSet, ABC):
         details = self.add_block_label('Details', 7, 3, row_span=2, column_span=6, center=True)
         details.toggle_border()
         self._details = SelectionWidget(details, columns=self.__DETAILS_COLUMNS, is_second=True)
-
-        ColorRules.apply_qi_rules(self.__qi_player)
-        ColorRules.apply_stv_rules(self.__stv_player)
-        ColorRules.apply_stv_rules(self.__stv_diff, diff_rules=True)
-        ColorRules.apply_stv_rules(self.__stv_target)
-        ColorRules.apply_qi_rules(self.__qi_target)
-        ColorRules.apply_circuit_rules(self.__circuit)
-        ColorRules.apply_selection_rules(self._choices)
-        ColorRules.apply_selection_rules(self._details)
 
     def get_main_widget(self) -> py_cui.widgets.Widget:
         return self._choices.widget
@@ -628,9 +618,6 @@ class ShopWidgetSet(MyWidgetSet):
         self.__details = SimpleWidget(details)
         buy = self.add_block_label("Buy", 4, inv_width, row_span=1, column_span=self.__NUM_OF_COLS - inv_width)
         self.__buy = SelectionWidget(buy, is_second=True)
-
-        ColorRules.apply_selection_rules(self.__inventory)
-        ColorRules.apply_selection_rules(self.__buy)
 
     @property
     def inventory(self) -> SelectionWidget:
