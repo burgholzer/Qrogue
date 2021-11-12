@@ -115,18 +115,12 @@ class QrogueCUI(py_cui.PyCUI):
         self.__riddle.details.widget.add_key_command(self.__controls.action, self.__riddle_details)
 
     def print_screen(self) -> None:
-        import os
-        from datetime import datetime
-        now = datetime.now()
-        now_str = now.strftime("%d%m%Y_%H%M%S")
-        file_name = f"screenshot_{now_str}.qrogue_screen"
-
-        text = now_str + "\n"
+        text = ""
         for my_widget in self.__cur_widget_set.get_widget_list():
             text += str(my_widget) + "\n"
             text += my_widget.widget.get_title()
             text += "\n"
-        PathConfig.write(os.path.join("screenprints", file_name), text)
+        PathConfig.new_screen_print(text)
 
     def apply_widget_set(self, new_widget_set: MyWidgetSet) -> None:
         new_widget_set.reset()

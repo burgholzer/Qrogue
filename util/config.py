@@ -1,17 +1,29 @@
 import os
+from datetime import datetime
 
 import py_cui
 
 
 class PathConfig:
     @staticmethod
-    def base_path(file_name: str = "") -> str:
+    def __base_path(file_name: str = "") -> str:
         folder = os.path.join("Documents", "Studium", "Master", "3. Semester", "Qrogue")
         return "D:\\" + os.path.join(folder, file_name)
 
     @staticmethod
+    def new_screen_print(text: str):
+        now_str = datetime.now().strftime("%d%m%Y_%H%M%S")
+        file_name = os.path.join("screenprints", f"{now_str}.qrsc")
+        PathConfig.write(file_name, now_str + "\n" + text, True, True)
+
+    @staticmethod
+    def new_key_log_file() -> str:
+        now_str = datetime.now().strftime("%d%m%Y_%H%M%S")
+        return os.path.join("keylogs", f"{now_str}.qrkl")
+
+    @staticmethod
     def write(file_name: str, text: str, may_exist: bool = True, append: bool = False):
-        path = PathConfig.base_path(file_name)
+        path = PathConfig.__base_path(file_name)
         mode = "x"
         if may_exist:
             if os.path.exists(path):
@@ -24,7 +36,7 @@ class PathConfig:
 
     @staticmethod
     def delete(file_name):
-        path = PathConfig.base_path(file_name)
+        path = PathConfig.__base_path(file_name)
         if os.path.exists(path):
             os.remove(path)
 
