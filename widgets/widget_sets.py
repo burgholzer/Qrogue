@@ -21,7 +21,7 @@ from util.my_random import RandomManager
 from widgets.color_rules import ColorRules
 from widgets.my_popups import Popup, CommonPopups
 from widgets.my_widgets import SelectionWidget, StateVectorWidget, CircuitWidget, MapWidget, SimpleWidget, HudWidget, \
-    QubitInfoWidget
+    QubitInfoWidget, MyBaseWidget
 
 
 class MyWidgetSet(WidgetSet, ABC):
@@ -31,6 +31,49 @@ class MyWidgetSet(WidgetSet, ABC):
     def __init__(self, num_rows, num_cols, logger):
         super().__init__(num_rows, num_cols, logger)
         self.init_widgets()
+
+    def add_block_label(self, title, row, column, row_span = 1, column_span = 1, padx = 1, pady = 0, center=True):
+        """Function that adds a new block label to the CUI grid
+
+                Parameters
+                ----------
+                title : str
+                    The title of the block label
+                row : int
+                    The row value, from the top down
+                column : int
+                    The column value from the top down
+                row_span=1 : int
+                    The number of rows to span accross
+                column_span=1 : int
+                    the number of columns to span accross
+                padx=1 : int
+                    number of padding characters in the x direction
+                pady=0 : int
+                    number of padding characters in the y direction
+                center : bool
+                    flag to tell label to be centered or left-aligned.
+
+                Returns
+                -------
+                new_widget : MyBaseWidget
+                    A reference to the created widget object.
+                """
+        id = 'Widget{}'.format(len(self._widgets.keys()))
+        new_widget = MyBaseWidget(id,
+                                       title,
+                                       self._grid,
+                                       row,
+                                       column,
+                                       row_span,
+                                       column_span,
+                                       padx,
+                                       pady,
+                                       center,
+                                       self._logger)
+        self._widgets[id] = new_widget
+        self._logger.info('Adding widget {} w/ ID {} of type {}'.format(title, id, str(type(new_widget))))
+        return new_widget
 
     def render(self) -> None:
         for widget in self.get_widget_list():

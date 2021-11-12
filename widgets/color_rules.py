@@ -222,12 +222,6 @@ class ColorRules:
         qi_widget.widget.add_text_color_rule("~.*~", py_cui.colors.CYAN_ON_BLACK, 'contains', match_type='regex')
 
     @staticmethod
-    def apply_selection_rules(sel_widget: SelectionWidget) -> None:
-        length = 0 #sel_widget.choice_length + 2 # +2 to include the leading and trailing whitespace
-        sel_widget.widget.add_text_color_rule(f"->.{{{length}}}", py_cui.colors.BLACK_ON_WHITE,
-                                              'contains', match_type='regex')
-
-    @staticmethod
     def apply_circuit_rules(circuit_widget: CircuitWidget) -> None:
         regex = "(\{.*?\}|\|.*?\>|\<.*?\|)"
         circuit_widget.widget.add_text_color_rule(regex, py_cui.colors.CYAN_ON_BLACK, 'contains', match_type='regex')

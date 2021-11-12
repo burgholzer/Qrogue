@@ -8,16 +8,21 @@ from game.logic.instruction import Instruction
 from game.logic.qubit import StateVector
 from game.map.map import Map
 from game.map.navigation import Direction
+from util.config import ColorConfig
 from widgets.renderer import TileRenderer
 
 
+class MyBaseWidget(BlockLabel):
+    def __init__(self, id, title, grid, row, column, row_span, column_span, padx, pady, center, logger):
+        super().__init__(id, title, grid, row, column, row_span, column_span, padx, pady, center, logger)
+
+
 class Widget(ABC):
-    def __init__(self, widget: BlockLabel):
+    def __init__(self, widget: MyBaseWidget):
         self.__widget = widget
-        self.__widget.add_key_command(Pausing.key(), Pausing.pause)
 
     @property
-    def widget(self) -> BlockLabel:
+    def widget(self) -> MyBaseWidget:
         return self.__widget
 
     @abstractmethod
@@ -34,7 +39,7 @@ class Widget(ABC):
 
 
 class SimpleWidget(Widget):
-    def __init__(self, widget: BlockLabel):
+    def __init__(self, widget: MyBaseWidget):
         super().__init__(widget)
         self.__text = ""
 
@@ -50,7 +55,7 @@ class SimpleWidget(Widget):
 
 
 class HudWidget(Widget):
-    def __init__(self, widget: BlockLabel):
+    def __init__(self, widget: MyBaseWidget):
         super().__init__(widget)
         self.__player = None
         self.__render_duration = None
@@ -74,7 +79,7 @@ class HudWidget(Widget):
 
 
 class CircuitWidget(Widget):
-    def __init__(self, widget: BlockLabel):
+    def __init__(self, widget: MyBaseWidget):
         super().__init__(widget)
         self.__player = None
 
@@ -119,7 +124,7 @@ class CircuitWidget(Widget):
 
 
 class MapWidget(Widget):
-    def __init__(self, widget: BlockLabel):
+    def __init__(self, widget: MyBaseWidget):
         super().__init__(widget)
         self.__map = None
         self.__backup = None
@@ -146,7 +151,7 @@ class MapWidget(Widget):
 
 
 class StateVectorWidget(Widget):
-    def __init__(self, widget: BlockLabel, headline: str):
+    def __init__(self, widget: MyBaseWidget, headline: str):
         super().__init__(widget)
         self.__headline = headline
         self.__state_vector = None
@@ -164,7 +169,7 @@ class StateVectorWidget(Widget):
 
 
 class QubitInfoWidget(Widget):
-    def __init__(self, widget: BlockLabel, left_aligned: bool):
+    def __init__(self, widget: MyBaseWidget, left_aligned: bool):
         super(QubitInfoWidget, self).__init__(widget)
         self.__left_aligned = left_aligned
         self.__text = ""
@@ -205,7 +210,7 @@ class QubitInfoWidget(Widget):
 class SelectionWidget(Widget):
     __COLUMN_SEPARATOR = "   "
 
-    def __init__(self, widget: BlockLabel, columns: int = 1, is_second: bool = False, stay_selected: bool = False):
+    def __init__(self, widget: MyBaseWidget, columns: int = 1, is_second: bool = False, stay_selected: bool = False):
         super(SelectionWidget, self).__init__(widget)
         self.__columns = columns
         self.__is_second = is_second
@@ -213,6 +218,7 @@ class SelectionWidget(Widget):
         self.__index = 0
         self.__choices = []
         self.__callbacks = []
+        self.widget.add_text_color_rule(f"->.", ColorConfig.SELECTION_HIGHLIGHT, 'contains', match_type='regex')
 
     @property
     def num_of_choices(self) -> int:

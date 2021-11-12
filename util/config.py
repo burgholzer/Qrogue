@@ -36,6 +36,8 @@ class MapConfig:
 
 
 class ColorConfig:
+    SELECTION_HIGHLIGHT = py_cui.BLACK_ON_WHITE
+
     ERROR_COLOR = py_cui.RED_ON_BLUE
     TEXT_HIGHLIGHT = "//"
     REGEX_TEXT_HIGHLIGHT = "//"
