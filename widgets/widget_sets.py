@@ -105,10 +105,11 @@ class MenuWidgetSet(MyWidgetSet):
     __MAP_WIDTH = 50
     __MAP_HEIGHT = 14
 
-    def __init__(self, logger, cbp: CallbackPack):
+    def __init__(self, logger, cbp: CallbackPack, stop_callback: "()"):
         super().__init__(self.__NUM_OF_ROWS, self.__NUM_OF_COLS, logger)
         self.__seed = 7
         self.__cbp = cbp
+        self.__stop = stop_callback
 
     def init_widgets(self) -> None:
         title = self.add_block_label("Qrogue", 0, 0, row_span=6, column_span=self.__NUM_OF_COLS, center=True)
@@ -153,8 +154,7 @@ class MenuWidgetSet(MyWidgetSet):
         Popup.message("TODO", "The options are not implemented yet!")
 
     def __exit(self) -> None:
-        #GameHandler.instance().stop()
-        exit()
+        self.__stop()
 
 
 class PauseMenuWidgetSet(MyWidgetSet):

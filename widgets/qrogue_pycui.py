@@ -11,6 +11,7 @@ from game.controls import Controls, Pausing
 from game.map.map import Map
 from game.map.navigation import Direction
 from util.config import PathConfig, ColorConfig, CheatConfig
+from util.key_logger import KeyLogger
 from util.logger import Logger
 from widgets.color_rules import MultiColorRenderer
 from widgets.my_popups import Popup, MultilinePopup
@@ -32,7 +33,7 @@ class QrogueCUI(py_cui.PyCUI):
 
         cbp = CallbackPack(self.__start_gameplay, self.__start_fight, self.__start_boss_fight, self.__open_riddle,
                            self.__visit_shop)
-        self.__menu = MenuWidgetSet(Logger.instance(), cbp)
+        self.__menu = MenuWidgetSet(Logger.instance(), cbp, self.stop)
         self.__pause = PauseMenuWidgetSet(Logger.instance(), self.__general_continue, self.switch_to_menu)
         self.__explore = ExploreWidgetSet(Logger.instance())
         self.__fight = FightWidgetSet(Logger.instance(), self.__continue_explore, self.__end_of_gameplay)
@@ -45,7 +46,14 @@ class QrogueCUI(py_cui.PyCUI):
         self.__init_keys()
 
         self.__state_machine.change_state(State.Menu, None)
+
+    def start(self):
         self.render()
+        super(QrogueCUI, self).start()
+
+    def _handle_key_presses(self, key_pressed):
+        KeyLogger.instance().log(self.__controls, key_pressed)
+        super(QrogueCUI, self)._handle_key_presses(key_pressed)
 
     def _initialize_widget_renderer(self):
         """Function that creates the renderer object that will draw each widget

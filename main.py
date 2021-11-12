@@ -1,6 +1,7 @@
 #D:\Programs\anaconda3\envs\Qrogue
 # This is a sample Python script.
 from game.game import GameHandler
+from util.key_logger import KeyLogger
 
 note = """
 Climate Crisis Narrative? E.g. the game plays on earth in 2070, most places have been destroyed 
@@ -11,3 +12,4 @@ turn back time so we can "stop" the climate crisis and live on a healthy planet?
 
 game = GameHandler(7)
 game.start()
+KeyLogger.instance().flush(force=False)

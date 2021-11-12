@@ -1,5 +1,6 @@
 
 from game.controls import Controls
+from util.key_logger import KeyLogger
 from util.logger import Logger
 from util.my_random import RandomManager
 from widgets.qrogue_pycui import QrogueCUI
@@ -19,14 +20,13 @@ class GameHandler:
             raise Exception("This class is a singleton!")
         else:
             GameHandler.__instance = self
+            # create the singletons
             RandomManager(seed)
-            Logger()    # create the logger
+            Logger()
+            KeyLogger()
+            controls = Controls()   # todo load later from file!
 
-            self.__renderer = QrogueCUI(seed, Controls())
+            self.__renderer = QrogueCUI(seed, controls)
 
     def start(self) -> None:
         self.__renderer.start()
-        self.__renderer.render()
-
-    def stop(self) -> None:
-        self.__renderer.stop()

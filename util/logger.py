@@ -1,3 +1,5 @@
+from util.key_logger import KeyLogger
+
 
 class Logger:
     __instance = None
@@ -26,6 +28,7 @@ class Logger:
 
     def error(self, message) -> None:
         self.__error_popup("ERROR", message)
+        KeyLogger.instance().log_error(message)
 
     def print(self, message: str, clear: bool = False) -> None:
         print(message)
