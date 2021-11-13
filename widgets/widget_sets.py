@@ -22,15 +22,17 @@ from widgets.color_rules import ColorRules
 from widgets.my_popups import Popup, CommonPopups
 from widgets.my_widgets import SelectionWidget, StateVectorWidget, CircuitWidget, MapWidget, SimpleWidget, HudWidget, \
     QubitInfoWidget, MyBaseWidget
+from widgets.renderable import Renderable
 
 
-class MyWidgetSet(WidgetSet, ABC):
+class MyWidgetSet(WidgetSet, Renderable, ABC):
     """
     Class that handles different sets of widgets so we can easily switch between different screens.
     """
-    def __init__(self, num_rows, num_cols, logger):
+    def __init__(self, num_rows, num_cols, logger, base_render_callback: "()"):
         super().__init__(num_rows, num_cols, logger)
         self.init_widgets()
+        self.__base_render = base_render_callback
 
     def add_block_label(self, title, row, column, row_span = 1, column_span = 1, padx = 1, pady = 0, center=True):
         """Function that adds a new block label to the CUI grid
@@ -76,8 +78,7 @@ class MyWidgetSet(WidgetSet, ABC):
         return new_widget
 
     def render(self) -> None:
-        for widget in self.get_widget_list():
-            widget.render()
+        self.__base_render(self.get_widget_list())
 
     @abstractmethod
     def init_widgets(self) -> None:
@@ -105,11 +106,12 @@ class MenuWidgetSet(MyWidgetSet):
     __MAP_WIDTH = 50
     __MAP_HEIGHT = 14
 
-    def __init__(self, logger, cbp: CallbackPack, stop_callback: "()"):
-        super().__init__(self.__NUM_OF_ROWS, self.__NUM_OF_COLS, logger)
+    def __init__(self, render: "()", logger, cbp: CallbackPack, stop_callback: "()", start_simulation_callback: "(str,)"):
+        super().__init__(self.__NUM_OF_ROWS, self.__NUM_OF_COLS, logger, render)
         self.__seed = 7
         self.__cbp = cbp
         self.__stop = stop_callback
+        self.__start_simulation = start_simulation_callback
 
     def init_widgets(self) -> None:
         title = self.add_block_label("Qrogue", 0, 0, row_span=6, column_span=self.__NUM_OF_COLS, center=True)
@@ -119,8 +121,8 @@ class MenuWidgetSet(MyWidgetSet):
         selection = self.add_block_label("", 6, 0, row_span=2, column_span=self.__NUM_OF_COLS, center=True)
         self.__selection = SelectionWidget(selection, 4)
         self.__selection.set_data(data=(
-            ["PLAY", "TUTORIAL", "OPTIONS", "EXIT"],
-            [self.__play, self.__tutorial, self.__options, self.__exit]
+            ["PLAY", "TUTORIAL", "SIMULATOR", "OPTIONS", "EXIT"],
+            [self.__play, self.__tutorial, self.__simulate, self.__options, self.__exit]
         ))
 
     def get_widget_list(self) -> "list of Widgets":
@@ -150,6 +152,9 @@ class MenuWidgetSet(MyWidgetSet):
         self.__cbp.start_gameplay(map)
         Popup.message("Welcome to Qrogue! (scroll with arrow keys)", HelpText.get(HelpTextType.Welcome))
 
+    def __simulate(self) -> None:
+        self.__start_simulation("") # todo fix parameter
+
     def __options(self) -> None:
         Popup.message("TODO", "The options are not implemented yet!")
 
@@ -177,8 +182,8 @@ class PauseMenuWidgetSet(MyWidgetSet):
          ]
     )
 
-    def __init__(self, logger, continue_callback: "()", exit_run_callback: "()"):
-        super().__init__(9, self.__NUM_OF_COLS, logger)
+    def __init__(self, render: "()", logger, continue_callback: "()", exit_run_callback: "()"):
+        super().__init__(9, self.__NUM_OF_COLS, logger, render)
         self.__continue_callback = continue_callback
         self.__exit_run = exit_run_callback
 
@@ -263,8 +268,8 @@ class ExploreWidgetSet(MyWidgetSet):
     __NUM_OF_ROWS = 8
     __NUM_OF_COLS = 9
 
-    def __init__(self, logger):
-        super().__init__(self.__NUM_OF_ROWS, self.__NUM_OF_COLS, logger)
+    def __init__(self, render: "()", logger):
+        super().__init__(self.__NUM_OF_ROWS, self.__NUM_OF_COLS, logger, render)
 
     def init_widgets(self) -> None:
         hud = self.add_block_label('HUD', 0, 0, row_span=1, column_span=self.__NUM_OF_COLS, center=False)
@@ -321,9 +326,9 @@ class ReachTargetWidgetSet(MyWidgetSet, ABC):
     __CHOICE_COLUMNS = 2
     __DETAILS_COLUMNS = 2
 
-    def __init__(self, logger, continue_exploration_callback: "()", flee_choice: str = "Flee"):
+    def __init__(self, render: "()", logger, continue_exploration_callback: "()", flee_choice: str = "Flee"):
         self.__choice_strings = ["Add/Remove", "Commit", "Reset", "Items", "Help", flee_choice]
-        super().__init__(self.__NUM_OF_ROWS, self.__NUM_OF_COLS, logger)
+        super().__init__(self.__NUM_OF_ROWS, self.__NUM_OF_COLS, logger, render)
         self._continue_exploration_callback = continue_exploration_callback
         self._player = None
         self._target = None
@@ -532,8 +537,8 @@ class ReachTargetWidgetSet(MyWidgetSet, ABC):
 
 
 class FightWidgetSet(ReachTargetWidgetSet):
-    def __init__(self, logger, continue_exploration_callback: "()", game_over_callback: "()"):
-        super(FightWidgetSet, self).__init__(logger, continue_exploration_callback)
+    def __init__(self, render: "()", logger, continue_exploration_callback: "()", game_over_callback: "()"):
+        super(FightWidgetSet, self).__init__(render, logger, continue_exploration_callback)
         self.__random = RandomManager.create_new()
         self.__game_over_callback = game_over_callback
         self.__flee_chance = 0
@@ -579,17 +584,16 @@ class FightWidgetSet(ReachTargetWidgetSet):
 
 
 class BossFightWidgetSet(FightWidgetSet):
-    def __init__(self, logger, continue_exploration_callback: "()", game_over_callback: "()",
+    def __init__(self, render: "()", logger, continue_exploration_callback: "()", game_over_callback: "()",
                  tutorial_won_callback: "()"):
         self.__continue_exploration_callback = continue_exploration_callback
         self.__tutorial_won = tutorial_won_callback
-        super().__init__(logger, self.__continue_exploration, game_over_callback)
+        super().__init__(render, logger, self.__continue_exploration, game_over_callback)
 
     def set_data(self, player: PlayerActor, target: Boss):
         super(BossFightWidgetSet, self).set_data(player, target)
 
     def __continue_exploration(self):
-        print(self._target.is_defeated)
         if self._target.is_defeated:
             self.__tutorial_won()
         else:
@@ -600,8 +604,8 @@ class ShopWidgetSet(MyWidgetSet):
     __NUM_OF_ROWS = 9
     __NUM_OF_COLS = 9
 
-    def __init__(self, logger, continue_exploration_callback: "()"):
-        super().__init__(self.__NUM_OF_ROWS, self.__NUM_OF_COLS, logger)
+    def __init__(self, render: "()", logger, continue_exploration_callback: "()"):
+        super().__init__(self.__NUM_OF_ROWS, self.__NUM_OF_COLS, logger, render)
         self.__continue_exploration = continue_exploration_callback
         self.__player = None
         self.__items = None
@@ -696,8 +700,8 @@ class RiddleWidgetSet(ReachTargetWidgetSet):
     __NUM_OF_ROWS = 9
     __NUM_OF_COLS = 9
 
-    def __init__(self, logger, continue_exploration_callback: "()"):
-        super().__init__(logger, continue_exploration_callback, "Give Up")
+    def __init__(self, render: "()", logger, continue_exploration_callback: "()"):
+        super().__init__(render, logger, continue_exploration_callback, "Give Up")
 
     def set_data(self, player: PlayerActor, target: Riddle) -> None:
         super(RiddleWidgetSet, self).set_data(player, target)

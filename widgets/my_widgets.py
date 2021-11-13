@@ -3,12 +3,12 @@ from abc import ABC, abstractmethod
 from py_cui.widgets import BlockLabel
 
 from game.actors.player import Player as PlayerActor
-from game.controls import Pausing
 from game.logic.instruction import Instruction
 from game.logic.qubit import StateVector
 from game.map.map import Map
 from game.map.navigation import Direction
 from util.config import ColorConfig
+from widgets.renderable import Renderable
 from widgets.renderer import TileRenderer
 
 
@@ -17,7 +17,7 @@ class MyBaseWidget(BlockLabel):
         super().__init__(id, title, grid, row, column, row_span, column_span, padx, pady, center, logger)
 
 
-class Widget(ABC):
+class Widget(Renderable, ABC):
     def __init__(self, widget: MyBaseWidget):
         self.__widget = widget
 

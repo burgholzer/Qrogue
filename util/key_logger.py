@@ -25,8 +25,8 @@ class KeyLogger:
             KeyLogger.__instance = self
 
     def log(self, controls: Controls, key_pressed: int):
-        key = controls.convert(key_pressed)
-        self.__buffer += chr(key)
+        key = controls.encode(key_pressed)
+        self.__buffer += key.to_char()
 
         if len(self.__buffer) >= KeyLogger.__BUFFER_SIZE:
             self.flush(force=True)

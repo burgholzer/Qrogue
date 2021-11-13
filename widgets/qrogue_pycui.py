@@ -7,10 +7,11 @@ from game.actors.enemy import Enemy
 from game.actors.player import Player as PlayerActor
 from game.actors.riddle import Riddle
 from game.callbacks import CallbackPack
-from game.controls import Controls, Pausing
+from game.controls import Controls, Pausing, Keys
 from game.map.map import Map
 from game.map.navigation import Direction
-from util.config import PathConfig, ColorConfig, CheatConfig
+from util.config import PathConfig, ColorConfig, CheatConfig, GameplayConfig
+from util.game_simulator import GameSimulator
 from util.key_logger import KeyLogger
 from util.logger import Logger
 from widgets.color_rules import MultiColorRenderer
@@ -26,6 +27,7 @@ class QrogueCUI(py_cui.PyCUI):
         Popup.update_popup_functions(self.__show_popup)
         CheatConfig.init(self.__show_popup, self.__show_cheat_popup)
 
+        self.__simulator = None
         self.__state_machine = StateMachine(self)
         self.__seed = seed
         self.__controls = controls
@@ -33,14 +35,15 @@ class QrogueCUI(py_cui.PyCUI):
 
         cbp = CallbackPack(self.__start_gameplay, self.__start_fight, self.__start_boss_fight, self.__open_riddle,
                            self.__visit_shop)
-        self.__menu = MenuWidgetSet(Logger.instance(), cbp, self.stop)
-        self.__pause = PauseMenuWidgetSet(Logger.instance(), self.__general_continue, self.switch_to_menu)
-        self.__explore = ExploreWidgetSet(Logger.instance())
-        self.__fight = FightWidgetSet(Logger.instance(), self.__continue_explore, self.__end_of_gameplay)
-        self.__boss_fight = BossFightWidgetSet(Logger.instance(), self.__continue_explore, self.__end_of_gameplay,
-                                               self.__won_tutorial)
-        self.__riddle = RiddleWidgetSet(Logger.instance(), self.__continue_explore)
-        self.__shop = ShopWidgetSet(Logger.instance(), self.__continue_explore)
+        self.__menu = MenuWidgetSet(self.__render, Logger.instance(), cbp, self.stop, self.__start_simulation)
+        self.__pause = PauseMenuWidgetSet(self.__render, Logger.instance(), self.__general_continue,
+                                          self.switch_to_menu)
+        self.__explore = ExploreWidgetSet(self.__render, Logger.instance())
+        self.__fight = FightWidgetSet(self.__render, Logger.instance(), self.__continue_explore, self.__end_of_gameplay)
+        self.__boss_fight = BossFightWidgetSet(self.__render, Logger.instance(), self.__continue_explore,
+                                               self.__end_of_gameplay, self.__won_tutorial)
+        self.__riddle = RiddleWidgetSet(self.__render, Logger.instance(), self.__continue_explore)
+        self.__shop = ShopWidgetSet(self.__render, Logger.instance(), self.__continue_explore)
 
         self.__cur_widget_set = None
         self.__init_keys()
@@ -51,9 +54,28 @@ class QrogueCUI(py_cui.PyCUI):
         self.render()
         super(QrogueCUI, self).start()
 
+    def __start_simulation(self, path: str):
+        self.__simulator = GameSimulator(self.__controls, path, in_keylog_folder=True)
+        # go back to the original position of the cursor
+        super(QrogueCUI, self)._handle_key_presses(self.__controls.selection_left)
+        super(QrogueCUI, self)._handle_key_presses(self.__controls.selection_left)
+        self._handle_key_presses(self.__controls.action)
+
     def _handle_key_presses(self, key_pressed):
-        KeyLogger.instance().log(self.__controls, key_pressed)
-        super(QrogueCUI, self)._handle_key_presses(key_pressed)
+        if self.__simulator is None:
+            if GameplayConfig.log_keys():
+                KeyLogger.instance().log(self.__controls, key_pressed)
+            super(QrogueCUI, self)._handle_key_presses(key_pressed)
+        elif key_pressed == self.__controls.get(Keys.Escape):
+            Popup.message("Simulator", "stopped Simulator")
+            self.__simulator = None
+        else:
+            key = self.__simulator.next()
+            if key:
+                super(QrogueCUI, self)._handle_key_presses(key)
+            else:
+                Popup.message("Simulator", "finished")
+                self.__simulator = None
 
     def _initialize_widget_renderer(self):
         """Function that creates the renderer object that will draw each widget
@@ -76,7 +98,6 @@ class QrogueCUI(py_cui.PyCUI):
         for widget_set in [self.__explore, self.__fight, self.__boss_fight, self.__shop, self.__riddle]:
             for widget in widget_set.get_widget_list():
                 widget.widget.add_key_command(self.__controls.pause, Pausing.pause)
-
 
         # all selections
         selection_widgets = [
@@ -173,7 +194,6 @@ class QrogueCUI(py_cui.PyCUI):
         self.switch_to_menu(None)
 
     def __won_tutorial(self) -> None:
-        print("adfasdf")
         self.switch_to_menu(None)
         bell = ColorConfig.highlight_word("Bell")
         Popup.message("You won!", f"Congratulations, you defeated {bell} and successfully played the Tutorial!")
@@ -237,7 +257,11 @@ class QrogueCUI(py_cui.PyCUI):
         self.apply_widget_set(self.__shop)
 
     def render(self) -> None:
-        self.__cur_widget_set.render()
+        self.__render([self.__cur_widget_set])
+
+    def __render(self, renderables: "list of Renderable"):
+        for r in renderables:
+            r.render()
 
     def __use_menu_selection(self) -> None:
         if self.__menu.selection.use() and self.__cur_widget_set is self.__menu:
@@ -246,55 +270,51 @@ class QrogueCUI(py_cui.PyCUI):
     def __pause_choices(self) -> None:
         if self.__pause.choices.use() and self.__cur_widget_set is self.__pause:
             self.move_focus(self.__pause.details.widget, auto_press_buttons=False)
-            self.__pause.choices.render()
-            self.__pause.details.render()
+            self.__render([self.__pause.choices, self.__pause.details])
 
     def __pause_details(self) -> None:
         if self.__pause.details.use() and self.__cur_widget_set is self.__pause:
             self.move_focus(self.__pause.choices.widget, auto_press_buttons=False)
             self.__pause.details.render_reset()
-            self.__pause.render()
+            self.render()
 
     def __fight_choices(self) -> None:
         if self.__fight.choices.use() and self.__cur_widget_set is self.__fight:
             self.move_focus(self.__fight.details.widget, auto_press_buttons=False)
-            self.__fight.choices.render()
-            self.__fight.details.render()
+            self.__render([self.__fight.choices, self.__fight.details])
 
     def __fight_details(self) -> None:
         if self.__fight.details.use() and self.__cur_widget_set is self.__fight:
             self.move_focus(self.__fight.choices.widget, auto_press_buttons=False)
             self.__fight.details.render_reset()
-            self.__fight.render()   # needed for updating the StateVectors and the circuit
+            self.render()# render the whole widget_set for updating the StateVectors and the circuit
 
     def __boss_fight_choices(self) -> None:
         if self.__boss_fight.choices.use() and self.__cur_widget_set is self.__boss_fight:
             self.move_focus(self.__boss_fight.details.widget, auto_press_buttons=False)
-            self.__boss_fight.choices.render()
-            self.__boss_fight.details.render()
+            self.__render([self.__boss_fight.choices, self.__boss_fight.details])
 
     def __boss_fight_details(self) -> None:
         if self.__boss_fight.details.use() and self.__cur_widget_set is self.__boss_fight:
             self.move_focus(self.__boss_fight.choices.widget, auto_press_buttons=False)
             self.__boss_fight.details.render_reset()
-            self.__boss_fight.render()   # needed for updating the StateVectors and the circuit
+            self.render()   # render the whole widget_set for updating the StateVectors and the circuit
 
     def __riddle_choices(self):
         if self.__riddle.choices.use() and self.__cur_widget_set is self.__riddle:
             self.move_focus(self.__riddle.details.widget, auto_press_buttons=False)
-            self.__riddle.choices.render()
-            self.__riddle.details.render()
+            self.__render([self.__riddle.choices, self.__pause.details])
 
     def __riddle_details(self) -> None:
         if self.__riddle.details.use() and self.__cur_widget_set is self.__riddle:
             self.move_focus(self.__riddle.choices.widget, auto_press_buttons=False)
             self.__riddle.details.render_reset()
-            self.__riddle.render()   # needed for updating the StateVectors and the circuit
+            self.render()   # render the whole widget_set for updating the StateVectors and the circuit
 
     def __shop_inventory(self) -> None:
         if self.__shop.inventory.use() and self.__cur_widget_set is self.__shop:
             self.move_focus(self.__shop.buy.widget, auto_press_buttons=False)
-            self.__shop.render()
+            self.render()
 
     def __shop_buy(self) -> None:
         if self.__shop.buy.use() and self.__cur_widget_set is self.__shop:
@@ -302,7 +322,7 @@ class QrogueCUI(py_cui.PyCUI):
             self.__shop.details.render_reset()
             self.__shop.buy.render_reset()
             self.__shop.buy.clear_text()
-            self.__shop.render()
+            self.render()
 
 
 class State(Enum):

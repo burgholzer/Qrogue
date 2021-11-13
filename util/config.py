@@ -5,6 +5,8 @@ import py_cui
 
 
 class PathConfig:
+    __KEY_LOG_FOLDER = "keylogs"
+
     @staticmethod
     def __base_path(file_name: str = "") -> str:
         folder = os.path.join("Documents", "Studium", "Master", "3. Semester", "Qrogue")
@@ -19,7 +21,7 @@ class PathConfig:
     @staticmethod
     def new_key_log_file() -> str:
         now_str = datetime.now().strftime("%d%m%Y_%H%M%S")
-        return os.path.join("keylogs", f"{now_str}.qrkl")
+        return os.path.join(PathConfig.__KEY_LOG_FOLDER, f"{now_str}.qrkl")
 
     @staticmethod
     def write(file_name: str, text: str, may_exist: bool = True, append: bool = False):
@@ -33,6 +35,20 @@ class PathConfig:
         file = open(path, mode)
         file.write(text)
         file.close()
+
+    @staticmethod
+    def read_keylog_buffered(file_name: str, in_keylog_folder: bool = True, buffer_size: int = 10) -> str:
+        if in_keylog_folder:
+            path = PathConfig.__base_path(os.path.join(PathConfig.__KEY_LOG_FOLDER, file_name))
+        else:
+            path = file_name
+        if os.path.exists(path):
+            with open(path, "r") as file:
+                data = file.read(buffer_size)
+                while data:
+                    yield data
+                    data = file.read(buffer_size)
+        return None
 
     @staticmethod
     def delete(file_name):
@@ -267,7 +283,12 @@ class CheatConfig:
 
 class GameplayConfig:
     __AUTO_RESET_CIRCUIT = True
+    __LOG_KEYS = False
 
     @staticmethod
     def auto_reset_circuit() -> bool:
         return GameplayConfig.__AUTO_RESET_CIRCUIT
+
+    @staticmethod
+    def log_keys() -> bool:
+        return GameplayConfig.__LOG_KEYS
