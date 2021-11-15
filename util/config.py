@@ -5,23 +5,49 @@ import py_cui
 
 
 class PathConfig:
+    __BASE_PATH = ".."
+    __LOG_FOLDER = "logs"
     __KEY_LOG_FOLDER = "keylogs"
+    __SCREEN_PRINTS_FOLDER = "screenprints"
+
+    @staticmethod
+    def set_base_path() -> bool:
+        config_file_path = os.path.join(os.path.abspath("."), "installer", "qrogue.config")
+        try:
+            with open(config_file_path) as f:
+                content = f.readlines()
+                PathConfig.__BASE_PATH = ""
+                # remove the special characters so we get a "normal" path string (don't know why this is needed, but it is)
+                flag = False
+                for char in content[2]:
+                    if flag:
+                        PathConfig.__BASE_PATH += char
+                    flag = not flag
+                # remove the last character because it is \n
+                PathConfig.__BASE_PATH = PathConfig.__BASE_PATH[:-1]
+            return os.path.exists(PathConfig.__BASE_PATH)
+        except:
+            return False
 
     @staticmethod
     def __base_path(file_name: str = "") -> str:
-        folder = os.path.join("Documents", "Studium", "Master", "3. Semester", "Qrogue")
-        return "D:\\" + os.path.join(folder, file_name)
+        return os.path.join(PathConfig.__BASE_PATH, file_name)
 
     @staticmethod
-    def new_screen_print(text: str):
+    def new_log_file(seed: int) -> str:
         now_str = datetime.now().strftime("%d%m%Y_%H%M%S")
-        file_name = os.path.join("screenprints", f"{now_str}.qrsc")
-        PathConfig.write(file_name, now_str + "\n" + text, True, True)
+        return os.path.join(PathConfig.__LOG_FOLDER, f"{now_str}_seed{seed}.qrlog")
 
     @staticmethod
     def new_key_log_file() -> str:
         now_str = datetime.now().strftime("%d%m%Y_%H%M%S")
         return os.path.join(PathConfig.__KEY_LOG_FOLDER, f"{now_str}.qrkl")
+
+    @staticmethod
+    def new_screen_print(text: str):
+        now_str = datetime.now().strftime("%d%m%Y_%H%M%S")
+        file_name = os.path.join(PathConfig.__SCREEN_PRINTS_FOLDER, f"{now_str}.qrsc")
+        PathConfig.write(file_name, now_str + "\n" + text, True, True)
 
     @staticmethod
     def write(file_name: str, text: str, may_exist: bool = True, append: bool = False):

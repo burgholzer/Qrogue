@@ -3,7 +3,8 @@
 /.idea/inspectionProfiles/profiles_settings.xml
 /.idea/Qrogue.iml
 /.idea/vcs.xml
+/.env_qrogue
 powershell.txt
-script.ps1
+installer/qrogue.config
 *.pyc
 /Qrogue - Verknüpfung.lnk
