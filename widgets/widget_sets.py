@@ -101,7 +101,7 @@ _ascii_art = """
  Qrogue
 """
 class MenuWidgetSet(MyWidgetSet):
-    __NUM_OF_ROWS = 8
+    __NUM_OF_ROWS = 9
     __NUM_OF_COLS = 9
     __MAP_WIDTH = 50
     __MAP_HEIGHT = 14
@@ -115,14 +115,14 @@ class MenuWidgetSet(MyWidgetSet):
         self.__start_simulation = start_simulation_callback
 
     def init_widgets(self) -> None:
-        title = self.add_block_label("Qrogue", 0, 0, row_span=6, column_span=self.__NUM_OF_COLS, center=True)
+        title = self.add_block_label("Qrogue", 0, 3, row_span=self.__NUM_OF_ROWS-1, column_span=6, center=True)
         self.__title = SimpleWidget(title)
         self.__title.set_data(_ascii_art)
 
-        selection = self.add_block_label("", 6, 0, row_span=2, column_span=self.__NUM_OF_COLS, center=True)
-        self.__selection = SelectionWidget(selection, 4)
+        selection = self.add_block_label("", 2, 0, row_span=5, column_span=3, center=True)
+        self.__selection = SelectionWidget(selection, 1)
         self.__selection.set_data(data=(
-            ["PLAY", "TUTORIAL", "SIMULATOR", "OPTIONS", "EXIT"],
+            ["PLAY\n", "TUTORIAL\n", "SIMULATOR\n", "OPTIONS\n", "EXIT\n"],
             [self.__play, self.__tutorial, self.__simulate, self.__options, self.__exit]
         ))
 
