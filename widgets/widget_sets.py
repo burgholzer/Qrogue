@@ -29,8 +29,8 @@ class MyWidgetSet(WidgetSet, Renderable, ABC):
     """
     Class that handles different sets of widgets so we can easily switch between different screens.
     """
-    def __init__(self, num_rows, num_cols, logger, base_render_callback: "()"):
-        super().__init__(num_rows, num_cols, logger)
+    def __init__(self, num_rows, num_cols, logger, root: py_cui.PyCUI, base_render_callback: "()"):
+        super().__init__(num_rows, num_cols, logger, root)
         self.init_widgets()
         self.__base_render = base_render_callback
 
@@ -106,8 +106,9 @@ class MenuWidgetSet(MyWidgetSet):
     __MAP_WIDTH = 50
     __MAP_HEIGHT = 14
 
-    def __init__(self, render: "()", logger, cbp: CallbackPack, stop_callback: "()", start_simulation_callback: "(str,)"):
-        super().__init__(self.__NUM_OF_ROWS, self.__NUM_OF_COLS, logger, render)
+    def __init__(self, render: "()", logger, root: py_cui.PyCUI, cbp: CallbackPack, stop_callback: "()",
+                 start_simulation_callback: "(str,)"):
+        super().__init__(self.__NUM_OF_ROWS, self.__NUM_OF_COLS, logger, root, render)
         self.__seed = 7
         self.__cbp = cbp
         self.__stop = stop_callback
@@ -182,8 +183,8 @@ class PauseMenuWidgetSet(MyWidgetSet):
          ]
     )
 
-    def __init__(self, render: "()", logger, continue_callback: "()", exit_run_callback: "()"):
-        super().__init__(9, self.__NUM_OF_COLS, logger, render)
+    def __init__(self, render: "()", logger, root: py_cui.PyCUI, continue_callback: "()", exit_run_callback: "()"):
+        super().__init__(self.__NUM_OF_ROWS, self.__NUM_OF_COLS, logger, root, render)
         self.__continue_callback = continue_callback
         self.__exit_run = exit_run_callback
 
@@ -268,8 +269,8 @@ class ExploreWidgetSet(MyWidgetSet):
     __NUM_OF_ROWS = 8
     __NUM_OF_COLS = 9
 
-    def __init__(self, render: "()", logger):
-        super().__init__(self.__NUM_OF_ROWS, self.__NUM_OF_COLS, logger, render)
+    def __init__(self, render: "()", logger, root: py_cui.PyCUI):
+        super().__init__(self.__NUM_OF_ROWS, self.__NUM_OF_COLS, logger, root, render)
 
     def init_widgets(self) -> None:
         hud = self.add_block_label('HUD', 0, 0, row_span=1, column_span=self.__NUM_OF_COLS, center=False)
@@ -326,9 +327,9 @@ class ReachTargetWidgetSet(MyWidgetSet, ABC):
     __CHOICE_COLUMNS = 2
     __DETAILS_COLUMNS = 2
 
-    def __init__(self, render: "()", logger, continue_exploration_callback: "()", flee_choice: str = "Flee"):
+    def __init__(self, render: "()", logger, root: py_cui.PyCUI, continue_exploration_callback: "()", flee_choice: str = "Flee"):
         self.__choice_strings = ["Add/Remove", "Commit", "Reset", "Items", "Help", flee_choice]
-        super().__init__(self.__NUM_OF_ROWS, self.__NUM_OF_COLS, logger, render)
+        super().__init__(self.__NUM_OF_ROWS, self.__NUM_OF_COLS, logger, root, render)
         self._continue_exploration_callback = continue_exploration_callback
         self._player = None
         self._target = None
@@ -537,8 +538,8 @@ class ReachTargetWidgetSet(MyWidgetSet, ABC):
 
 
 class FightWidgetSet(ReachTargetWidgetSet):
-    def __init__(self, render: "()", logger, continue_exploration_callback: "()", game_over_callback: "()"):
-        super(FightWidgetSet, self).__init__(render, logger, continue_exploration_callback)
+    def __init__(self, render: "()", logger, root: py_cui.PyCUI, continue_exploration_callback: "()", game_over_callback: "()"):
+        super(FightWidgetSet, self).__init__(render, logger, root, continue_exploration_callback)
         self.__random = RandomManager.create_new()
         self.__game_over_callback = game_over_callback
         self.__flee_chance = 0
@@ -584,11 +585,11 @@ class FightWidgetSet(ReachTargetWidgetSet):
 
 
 class BossFightWidgetSet(FightWidgetSet):
-    def __init__(self, render: "()", logger, continue_exploration_callback: "()", game_over_callback: "()",
+    def __init__(self, render: "()", logger, root: py_cui.PyCUI, continue_exploration_callback: "()", game_over_callback: "()",
                  tutorial_won_callback: "()"):
         self.__continue_exploration_callback = continue_exploration_callback
         self.__tutorial_won = tutorial_won_callback
-        super().__init__(render, logger, self.__continue_exploration, game_over_callback)
+        super().__init__(render, logger, root, self.__continue_exploration, game_over_callback)
 
     def set_data(self, player: PlayerActor, target: Boss):
         super(BossFightWidgetSet, self).set_data(player, target)
@@ -604,8 +605,8 @@ class ShopWidgetSet(MyWidgetSet):
     __NUM_OF_ROWS = 9
     __NUM_OF_COLS = 9
 
-    def __init__(self, render: "()", logger, continue_exploration_callback: "()"):
-        super().__init__(self.__NUM_OF_ROWS, self.__NUM_OF_COLS, logger, render)
+    def __init__(self, render: "()", logger, root: py_cui.PyCUI, continue_exploration_callback: "()"):
+        super().__init__(self.__NUM_OF_ROWS, self.__NUM_OF_COLS, logger, root, render)
         self.__continue_exploration = continue_exploration_callback
         self.__player = None
         self.__items = None
@@ -700,8 +701,8 @@ class RiddleWidgetSet(ReachTargetWidgetSet):
     __NUM_OF_ROWS = 9
     __NUM_OF_COLS = 9
 
-    def __init__(self, render: "()", logger, continue_exploration_callback: "()"):
-        super().__init__(render, logger, continue_exploration_callback, "Give Up")
+    def __init__(self, render: "()", logger, root: py_cui.PyCUI, continue_exploration_callback: "()"):
+        super().__init__(render, logger, root, continue_exploration_callback, "Give Up")
 
     def set_data(self, player: PlayerActor, target: Riddle) -> None:
         super(RiddleWidgetSet, self).set_data(player, target)

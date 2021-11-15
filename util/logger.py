@@ -1,7 +1,9 @@
+import py_cui.debug
+
 from util.key_logger import KeyLogger
 
 
-class Logger:
+class Logger(py_cui.debug.PyCUILogger):
     __instance = None
 
     @staticmethod
@@ -11,6 +13,7 @@ class Logger:
         return Logger.__instance
 
     def __init__(self):
+        super().__init__("Qrogue-Logger")
         if Logger.__instance is not None:
             raise Exception("This class is a singleton!")
         else:
@@ -23,10 +26,10 @@ class Logger:
         self.__message_popup = message_popup_function
         self.__error_popup = error_popup_function
 
-    def info(self, message) -> None:
+    def info(self, message, **kwargs) -> None:
         pass
 
-    def error(self, message) -> None:
+    def error(self, message, **kwargs) -> None:
         self.__error_popup("ERROR", message)
         KeyLogger.instance().log_error(message)
 

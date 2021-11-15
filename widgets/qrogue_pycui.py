@@ -35,15 +35,15 @@ class QrogueCUI(py_cui.PyCUI):
 
         cbp = CallbackPack(self.__start_gameplay, self.__start_fight, self.__start_boss_fight, self.__open_riddle,
                            self.__visit_shop)
-        self.__menu = MenuWidgetSet(self.__render, Logger.instance(), cbp, self.stop, self.__start_simulation)
-        self.__pause = PauseMenuWidgetSet(self.__render, Logger.instance(), self.__general_continue,
+        self.__menu = MenuWidgetSet(self.__render, Logger.instance(), self, cbp, self.stop, self.__start_simulation)
+        self.__pause = PauseMenuWidgetSet(self.__render, Logger.instance(), self, self.__general_continue,
                                           self.switch_to_menu)
-        self.__explore = ExploreWidgetSet(self.__render, Logger.instance())
-        self.__fight = FightWidgetSet(self.__render, Logger.instance(), self.__continue_explore, self.__end_of_gameplay)
-        self.__boss_fight = BossFightWidgetSet(self.__render, Logger.instance(), self.__continue_explore,
+        self.__explore = ExploreWidgetSet(self.__render, Logger.instance(), self)
+        self.__fight = FightWidgetSet(self.__render, Logger.instance(), self, self.__continue_explore, self.__end_of_gameplay)
+        self.__boss_fight = BossFightWidgetSet(self.__render, Logger.instance(), self, self.__continue_explore,
                                                self.__end_of_gameplay, self.__won_tutorial)
-        self.__riddle = RiddleWidgetSet(self.__render, Logger.instance(), self.__continue_explore)
-        self.__shop = ShopWidgetSet(self.__render, Logger.instance(), self.__continue_explore)
+        self.__riddle = RiddleWidgetSet(self.__render, Logger.instance(), self, self.__continue_explore)
+        self.__shop = ShopWidgetSet(self.__render, Logger.instance(), self, self.__continue_explore)
 
         self.__cur_widget_set = None
         self.__init_keys()
