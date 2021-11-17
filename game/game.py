@@ -22,7 +22,7 @@ class GameHandler:
             GameHandler.__instance = self
             # create the singletons
             RandomManager(seed)
-            Logger()
+            Logger(seed)
             KeyLogger()
             controls = Controls()   # todo load later from file!
 

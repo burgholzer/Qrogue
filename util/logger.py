@@ -1,9 +1,13 @@
+from datetime import datetime
+
 import py_cui.debug
 
+from util.config import PathConfig
 from util.key_logger import KeyLogger
 
 
 class Logger(py_cui.debug.PyCUILogger):
+    __BUFFER_SIZE = 2048
     __instance = None
 
     @staticmethod
@@ -12,7 +16,7 @@ class Logger(py_cui.debug.PyCUILogger):
             raise Exception("This singleton has not been initialized yet!")
         return Logger.__instance
 
-    def __init__(self):
+    def __init__(self, seed: int):
         super().__init__("Qrogue-Logger")
         if Logger.__instance is not None:
             raise Exception("This class is a singleton!")
@@ -20,6 +24,9 @@ class Logger(py_cui.debug.PyCUILogger):
             self.__text = ""
             self.__message_popup = None
             self.__error_popup = None
+            self.__save_file = PathConfig.new_log_file(seed)
+            self.__buffer_size = 0
+            self.__buffer = []
             Logger.__instance = self
 
     def set_popup(self, message_popup_function: "void(str, str)", error_popup_function: "void(str, str)") -> None:
@@ -27,7 +34,12 @@ class Logger(py_cui.debug.PyCUILogger):
         self.__error_popup = error_popup_function
 
     def info(self, message, **kwargs) -> None:
-        pass
+        time_str = datetime.now().strftime("%H-%M-%S")
+        text = f"{time_str}: {message}"
+        self.__buffer.append(text)
+        self.__buffer_size += len(text)
+        if self.__buffer_size >= Logger.__BUFFER_SIZE:
+            self.flush()
 
     def error(self, message, **kwargs) -> None:
         self.__error_popup("ERROR", message)
@@ -55,3 +67,12 @@ class Logger(py_cui.debug.PyCUILogger):
 
     def clear(self) -> None:
         self.__text = ""
+
+    def flush(self) -> None:
+        if self.__buffer_size > 0:
+            text = ""
+            for log in self.__buffer:
+                text += log + "\n"
+            PathConfig.write(self.__save_file, text, may_exist=True, append=True)
+            self.__buffer = []
+            self.__buffer_size = 0

@@ -1,7 +1,9 @@
 #D:\Programs\anaconda3\envs\Qrogue
 # This is a sample Python script.
 from game.game import GameHandler
+from util.config import PathConfig
 from util.key_logger import KeyLogger
+from util.logger import Logger
 
 note = """
 Climate Crisis Narrative? E.g. the game plays on earth in 2070, most places have been destroyed 
@@ -10,6 +12,13 @@ The goal is to find parts of a Quantum Computer (inspiration from Entanglion) so
 turn back time so we can "stop" the climate crisis and live on a healthy planet?
 """
 
-game = GameHandler(7)
-game.start()
-KeyLogger.instance().flush(force=False)
+if PathConfig.set_base_path():
+    game = GameHandler(7)
+    game.start()
+    # flush after the player stopped playing
+    Logger.instance().flush()
+    KeyLogger.instance().flush(force=False)
+else:
+    print("[Qrogue] Error: qrogue.config is invalid. Please check if the second line describes a valid path (the path "
+          "to your save files). Using special characters in the path could also cause this error so if the path is "
+          "valid please consider using another one without special characters.")
