@@ -25,7 +25,7 @@ class QrogueCUI(py_cui.PyCUI):
         super().__init__(width, height)
         Logger.instance().set_popup(self.show_message_popup, self.show_error_popup)
         Popup.update_popup_functions(self.__show_popup)
-        CheatConfig.init(self.__show_popup, self.__show_cheat_popup)
+        CheatConfig.init(self.__show_popup, self.__show_input_popup)
 
         self.__simulator = None
         self.__state_machine = StateMachine(self)
@@ -35,7 +35,7 @@ class QrogueCUI(py_cui.PyCUI):
 
         cbp = CallbackPack(self.__start_gameplay, self.__start_fight, self.__start_boss_fight, self.__open_riddle,
                            self.__visit_shop)
-        self.__menu = MenuWidgetSet(self.__render, Logger.instance(), self, cbp, self.stop, self.__start_simulation)
+        self.__menu = MenuWidgetSet(self.__render, Logger.instance(), self, cbp, self.stop, self.__choose_simulation)
         self.__pause = PauseMenuWidgetSet(self.__render, Logger.instance(), self, self.__general_continue,
                                           self.switch_to_menu)
         self.__explore = ExploreWidgetSet(self.__render, Logger.instance(), self)
@@ -54,12 +54,21 @@ class QrogueCUI(py_cui.PyCUI):
         self.render()
         super(QrogueCUI, self).start()
 
+    def __choose_simulation(self):
+        title = "Enter the path to the .qrkl-file to simulate:"
+        self.__show_input_popup(title, py_cui.WHITE_ON_CYAN, self.__start_simulation)
+
     def __start_simulation(self, path: str):
-        self.__simulator = GameSimulator(self.__controls, path, in_keylog_folder=True)
-        # go back to the original position of the cursor
-        super(QrogueCUI, self)._handle_key_presses(self.__controls.selection_left)
-        super(QrogueCUI, self)._handle_key_presses(self.__controls.selection_left)
-        self._handle_key_presses(self.__controls.action)
+        if not path.endswith(".qrkl"):
+            path += ".qrkl"
+        try:
+            self.__simulator = GameSimulator(self.__controls, path, in_keylog_folder=True)
+            # go back to the original position of the cursor and start the game
+            super(QrogueCUI, self)._handle_key_presses(self.__controls.selection_left)
+            super(QrogueCUI, self)._handle_key_presses(self.__controls.selection_left)
+            super(QrogueCUI, self)._handle_key_presses(self.__controls.action)
+        except FileNotFoundError:
+            Logger.instance().error(f"File \"{path}\" could not be found!", only_popup=True)
 
     def _handle_key_presses(self, key_pressed):
         if self.__simulator is None:
@@ -162,16 +171,9 @@ class QrogueCUI(py_cui.PyCUI):
         self.__focused_widget = self.get_selected_widget()
         self._popup = MultilinePopup(self, title, text, color, self._renderer, self._logger, self.__controls)
 
-    def __show_cheat_popup(self, title: str, color: int) -> None:
+    def __show_input_popup(self, title: str, color: int, callback: "(str,)") -> None:
         self.__focused_widget = self.get_selected_widget()
-        self._popup = py_cui.popups.TextBoxPopup(self, title, color, self.__use_cheat, self._renderer, False,
-                                                 self._logger)
-
-    def __use_cheat(self, input: str):
-        if CheatConfig.use_cheat(input):
-            Popup.message("Cheats", f"Successfully used the Cheat \"{input}\"")
-        else:
-            Popup.message("Cheats", "This is not a valid Cheat!")
+        self._popup = py_cui.popups.TextBoxPopup(self, title, color, callback, self._renderer, False, self._logger)
 
     def close_popup(self) -> None:
         super(QrogueCUI, self).close_popup()

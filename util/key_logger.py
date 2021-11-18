@@ -1,8 +1,9 @@
-from game.controls import Controls
-from util.config import PathConfig
+from game.controls import Controls, Keys
+from util.config import PathConfig, GameplayConfig
 
 
 class KeyLogger:
+    CONFIG_HEAD = "[Config]"
     __BUFFER_SIZE = 1024
     __instance = None
 
@@ -14,14 +15,15 @@ class KeyLogger:
 
     @staticmethod
     def get_error_marker() -> str:
-        return chr(Controls.INVALID_KEY) + chr(Controls.INVALID_KEY) + chr(Controls.INVALID_KEY)
+        return Keys.Invalid.to_char() + Keys.Invalid.to_char() + Keys.Invalid.to_char()
 
     def __init__(self):
         if KeyLogger.__instance is not None:
             raise Exception("This class is a singleton!")
         else:
-            self.__buffer = ""
             self.__save_file = PathConfig.new_key_log_file()
+            self.__buffer = f"{KeyLogger.CONFIG_HEAD}\n{GameplayConfig.to_file_text()}\n"
+            self.flush(force=True)
             KeyLogger.__instance = self
 
     def log(self, controls: Controls, key_pressed: int):

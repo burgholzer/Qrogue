@@ -63,7 +63,7 @@ class PathConfig:
         file.close()
 
     @staticmethod
-    def read_keylog_buffered(file_name: str, in_keylog_folder: bool = True, buffer_size: int = 10) -> str:
+    def read_keylog_buffered(file_name: str, in_keylog_folder: bool = True, buffer_size: int = 1024) -> str:
         if in_keylog_folder:
             path = PathConfig.__base_path(os.path.join(PathConfig.__KEY_LOG_FOLDER, file_name))
         else:
@@ -75,6 +75,18 @@ class PathConfig:
                     yield data
                     data = file.read(buffer_size)
         return None
+
+    @staticmethod
+    def read(file_name: str, in_base_path: bool = True) -> str:
+        if in_base_path:
+            path = PathConfig.__base_path(file_name)
+        else:
+            path = file_name
+        content = []
+        if os.path.exists(path):
+            with open(path, "r") as file:
+                content = file.read()
+        return content
 
     @staticmethod
     def delete(file_name):
@@ -252,7 +264,7 @@ class CheatConfig:
     __input_popup = None
 
     @staticmethod
-    def init(popup_callback: "(str, str, int)", input_popup_callback: "(str, int)"):
+    def init(popup_callback: "(str, str, int)", input_popup_callback: "(str, int, (str,))"):
         CheatConfig.__cheated = False
         CheatConfig.__popup = popup_callback
         CheatConfig.__input_popup = input_popup_callback
@@ -278,7 +290,7 @@ class CheatConfig:
     @staticmethod
     def cheat_input():
         if CheatConfig.__input_popup is not None:
-            CheatConfig.__input_popup("Input your Cheat:", py_cui.BLACK_ON_RED)
+            CheatConfig.__input_popup("Input your Cheat:", py_cui.BLACK_ON_RED, CheatConfig.__use_cheat)
 
     @staticmethod
     def cheat_list():
@@ -292,7 +304,7 @@ class CheatConfig:
         CheatConfig.__popup("List of Cheats", text, PopupConfig.default_color())
 
     @staticmethod
-    def use_cheat(code: str) -> bool:
+    def __use_cheat(code: str) -> bool:
         ret = False
         if code == CheatConfig.__ALL or code == CheatConfig.__NONE:
             for key in CheatConfig.__CHEATS:
@@ -303,18 +315,74 @@ class CheatConfig:
             ret = True
 
         if ret:
+            CheatConfig.__popup("Cheats", f"Successfully used the Cheat \"{code}\"")
             CheatConfig.__cheated = True
+        else:
+            CheatConfig.__popup("Cheats", "This is not a valid Cheat!")
         return ret
 
 
 class GameplayConfig:
-    __AUTO_RESET_CIRCUIT = True
-    __LOG_KEYS = False
+    __KEY_VALUE_SEPARATOR = "="
+
+    __AUTO_RESET_CIRCUIT = "Auto reset Circuit"
+    __LOG_KEYS = "Log Keys"
+    __CONFIG = {
+        __AUTO_RESET_CIRCUIT: ("F", "Automatically reset your Circuit to a clean state at the beginning of a Fight, "
+                                     "Riddle, etc."),
+        __LOG_KEYS: ("True", "Stores all keys you pressed in a .qrkl-file so one can replay them (e.g. for analysing a "
+                           "bug)"),
+    }
+
+    @staticmethod
+    def to_file_text() -> str:
+        text = ""
+        for conf in GameplayConfig.__CONFIG:
+            text += f"{conf}{GameplayConfig.__KEY_VALUE_SEPARATOR}{GameplayConfig.__CONFIG[conf][0]}"
+            text += "\n"
+        return text
+
+    @staticmethod
+    def from_log_text(log_text: str) -> bool:
+        for line in log_text.splitlines():
+            split = line.split(GameplayConfig.__KEY_VALUE_SEPARATOR)
+            try:
+                GameplayConfig.__CONFIG[split[0]] = [split[1]]
+            except IndexError:
+                return False
+            except KeyError:
+                return False
+        return True
 
     @staticmethod
     def auto_reset_circuit() -> bool:
-        return GameplayConfig.__AUTO_RESET_CIRCUIT
+        return GameplayConfig.__CONFIG[GameplayConfig.__AUTO_RESET_CIRCUIT][0] == "True"
 
     @staticmethod
     def log_keys() -> bool:
-        return GameplayConfig.__LOG_KEYS
+        return GameplayConfig.__CONFIG[GameplayConfig.__LOG_KEYS][0] == "True"
+
+
+class Config:
+    __FILE_NAME = "qrogue_game.config"
+    __GAMEPLAY_HEAD = "[Gameplay]\n"
+
+    @staticmethod
+    def create():
+        text = ""
+        text += Config.__GAMEPLAY_HEAD
+        text += GameplayConfig.to_file_text()
+        PathConfig.write(Config.__FILE_NAME, text)
+
+    @staticmethod
+    def load():
+        if not PathConfig.set_base_path():
+            return 1
+        config = PathConfig.read(Config.__FILE_NAME)
+
+        gameplay_section = config.index(Config.__GAMEPLAY_HEAD) + len(Config.__GAMEPLAY_HEAD)
+        gameplay_section = (gameplay_section, len(config))
+        if not GameplayConfig.from_log_text(config[gameplay_section[0]:gameplay_section[1]]):
+            return 2
+
+        return 0

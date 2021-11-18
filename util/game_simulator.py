@@ -1,18 +1,30 @@
 from game.controls import Controls
-from util.config import PathConfig
+from util.config import PathConfig, GameplayConfig
+from util.key_logger import KeyLogger
 from util.logger import Logger
 
 
 class GameSimulator:
+    __BUFFER_SIZE = 1024
+
     def __init__(self, controls: Controls, path: str, in_keylog_folder: bool = True):
         self.__controls = controls
 
-        path = "12112021_202641.qrkl"
-        self.__reader = PathConfig.read_keylog_buffered(path, in_keylog_folder)
+        self.__reader = PathConfig.read_keylog_buffered(path, in_keylog_folder, buffer_size=GameSimulator.__BUFFER_SIZE)
         if self.__reader is None:
             Logger.instance().error("invalid path!")
+            return
         self.__cur_chunk = self.__next_chunk()
         self.__cur_index = -1
+
+        # change the config so we can reproduce the run (e.g. different auto reset would destroy the simulation)
+        if self.__cur_chunk.startswith(bytes(KeyLogger.CONFIG_HEAD, "utf-8")):
+            start = self.__cur_chunk.index(bytes("\n", "utf-8")) + 1
+            end = self.__cur_chunk.index(bytes("\n\n", "utf-8"), start)
+            config = str(self.__cur_chunk[start:end], "UTF-8")
+            GameplayConfig.from_log_text(config)
+
+            self.__cur_index = end  # continue at \n because for next key we start with going to the next position
 
     def __next_chunk(self) -> bytes:
         try:

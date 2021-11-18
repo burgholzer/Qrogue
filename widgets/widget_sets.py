@@ -154,7 +154,7 @@ class MenuWidgetSet(MyWidgetSet):
         Popup.message("Welcome to Qrogue! (scroll with arrow keys)", HelpText.get(HelpTextType.Welcome))
 
     def __simulate(self) -> None:
-        self.__start_simulation("") # todo fix parameter
+        self.__start_simulation()
 
     def __options(self) -> None:
         Popup.message("TODO", "The options are not implemented yet!")

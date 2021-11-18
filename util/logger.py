@@ -33,16 +33,28 @@ class Logger(py_cui.debug.PyCUILogger):
         self.__message_popup = message_popup_function
         self.__error_popup = error_popup_function
 
-    def info(self, message, **kwargs) -> None:
-        time_str = datetime.now().strftime("%H-%M-%S")
-        text = f"{time_str}: {message}"
+    def __write(self, text) -> None:
         self.__buffer.append(text)
         self.__buffer_size += len(text)
         if self.__buffer_size >= Logger.__BUFFER_SIZE:
             self.flush()
 
+    def info(self, message, **kwargs) -> None:
+        time_str = datetime.now().strftime("%H-%M-%S")
+        text = f"{time_str}: {message}"
+        self.__write(text)
+
     def error(self, message, **kwargs) -> None:
         self.__error_popup("ERROR", message)
+        try:
+            if kwargs["only_popup"]:
+                return
+        except:
+            pass
+        highlighting = "\n----------------------------------\n"
+        time_str = datetime.now().strftime("%H-%M-%S")
+        text = f"{highlighting}{time_str}, Error: {message}{highlighting}"
+        Logger.__write(text)
         KeyLogger.instance().log_error(message)
 
     def print(self, message: str, clear: bool = False) -> None:
