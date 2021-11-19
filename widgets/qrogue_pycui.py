@@ -305,7 +305,7 @@ class QrogueCUI(py_cui.PyCUI):
     def __riddle_choices(self):
         if self.__riddle.choices.use() and self.__cur_widget_set is self.__riddle:
             self.move_focus(self.__riddle.details.widget, auto_press_buttons=False)
-            self.__render([self.__riddle.choices, self.__pause.details])
+            self.__render([self.__riddle.choices, self.__riddle.details])
 
     def __riddle_details(self) -> None:
         if self.__riddle.details.use() and self.__cur_widget_set is self.__riddle:

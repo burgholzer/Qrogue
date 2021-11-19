@@ -472,7 +472,6 @@ class ReachTargetWidgetSet(MyWidgetSet, ABC):
             from util.logger import Logger
             Logger.instance().error("Error! Target is not set!")
             return False
-
         result = self._player.update_statevector()
         self.__stv_player.set_data(result)
         self.__stv_diff.set_data(result.get_diff(self._target.statevector))
@@ -706,7 +705,6 @@ class RiddleWidgetSet(ReachTargetWidgetSet):
 
     def set_data(self, player: PlayerActor, target: Riddle) -> None:
         super(RiddleWidgetSet, self).set_data(player, target)
-        self._target.is_reached(player.state_vector)
 
     def _on_commit_fail(self) -> bool:
         if self._target.attempts <= 0:
