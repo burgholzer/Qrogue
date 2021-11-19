@@ -315,7 +315,7 @@ class CheatConfig:
             ret = True
 
         if ret:
-            CheatConfig.__popup("Cheats", f"Successfully used the Cheat \"{code}\"")
+            CheatConfig.__popup("Cheats", f"Successfully used the Cheat \"{code}\"", PopupConfig.default_color())
             CheatConfig.__cheated = True
         else:
             CheatConfig.__popup("Cheats", "This is not a valid Cheat!")
