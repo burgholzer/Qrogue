@@ -54,7 +54,7 @@ class Logger(py_cui.debug.PyCUILogger):
         highlighting = "\n----------------------------------\n"
         time_str = datetime.now().strftime("%H-%M-%S")
         text = f"{highlighting}{time_str}, Error: {message}{highlighting}"
-        Logger.__write(text)
+        Logger.instance().__write(text)
         KeyLogger.instance().log_error(message)
 
     def print(self, message: str, clear: bool = False) -> None:
