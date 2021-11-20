@@ -10,8 +10,7 @@ from game.logic.instruction import CXGate, HGate, XGate
 from game.logic.qubit import StateVector, DummyQubitSet
 from game.map import tiles
 from game.map.navigation import Coordinate, Direction
-from game.map.rooms import Room, SpawnRoom, GateRoom, WildRoom, BossRoom, ShopRoom, RiddleRoom
-from game.map.tiles import Door
+from game.map.rooms import Room, SpawnRoom, GateRoom, WildRoom, BossRoom, ShopRoom, RiddleRoom, Hallway
 from util.config import ColorConfig as CC
 from util.help_texts import HelpText, HelpTextType
 
@@ -113,8 +112,9 @@ class TutorialTile(tiles.Message):
 
 
 class CustomWildRoom(Room):
-    def __init__(self, start_fight_callback: "void(EnemyActor, Direction, PlayerActor)",
-                 tutorial_tile: TutorialTile, blocking_tile: TutorialTile):
+    def __init__(self, east_hallway: Hallway, west_hallway: Hallway,
+                 start_fight_callback: "void(EnemyActor, Direction, PlayerActor)", tutorial_tile: TutorialTile,
+                 blocking_tile: TutorialTile):
         factory = TutorialEnemyFactory(start_fight_callback)
         self.__enemies = []
         for i in range(Room.INNER_WIDTH):
@@ -128,21 +128,21 @@ class CustomWildRoom(Room):
         for i in range(len(self.__enemies)):
             tile_dic[Coordinate(1, i)] = self.__enemies[i]
         tile_list = Room.dic_to_tile_list(tile_dic)
-        super().__init__(tile_list, west_door=True, east_door=tiles.Door(Direction.East))
+        super().__init__(tile_list, east_hallway=east_hallway, west_hallway=west_hallway)
 
     def get_entangled_tiles(self, id: int) -> "list of EnemyTiles":
         if id == 0:
             return []
         return self.__enemies
 
-    def __str__(self):
+    def abbreviation(self) -> str:
         return "cWR"
 
 
 class CustomWildRoom2(WildRoom):
-    def __init__(self, factory: EnemyFactory, chance: float = 0.4, east_door: Door = None,
-                 south_door: Door = None, west_door: bool = False, north_door: bool = False):
-        super().__init__(factory, chance, east_door, south_door, west_door, north_door)
+    def __init__(self, factory: EnemyFactory, chance: float = 0.4, north_hallway: Hallway = None,
+                 east_hallway: Hallway = None, south_hallway: Hallway = None, west_hallway: Hallway = None):
+        super().__init__(factory, chance, north_hallway, east_hallway, south_hallway, west_hallway)
         special = CC.highlight_word("special")
         doors = CC.highlight_object("Doors")
         entangled = CC.highlight_word("entangled")
@@ -159,13 +159,16 @@ class CustomWildRoom2(WildRoom):
                f"...because the {boss} is already waiting for you in the North."
         self._set_tile(tiles.Message(Popup("Tutorial: Entangled Doors", text)), 0, Room.MID_Y)
 
+    def abbreviation(self) -> str:
+        return "cWR2"
+
 
 class TutorialGateRoom(GateRoom):
-    def __init__(self, tutorial_tile):
+    def __init__(self, hallway: Hallway, tutorial_tile):
         tile_dic = {
             Coordinate(Room.MID_X - 1, 0): tutorial_tile
         }
-        super().__init__(Door(Direction.North), tile_dic)
+        super().__init__(hallway, False, tile_dic)
 
 
 class Tutorial:
@@ -256,13 +259,26 @@ class Tutorial:
         popups = [Popup(f"Tutorial #{i + 1}", messages[i], show=False)
                   for i in range(len(messages))]
 
+        entangled_east = tiles.EntangledDoor(Direction.East)
+        entangled_south = tiles.EntangledDoor(Direction.South)
+        tiles.EntangledDoor.entangle(entangled_east, entangled_south)
+        # hallways
+        spawn_hallway_east = Hallway(tiles.Door(Direction.East))
+        spawn_hallway_south = Hallway(tiles.Door(Direction.South, locked=True))
+        cwr_hallway_east = Hallway(tiles.Door(Direction.East))
+        riddle_hallway = Hallway(tiles.Door(Direction.South))
+        shop_hallway = Hallway(tiles.Door(Direction.North))
+        cwr2_hallway_west = Hallway(tiles.Door(Direction.West))
+        cwr2_hallway_north = Hallway(tiles.Door(Direction.North))
+        cwr2_hallway_east = Hallway(entangled_east)
+        cwr2_hallway_south = Hallway(entangled_south)
+
         spawn_dic = {
             Coordinate(Room.MID_X - 1, Room.INNER_HEIGHT - 1): TutorialTile(popups[0], 0, self.is_active, self.progress),
             Coordinate(Room.INNER_WIDTH - 1, Room.MID_Y - 1): TutorialTile(popups[1], 1, self.is_active, self.progress,
                                                                             blocks=True)
         }
-        spawn = SpawnRoom(player, spawn_dic, east_door=tiles.Door(Direction.East),
-                          south_door=tiles.Door(Direction.South, locked=True))
+        spawn = SpawnRoom(player, spawn_dic, east_hallway=spawn_hallway_east, south_hallway=spawn_hallway_south)
         spawn_x = 0
         spawn_y = 1
         width = 5
@@ -271,20 +287,19 @@ class Tutorial:
 
         rooms = [[None for x in range(width)] for y in range(height)]
         rooms[spawn_y][spawn_x] = spawn
-        rooms[1][1] = CustomWildRoom(self.fight, TutorialTile(popups[2], 2, self.is_active, self.progress),
+        rooms[1][1] = CustomWildRoom(cwr_hallway_east, spawn_hallway_east, self.fight,
+                                     TutorialTile(popups[2], 2, self.is_active, self.progress),
                                      TutorialTile(popups[4], 4, self.is_active, self.progress, blocks=True))
-        rooms[2][0] = TutorialGateRoom(TutorialTile(popups[3], 3, self.is_active, self.progress))
-        rooms[1][2] = WildRoom(factory, chance=0.8, north_door=True, west_door=True,
-                               east_door=tiles.Door(Direction.East), south_door=tiles.Door(Direction.South))
-        rooms[0][2] = RiddleRoom(tiles.Door(Direction.South), TutorialRiddle(), self.riddle)
-        rooms[2][2] = ShopRoom(Door(Direction.North), [ShopItem(Key(2), 3), ShopItem(Key(1), 2)], self.shop)
-        entangled_east = tiles.EntangledDoor(Direction.East)
-        entangled_south = tiles.EntangledDoor(Direction.South)
-        tiles.EntangledDoor.entangle(entangled_east, entangled_south)
-        rooms[1][3] = CustomWildRoom2(factory, chance=0.7, north_door=True, west_door=True, east_door=entangled_east,
-                               south_door=entangled_south)
-        rooms[0][3] = BossRoom(tiles.Door(Direction.South), tiles.Boss(TutorialBoss(), self.boss_fight))
-        rooms[1][4] = WildRoom(factory, chance=0.5, west_door=True)
-        rooms[2][3] = WildRoom(factory, chance=0.6, north_door=True)
+        rooms[2][0] = TutorialGateRoom(spawn_hallway_south, TutorialTile(popups[3], 3, self.is_active, self.progress))
+        rooms[1][2] = WildRoom(factory, chance=0.8, west_hallway=cwr_hallway_east, north_hallway=riddle_hallway,
+                               south_hallway=shop_hallway, east_hallway=cwr2_hallway_west)
+        rooms[0][2] = RiddleRoom(riddle_hallway, True, TutorialRiddle(), self.riddle)
+        rooms[2][2] = ShopRoom(shop_hallway, False, [ShopItem(Key(2), 3), ShopItem(Key(1), 2)], self.shop)
+        rooms[1][3] = CustomWildRoom2(factory, chance=0.7, north_hallway=cwr2_hallway_north,
+                                      east_hallway=cwr2_hallway_east, south_hallway=cwr2_hallway_south,
+                                      west_hallway=cwr2_hallway_west)
+        rooms[0][3] = BossRoom(cwr2_hallway_north, True, tiles.Boss(TutorialBoss(), self.boss_fight))
+        rooms[1][4] = WildRoom(factory, chance=0.5, west_hallway=cwr2_hallway_east)
+        rooms[2][3] = WildRoom(factory, chance=0.6, north_hallway=cwr2_hallway_south)
 
         return rooms, Coordinate(spawn_x, spawn_y)

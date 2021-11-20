@@ -4,7 +4,7 @@ from game.actors.factory import EnemyFactory, DummyFightDifficulty
 from game.actors.player import Player as PlayerActor
 from game.callbacks import CallbackPack
 from game.map.navigation import Coordinate, Direction
-from game.map.rooms import Room
+from game.map.rooms import Room, Area
 from game.map.tutorial import Tutorial, TutorialPlayer
 from util.config import MapConfig
 from util.logger import Logger
@@ -13,7 +13,7 @@ from util.my_random import RandomManager
 
 class Map:
     WIDTH = 5
-    HEIGHT = 5
+    HEIGHT = 3
 
     def __init__(self, seed: int, width: int, height: int, player: PlayerActor, cbp: CallbackPack):
         self.__player = tiles.Player(player)
@@ -39,26 +39,86 @@ class Map:
     def __build_tutorial_map(self):
         self.__player = tiles.Player(TutorialPlayer())
         self.__rooms, spawn_point = Tutorial().build_tutorial_map(self.__player, self.__cbp)
-        self.__cur_room = self.__rooms[spawn_point.y][spawn_point.x]
+        self.__cur_area = self.__rooms[spawn_point.y][spawn_point.x]
         self.__player_pos = Map.__calculate_pos(spawn_point, Coordinate(Room.MID_X, Room.MID_Y))
-        self.__cur_room.enter()
+        self.__cur_area.enter(Direction.North)
 
-    def __get_room(self, x: int, y: int) -> (Room, Coordinate):
+    def __tile_at(self, x: int, y: int) -> tiles.Tile:
+        #"""
+        in_hallway = None
+        width = Room.OUTER_WIDTH + 1
+        height = Room.OUTER_HEIGHT + 1
+        x_mod = x % width
+        y_mod = y % height
+        # position is in Hallway
+        if x_mod == Room.OUTER_WIDTH:
+            if y_mod == Room.OUTER_HEIGHT:
+                return Area.void()
+            x_mod -= 1
+            in_hallway = Direction.East
+        elif y_mod == Room.OUTER_HEIGHT:
+            y_mod -= 1
+            in_hallway = Direction.South
+
+        room_x = int(x / width)
+        room_y = int(y / height)
+        room = self.__rooms[room_y][room_x]
+        if room is None:
+            return Area.void()
+
+        if in_hallway:
+            hallway = room.get_hallway(in_hallway)
+            if hallway.is_horizontal():
+                return hallway.at(x_mod, 0)
+            else:
+                return hallway.at(0, y_mod)
+        else:
+            return room.at(x_mod, y_mod)
+        #"""
+        #area, pos = self.__get_area(x, y)
+        #if area is None:
+        #    return Area.void()
+        #return area.at(pos.x, pos.y)
+
+    def __get_area(self, x: int, y: int) -> (Area, tiles.Tile):
         """
         Calculates and returns the Room and in-room Coordinates of the given Map position.
         :param x: x position on the Map
         :param y: y position on the Map
         :return: Room and in-room Coordinate corresponding to the x and y position
         """
-        room_x = int(x / Room.OUTER_WIDTH)
-        room_y = int(y / Room.OUTER_HEIGHT)
-        pos_x = int(x % Room.OUTER_WIDTH)
-        pos_y = int(y % Room.OUTER_HEIGHT)
+        in_hallway = None
+        width = Room.OUTER_WIDTH + 1
+        height = Room.OUTER_HEIGHT + 1
+        x_mod = x % width
+        y_mod = y % height
+        # position is in Hallway
+        if x_mod == Room.OUTER_WIDTH:
+            if y_mod == Room.OUTER_HEIGHT:
+                return None, Area.void()
+            x_mod -= 1
+            in_hallway = Direction.East
+        elif y_mod == Room.OUTER_HEIGHT:
+            y_mod -= 1
+            in_hallway = Direction.South
 
-        return self.__rooms[room_y][room_x], Coordinate(x=pos_x, y=pos_y)
+        room_x = int(x / width)
+        room_y = int(y / height)
+        room = self.__rooms[room_y][room_x]
+        if room is None:
+            return None, Area.void()
+
+        if in_hallway:
+            hallway = room.get_hallway(in_hallway)
+            if hallway.is_horizontal():
+                return hallway, hallway.at(x_mod, 0)
+            else:
+                return hallway, hallway.at(0, y_mod)
+        else:
+            return room, room.at(x_mod, y_mod)
 
     @staticmethod
-    def __calculate_pos(pos_of_room: Coordinate, pos_in_room: Coordinate) -> Coordinate:
+    def __calculate_pos(pos_of_room: Coordinate, pos_in_room: Coordinate) -> Coordinate:    # todo fix
         """
         Calculates and returns a Coordinate on the Map corresponding to the Cooridante of a Room on the Map and
         a Coordinate in the Room.
@@ -73,32 +133,42 @@ class Map:
 
     @property
     def height(self) -> int:
-        return Map.HEIGHT * Room.OUTER_HEIGHT
+        return Map.HEIGHT * (Room.OUTER_HEIGHT + 1) - 1
 
     @property
     def width(self) -> int:
-        return Map.WIDTH * Room.OUTER_WIDTH
+        return Map.WIDTH * (Room.OUTER_WIDTH + 1) - 1
 
-    def at(self, x: int, y: int, force: bool = False) -> tiles.Tile:
+    def tile_at(self, x: int, y: int) -> tiles.Tile:
+        """
+
+        :param x: horizontal position on the Map
+        :param y: vertical position on the Map
+        :return: Tile at the corresponding position
+        """
+        if x == self.__player_pos.x and y == self.__player_pos.y:
+            return self.__player
+
+        if 0 <= x < self.width and 0 <= y < self.height:
+            return self.__tile_at(x, y)
+        else:
+            Logger.instance().error(f"Error! Invalid position: {x}|{y}")
+            return tiles.Invalid()
+
+    def at(self, x: int, y: int) -> (Area, tiles.Tile):
         """
 
         :param x: horizontal position on the Map
         :param y: vertical position on the Map
         :param force: whether we force to get the real Tile or not (e.g. Fog of war, Player in front)
-        :return: Tile at the corresponding position
+        :return: Area and Tile at the corresponding position
         """
-        if not force and x == self.__player_pos.x and y == self.__player_pos.y:
-            return self.__player
-
-        if 0 <= x < self.width and 0 <= y < self.height:
-            room, pos = self.__get_room(x=x, y=y)
-            if room is None:
-                return tiles.Void()
-            else:
-                return room.at(x=pos.x, y=pos.y, force=force)
+        area, tile = self.__get_area(x, y)
+        if area is not None:
+            return area, tile
         else:
             Logger.instance().error(f"Error! Invalid position: {x}|{y}")
-            return tiles.Invalid()
+            return None, tiles.Invalid()
 
     @property
     def player(self) -> tiles.Player:
@@ -115,13 +185,12 @@ class Map:
                 new_pos.x < 0 or self.width <= new_pos.x:
             return False
 
-        tile = self.at(x=new_pos.x, y=new_pos.y, force=True)
+        area, tile = self.at(x=new_pos.x, y=new_pos.y)
         if tile.is_walkable(direction, self.__player.player):
-            room, pos = self.__get_room(new_pos.x, new_pos.y)
-            if room != self.__cur_room: # todo what if room is None?
-                self.__cur_room.leave(direction)
-                self.__cur_room = room
-                self.__cur_room.enter()
+            if area != self.__cur_area: # todo what if area is None?
+                self.__cur_area.leave(direction)
+                self.__cur_area = area
+                self.__cur_area.enter(direction)
 
             if isinstance(tile, tiles.WalkTriggerTile):
                 tile.on_walk(direction, self.player.player)

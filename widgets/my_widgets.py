@@ -140,7 +140,7 @@ class MapWidget(Widget):
             str_rep = ""
             for y in range(self.__map.height):
                 for x in range(self.__map.width):
-                    tile = self.__map.at(x, y)
+                    tile = self.__map.tile_at(x, y)
                     str_rep += TileRenderer.render(tile)
                 str_rep += "\n"
             self.widget.set_title(str_rep)

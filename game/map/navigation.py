@@ -39,6 +39,13 @@ class Direction(Enum):
     def y(self) -> int:
         return self.__y
 
+    def is_horizontal(self) -> bool:
+        """
+
+        :return: True if direction is East or West, False otherwise
+        """
+        return self.x != 0
+
     def opposite(self) -> "Direction":
         if self == Direction.North:
             return Direction.South
