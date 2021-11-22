@@ -1,7 +1,7 @@
 
-- key input buffer
++ key input buffer
 + Riddle shows no reward dialog after you solve it!
-- Room.is_in_sight()
++ Room.is_in_sight()
 + GameSimulator: choose file
 - create config files in install-script
 
@@ -20,4 +20,4 @@
 3) Aufhübschen
 
 SMALL TWEAKS/FIXES:
-- remove self.__player from game.py
++ remove self.__player from game.py
