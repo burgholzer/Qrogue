@@ -26,11 +26,14 @@ from widgets.renderable import Renderable
 
 
 class MyWidgetSet(WidgetSet, Renderable, ABC):
+    NUM_OF_ROWS = 9
+    NUM_OF_COLS = 9
+
     """
     Class that handles different sets of widgets so we can easily switch between different screens.
     """
-    def __init__(self, num_rows, num_cols, logger, root: py_cui.PyCUI, base_render_callback: "()"):
-        super().__init__(num_rows, num_cols, logger, root)
+    def __init__(self, logger, root: py_cui.PyCUI, base_render_callback: "()"):
+        super().__init__(MyWidgetSet.NUM_OF_ROWS, MyWidgetSet.NUM_OF_COLS, logger, root)
         self.init_widgets()
         self.__base_render = base_render_callback
 
@@ -98,24 +101,40 @@ class MyWidgetSet(WidgetSet, Renderable, ABC):
 
 
 _ascii_art = """
- Qrogue
+
+
+           _______           
+          / _____ \          
+         | |     | |         
+         | |     | |         
+         | |     | |         
+         | |     | |         
+         | |_____| |         
+          \______\_\         
+
+ 
+  _ __ ___   __ _ _   _  ___  
+ | '__/ _ \ / _` | | | |/ _ \ 
+ | | | (_) | (_| | |_| |  __/ 
+ |_|  \___/ \__, |\__,_|\___| 
+             __/ |            
+            |___/             
+
 """
 class MenuWidgetSet(MyWidgetSet):
-    __NUM_OF_ROWS = 9
-    __NUM_OF_COLS = 9
     __MAP_WIDTH = 50
     __MAP_HEIGHT = 14
 
     def __init__(self, render: "()", logger, root: py_cui.PyCUI, cbp: CallbackPack, stop_callback: "()",
                  start_simulation_callback: "(str,)"):
-        super().__init__(self.__NUM_OF_ROWS, self.__NUM_OF_COLS, logger, root, render)
+        super().__init__(logger, root, render)
         self.__seed = 7
         self.__cbp = cbp
         self.__stop = stop_callback
         self.__start_simulation = start_simulation_callback
 
     def init_widgets(self) -> None:
-        title = self.add_block_label("Qrogue", 0, 3, row_span=self.__NUM_OF_ROWS-1, column_span=6, center=True)
+        title = self.add_block_label("Qrogue", 0, 3, row_span=MyWidgetSet.NUM_OF_ROWS-1, column_span=6, center=True)
         self.__title = SimpleWidget(title)
         self.__title.set_data(_ascii_art)
 
@@ -164,8 +183,6 @@ class MenuWidgetSet(MyWidgetSet):
 
 
 class PauseMenuWidgetSet(MyWidgetSet):
-    __NUM_OF_COLS = 9
-    __NUM_OF_ROWS = 9
     __HELP_TEXTS = (
         [
             "Game",
@@ -184,24 +201,24 @@ class PauseMenuWidgetSet(MyWidgetSet):
     )
 
     def __init__(self, render: "()", logger, root: py_cui.PyCUI, continue_callback: "()", exit_run_callback: "()"):
-        super().__init__(self.__NUM_OF_ROWS, self.__NUM_OF_COLS, logger, root, render)
+        super().__init__(logger, root, render)
         self.__continue_callback = continue_callback
         self.__exit_run = exit_run_callback
 
     def init_widgets(self) -> None:
-        hud = self.add_block_label('HUD', 0, 0, row_span=1, column_span=self.__NUM_OF_COLS, center=False)
+        hud = self.add_block_label('HUD', 0, 0, row_span=1, column_span=MyWidgetSet.NUM_OF_COLS, center=False)
         hud.toggle_border()
         self.__hud = HudWidget(hud)
 
-        choices = self.add_block_label('Choices', 1, 0, row_span= self.__NUM_OF_ROWS-1, column_span=3, center=True)
+        choices = self.add_block_label('Choices', 1, 0, row_span= MyWidgetSet.NUM_OF_ROWS-1, column_span=3, center=True)
         self.__choices = SelectionWidget(choices, stay_selected=True)
         self.__choices.set_data(data=(
             ["Continue", "Options", "Help", "Exit"],
             [self.__continue, self.__options, self.__help, self.__exit]
         ))
 
-        details = self.add_block_label('Details', 1, 3, row_span=self.__NUM_OF_ROWS-1, column_span=self.__NUM_OF_COLS-3,
-                                       center=True)
+        details = self.add_block_label('Details', 1, 3, row_span=MyWidgetSet.NUM_OF_ROWS-1,
+                                       column_span=MyWidgetSet.NUM_OF_COLS-3, center=True)
         self.__details = SelectionWidget(details, is_second=True)
 
     @property
@@ -266,18 +283,16 @@ class PauseMenuWidgetSet(MyWidgetSet):
 
 
 class ExploreWidgetSet(MyWidgetSet):
-    __NUM_OF_ROWS = 8
-    __NUM_OF_COLS = 9
-
     def __init__(self, render: "()", logger, root: py_cui.PyCUI):
-        super().__init__(self.__NUM_OF_ROWS, self.__NUM_OF_COLS, logger, root, render)
+        super().__init__(logger, root, render)
 
     def init_widgets(self) -> None:
-        hud = self.add_block_label('HUD', 0, 0, row_span=1, column_span=self.__NUM_OF_COLS, center=False)
+        hud = self.add_block_label('HUD', 0, 0, row_span=1, column_span=MyWidgetSet.NUM_OF_COLS, center=False)
         hud.toggle_border()
         self.__hud = HudWidget(hud)
 
-        map_widget = self.add_block_label('MAP', 1, 0, row_span=self.__NUM_OF_ROWS-1, column_span=self.__NUM_OF_COLS, center=True)
+        map_widget = self.add_block_label('MAP', 1, 0, row_span=MyWidgetSet.NUM_OF_ROWS-1,
+                                          column_span=MyWidgetSet.NUM_OF_COLS, center=True)
         self.__map_widget = MapWidget(map_widget)
         ColorRules.apply_map_rules(self.__map_widget)
     
@@ -322,20 +337,18 @@ class ExploreWidgetSet(MyWidgetSet):
 
 
 class ReachTargetWidgetSet(MyWidgetSet, ABC):
-    __NUM_OF_ROWS = 9
-    __NUM_OF_COLS = 9
     __CHOICE_COLUMNS = 2
     __DETAILS_COLUMNS = 2
 
     def __init__(self, render: "()", logger, root: py_cui.PyCUI, continue_exploration_callback: "()", flee_choice: str = "Flee"):
         self.__choice_strings = ["Add/Remove", "Commit", "Reset", "Items", "Help", flee_choice]
-        super().__init__(self.__NUM_OF_ROWS, self.__NUM_OF_COLS, logger, root, render)
+        super().__init__(logger, root, render)
         self._continue_exploration_callback = continue_exploration_callback
         self._player = None
         self._target = None
 
     def init_widgets(self) -> None:
-        hud = self.add_block_label('HUD', 0, 0, row_span=1, column_span=self.__NUM_OF_COLS, center=False)
+        hud = self.add_block_label('HUD', 0, 0, row_span=1, column_span=MyWidgetSet.NUM_OF_COLS, center=False)
         hud.toggle_border()
         self.__hud = HudWidget(hud)
 
@@ -354,7 +367,7 @@ class ReachTargetWidgetSet(MyWidgetSet, ABC):
         qi_target = self.add_block_label('Qubit Info', stv_row, 8, row_span=row_span, column_span=1, center=True)
         self.__qi_target = QubitInfoWidget(qi_target, left_aligned=True)
 
-        circuit = self.add_block_label('Circuit', 6, 0, row_span=1, column_span=self.__NUM_OF_COLS, center=True)
+        circuit = self.add_block_label('Circuit', 6, 0, row_span=1, column_span=MyWidgetSet.NUM_OF_COLS, center=True)
         self.__circuit = CircuitWidget(circuit)
 
         choices = self.add_block_label('Choices', 7, 0, row_span=2, column_span=3, center=True)
@@ -601,26 +614,23 @@ class BossFightWidgetSet(FightWidgetSet):
 
 
 class ShopWidgetSet(MyWidgetSet):
-    __NUM_OF_ROWS = 9
-    __NUM_OF_COLS = 9
-
     def __init__(self, render: "()", logger, root: py_cui.PyCUI, continue_exploration_callback: "()"):
-        super().__init__(self.__NUM_OF_ROWS, self.__NUM_OF_COLS, logger, root, render)
+        super().__init__(logger, root, render)
         self.__continue_exploration = continue_exploration_callback
         self.__player = None
         self.__items = None
 
     def init_widgets(self) -> None:
-        hud = self.add_block_label("HUD", 0, 0, row_span=1, column_span=self.__NUM_OF_COLS, center=False)
+        hud = self.add_block_label("HUD", 0, 0, row_span=1, column_span=MyWidgetSet.NUM_OF_COLS, center=False)
         self.__hud = HudWidget(hud)
 
         inv_width = 4
         inventory = self.add_block_label("Inventory", 1, 0, row_span=7, column_span=inv_width)
         self.__inventory = SelectionWidget(inventory, stay_selected=True)
 
-        details = self.add_block_label("Details", 1, inv_width, row_span=4, column_span=self.__NUM_OF_COLS - inv_width)
+        details = self.add_block_label("Details", 1, inv_width, row_span=4, column_span=MyWidgetSet.NUM_OF_COLS - inv_width)
         self.__details = SimpleWidget(details)
-        buy = self.add_block_label("Buy", 4, inv_width, row_span=1, column_span=self.__NUM_OF_COLS - inv_width)
+        buy = self.add_block_label("Buy", 4, inv_width, row_span=1, column_span=MyWidgetSet.NUM_OF_COLS - inv_width)
         self.__buy = SelectionWidget(buy, is_second=True)
 
     @property
@@ -697,9 +707,6 @@ class ShopWidgetSet(MyWidgetSet):
 
 
 class RiddleWidgetSet(ReachTargetWidgetSet):
-    __NUM_OF_ROWS = 9
-    __NUM_OF_COLS = 9
-
     def __init__(self, render: "()", logger, root: py_cui.PyCUI, continue_exploration_callback: "()"):
         super().__init__(render, logger, root, continue_exploration_callback, "Give Up")
 
