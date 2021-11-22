@@ -1,3 +1,4 @@
+import time
 from enum import Enum
 
 import py_cui
@@ -31,6 +32,8 @@ class QrogueCUI(py_cui.PyCUI):
         self.__state_machine = StateMachine(self)
         self.__seed = seed
         self.__controls = controls
+        self.__last_input = time.time()
+        self.__last_key = None
         self.__focused_widget = None
 
         cbp = CallbackPack(self.__start_gameplay, self.__start_fight, self.__start_boss_fight, self.__open_riddle,
@@ -70,21 +73,38 @@ class QrogueCUI(py_cui.PyCUI):
         except FileNotFoundError:
             Logger.instance().error(f"File \"{path}\" could not be found!", only_popup=True)
 
+    def _ready_for_input(self, key_pressed: int, gameplay: bool = True) -> bool:
+        if self.__last_key != key_pressed:
+            self.__last_key = key_pressed
+            return True
+
+        if gameplay:
+            pause = GameplayConfig.gameplay_key_pause()
+        else:
+            pause = GameplayConfig.simulation_key_pause()
+        now_time = time.time()
+        if now_time - self.__last_input >= pause:
+            self.__last_input = now_time
+            return True
+        return False
+
     def _handle_key_presses(self, key_pressed):
         if self.__simulator is None:
-            if GameplayConfig.log_keys():
-                KeyLogger.instance().log(self.__controls, key_pressed)
-            super(QrogueCUI, self)._handle_key_presses(key_pressed)
+            if self._ready_for_input(key_pressed, gameplay=True):
+                if GameplayConfig.log_keys():
+                    KeyLogger.instance().log(self.__controls, key_pressed)
+                super(QrogueCUI, self)._handle_key_presses(key_pressed)
         elif key_pressed == self.__controls.get(Keys.Escape):
             Popup.message("Simulator", "stopped Simulator")
             self.__simulator = None
         else:
-            key = self.__simulator.next()
-            if key:
-                super(QrogueCUI, self)._handle_key_presses(key)
-            else:
-                Popup.message("Simulator", "finished")
-                self.__simulator = None
+            if self._ready_for_input(key_pressed, gameplay=False):
+                key = self.__simulator.next()
+                if key:
+                    super(QrogueCUI, self)._handle_key_presses(key)
+                else:
+                    Popup.message("Simulator", "finished")
+                    self.__simulator = None
 
     def _initialize_widget_renderer(self):
         """Function that creates the renderer object that will draw each widget

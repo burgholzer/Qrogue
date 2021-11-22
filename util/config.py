@@ -327,11 +327,15 @@ class GameplayConfig:
 
     __AUTO_RESET_CIRCUIT = "Auto reset Circuit"
     __LOG_KEYS = "Log Keys"
+    __SIMULATION_KEY_PAUSE = "Simulation key pause"
+    __GAMEPLAY_KEY_PAUSE = "Gameplay key pause"
     __CONFIG = {
-        __AUTO_RESET_CIRCUIT: ("F", "Automatically reset your Circuit to a clean state at the beginning of a Fight, "
+        __AUTO_RESET_CIRCUIT: ("True", "Automatically reset your Circuit to a clean state at the beginning of a Fight, "
                                      "Riddle, etc."),
         __LOG_KEYS: ("True", "Stores all keys you pressed in a .qrkl-file so one can replay them (e.g. for analysing a "
                            "bug)"),
+        __SIMULATION_KEY_PAUSE: ("0.2", "How long to wait before we process the next input during simulation."),
+        __GAMEPLAY_KEY_PAUSE: ("0.2", "How long to wait before we process the next input during gameplay."),
     }
 
     @staticmethod
@@ -361,6 +365,20 @@ class GameplayConfig:
     @staticmethod
     def log_keys() -> bool:
         return GameplayConfig.__CONFIG[GameplayConfig.__LOG_KEYS][0] == "True"
+
+    @staticmethod
+    def simulation_key_pause() -> float:
+        try:
+            return float(GameplayConfig.__CONFIG[GameplayConfig.__SIMULATION_KEY_PAUSE][0])
+        except:
+            return 0.2
+
+    @staticmethod
+    def gameplay_key_pause() -> float:
+        try:
+            return float(GameplayConfig.__CONFIG[GameplayConfig.__GAMEPLAY_KEY_PAUSE][0])
+        except:
+            return 0.4
 
 
 class Config:
