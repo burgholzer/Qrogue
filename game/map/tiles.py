@@ -13,11 +13,11 @@ from util.config import CheatConfig
 from util.logger import Logger
 from util.my_random import RandomManager
 from widgets.my_popups import Popup, CommonPopups
-from game.collectibles.collectible import type_str
 
 
 class TileCode(Enum):
     Invalid = -1    # when an error occurs, e.g. a tile at a non-existing position should be retrieved
+    Debug = -2      # displays a digit for debugging
     Void = 7        # tile outside of the playable area
     Floor = 0       # simple floor tile without special meaning
     FogOfWar = 3    # tile of a place we cannot see yet
@@ -81,6 +81,18 @@ class Invalid(Tile):
 
     def get_img(self):
         return "§"
+
+    def is_walkable(self, direction: Direction, player: PlayerActor) -> bool:
+        return False
+
+
+class Debug(Tile):
+    def __init__(self, num: int):
+        super(Debug, self).__init__(TileCode.Debug)
+        self.__num = str(num)[0]
+
+    def get_img(self) -> str:
+        return self.__num
 
     def is_walkable(self, direction: Direction, player: PlayerActor) -> bool:
         return False

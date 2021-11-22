@@ -7,9 +7,9 @@ from game.logic.instruction import Instruction
 from game.logic.qubit import StateVector
 from game.map.map import Map
 from game.map.navigation import Direction
+from game.map.rooms import Area, Placeholder
 from util.config import ColorConfig
 from widgets.renderable import Renderable
-from widgets.renderer import TileRenderer
 
 
 class MyBaseWidget(BlockLabel):
@@ -135,15 +135,54 @@ class MapWidget(Widget):
     def set_data(self, map: Map) -> None:
         self.__map = map
 
-    def render(self) -> None:   # todo more efficient rendering!
+    def render(self) -> None:
         if self.__map is not None:
-            str_rep = ""
-            for y in range(self.__map.height):
-                for x in range(self.__map.width):
-                    tile = self.__map.tile_at(x, y)
-                    str_rep += TileRenderer.render(tile)
-                str_rep += "\n"
-            self.widget.set_title(str_rep)
+            rows = []
+            offset = 0
+            # iterate through every row of Rooms
+            for y in range(Map.HEIGHT):
+                last_row = y == Map.HEIGHT - 1  # there are no more Hallways after the last row of Rooms
+                areas = []
+                south_hallways = []
+
+                for x in range(Map.WIDTH):
+                    last_col = x == Map.WIDTH - 1   # there are no more Hallways after the last Room in a row
+                    room = self.__map.room_at(x, y)
+                    if room is None:
+                        areas.append(Placeholder.room())
+                        if not last_col:
+                            areas.append(Placeholder.vertical())
+                        if not last_row:
+                            south_hallways.append(Placeholder.horizontal().get_row_str(0))
+
+                    else:
+                        areas.append(room)
+                        if not last_col:
+                            hallway = room.get_hallway(Direction.East, throw_error=False)
+                            if hallway is None:
+                                areas.append(Placeholder.vertical())
+                            else:
+                                areas.append(hallway)
+                        if not last_row:
+                            hallway = room.get_hallway(Direction.South, throw_error=False)
+                            if hallway is None:
+                                south_hallways.append(Placeholder.horizontal().get_row_str(0))
+                            else:
+                                south_hallways.append(hallway.get_row_str(0))
+
+                rows += ([""] * Area.UNIT_HEIGHT)   # initialize the new "block" of rows with empty strings
+                for area in areas:
+                    for ry in range(Area.UNIT_HEIGHT):
+                        rows[offset + ry] += area.get_row_str(ry)
+                rows.append(Area.void().get_img().join(south_hallways))
+                offset += Area.UNIT_HEIGHT + 1
+
+            # add player
+            x = self.__map.player_pos.x
+            y = self.__map.player_pos.y
+            rows[y] = rows[y][0:x] + self.__map.player_tile.get_img() + rows[y][x+1:]
+
+            self.widget.set_title("\n".join(rows))
 
     def render_reset(self) -> None:
         self.__backup = self.widget.get_title().title()

@@ -189,7 +189,7 @@ class QrogueCUI(py_cui.PyCUI):
         self.apply_widget_set(self.__menu)
 
     def __start_gameplay(self, map: Map) -> None:
-        Pausing(map.player.player, self.__pause_game)
+        Pausing(map.player_tile.player, self.__pause_game)
         self.__state_machine.change_state(State.Explore, map)
 
     def __end_of_gameplay(self) -> None:
@@ -218,7 +218,7 @@ class QrogueCUI(py_cui.PyCUI):
     def switch_to_explore(self, data) -> None:
         if data is not None:
             map = data
-            self.__explore.set_data(map, map.player)
+            self.__explore.set_data(map, map.player_tile)
         self.apply_widget_set(self.__explore)
 
     def __continue_explore(self) -> None:

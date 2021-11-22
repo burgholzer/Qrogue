@@ -8,6 +8,10 @@ class Area(ABC):
     __ID = 1
     __FOG = FogOfWar()
     __VOID = Void()
+    UNIT_WIDTH = 7
+    UNIT_HEIGHT = 7
+    MID_X = int(UNIT_WIDTH / 2)
+    MID_Y = int(UNIT_HEIGHT / 2)
 
     @staticmethod
     def void() -> Void:
@@ -29,6 +33,19 @@ class Area(ABC):
     def _id(self) -> int:
         return self.__id
 
+    def _set_tile(self, tile: Tile, x: int, y: int) -> bool:
+        """
+
+        :param tile: the Tile we want to place
+        :param x: horizontal position of the Tile
+        :param y: vertical position of the Tile
+        :return: whether we could place the Tile at the given position or not
+        """
+        if 0 <= x < Area.UNIT_WIDTH and 0 <= y < Area.UNIT_HEIGHT:
+            self.__tiles[y][x] = tile
+            return True
+        return False
+
     def at(self, x: int, y: int, force: bool = False) -> Tile:
         """
 
@@ -48,6 +65,20 @@ class Area(ABC):
         else:
             return Invalid()
 
+    def get_row_str(self, row: int) -> str:
+        if row >= len(self.__tiles):
+            return "".join([Invalid().get_img()] * Area.UNIT_WIDTH)
+
+        if self.__is_visible:
+            tiles = [t.get_img() for t in self.__tiles[row]]
+            return "".join(tiles)
+        elif self.__is_in_sight:
+            fog_str = Area.__FOG.get_img()
+            return fog_str * self.__width
+        else:
+            void_str = Area.__VOID.get_img()
+            return void_str * self.__width
+
     def make_visible(self):
         self.__is_in_sight = True
         self.__is_visible = True
@@ -62,25 +93,71 @@ class Area(ABC):
     def leave(self, direction: Direction):
         pass
 
+    def __str__(self):
+        return "?"
+
+
+class AreaPlaceholder(Area):
+    def __init__(self, code: int):
+        if code == 0:
+            # horizontal Hallway
+            self.__has_full_row = True
+        elif code == 1:
+            # vertical Hallway
+            self.__has_full_row = False
+        else:
+            # room
+            self.__has_full_row = True
+        super(AreaPlaceholder, self).__init__([[Area.void()]])
+
+    def at(self, x: int, y: int, force: bool = False) -> Tile:
+        return Area.void()
+
+    def get_row_str(self, row: int) -> str:
+        void_str = Area.void().get_img()
+        if self.__has_full_row:
+            return void_str * Area.UNIT_WIDTH
+        else:
+            return void_str
+
+    def in_sight(self):
+        pass
+
+    def enter(self, direction: Direction):
+        pass
+
+
+class Placeholder:
+    __HORIZONTAL = AreaPlaceholder(0)
+    __VERTICAL = AreaPlaceholder(1)
+    __ROOM = AreaPlaceholder(2)
+
+    @staticmethod
+    def horizontal() -> AreaPlaceholder:
+        return Placeholder.__HORIZONTAL
+
+    @staticmethod
+    def vertical() -> AreaPlaceholder:
+        return Placeholder.__VERTICAL
+
+    @staticmethod
+    def room() -> AreaPlaceholder:
+        return Placeholder.__ROOM
+
 
 class Hallway(Area):
-    MID_X = int(7 / 2)  # todo
-    MID_Y = int(7 / 2)
-
     def __init__(self, door: Door):
         self.__door = door
         self.__room1 = None
         self.__room2 = None
-        missing_half = int((Room.OUTER_WIDTH - 3) / 2)
         if self.is_horizontal():
+            missing_half = int((Area.UNIT_WIDTH - 3) / 2)
             row = [Void()] * missing_half + [Wall(), door, Wall()] + [Void()] * missing_half
             super(Hallway, self).__init__([row])
         else:
+            missing_half = int((Area.UNIT_HEIGHT - 3) / 2)
             tiles = [[Void()]] * missing_half + [[Wall()], [door], [Wall()]] + [[Void()]] * missing_half
             super(Hallway, self).__init__(tiles)
-
-    def at(self, x: int, y: int, force: bool = False) -> Tile:
-        return super(Hallway, self).at(x, y, force)
 
     def set_room(self, room: "Room", first: bool):
         """
@@ -90,12 +167,8 @@ class Hallway(Area):
         :return:
         """
         if first:
-            if self.__room1 is not None:
-                stop = True
             self.__room1 = room
         else:
-            if self.__room2 is not None:
-                stop = True
             self.__room2 = room
 
     def connects_horizontally(self) -> bool:
@@ -134,22 +207,16 @@ class Hallway(Area):
             return self.__room2
 
     def __str__(self) -> str:
-        if self.connects_horizontally():
+        if self.is_horizontal():
             orientation = "-"
         else:
             orientation = "|"
-        return f"{self._id} {orientation} {self.__room1}, {self.__room2}"
+        return f"HW{self._id}: {self.__room1} {orientation} {self.__room2}"
 
 
 class Room(Area):
-    INNER_WIDTH = 5                 # width inside the room, i.e. without walls and hallways
-    INNER_HEIGHT = INNER_WIDTH      # height inside the room, i.e. without walls and hallways
-    OUTER_WIDTH = INNER_WIDTH + 2   # width of the whole room area, i.e. with walls and hallways
-    OUTER_HEIGHT = INNER_HEIGHT + 2 # height of the whole room area, i.e. with walls and hallways
-    ROOM_WIDTH = INNER_WIDTH + 2    # width of the whole room, i.e. with walls but without hallways
-    ROOM_HEIGHT = INNER_HEIGHT + 2  # height of the whole room, i.e. with walls but without hallways
-    MID_X = int(ROOM_WIDTH / 2)     # middle of the room on the x-axis
-    MID_Y = int(ROOM_HEIGHT / 2)    # middle of the room on the y-axis
+    INNER_WIDTH = Area.UNIT_WIDTH - 2        # width inside the room, i.e. without walls and hallways
+    INNER_HEIGHT = Area.UNIT_HEIGHT - 2      # height inside the room, i.e. without walls and hallways
 
     @staticmethod
     def get_empty_room_tile_list() -> "list of Tiles":
@@ -169,9 +236,9 @@ class Room(Area):
 
     def __init__(self, tile_list: "list of Tiles", north_hallway: Hallway = None, east_hallway: Hallway = None,
                  south_hallway: Hallway = None, west_hallway: Hallway = None):
-        self.__tiles = []
-        top = [ Wall() for t in range(Room.ROOM_WIDTH) ]
-        self.__tiles.append(top)
+        tiles = []
+        room_top = [Wall()] * Area.UNIT_WIDTH
+        tiles.append(room_top)
 
         # fence the room tiles with Walls
         for y in range(Room.INNER_HEIGHT):
@@ -184,65 +251,48 @@ class Room(Area):
                 else:
                     row.append(Floor())
             row.append(Wall())
-            #row.append(Void()) # again append an invisible Tile to the right
-            self.__tiles.append(row)
+            tiles.append(row)
 
-        room_bottom = [ Wall() for t in range(Room.ROOM_WIDTH) ]
-        #room_bottom.append(Void())
-        # append the visible row at the bottom for potential hallways
-        #bottom = [ Void() for t in range(Room.OUTER_WIDTH)]
-
-        self.__tiles.append(room_bottom)
-        #self.__tiles.append(bottom)
+        room_bottom = [Wall()] * Area.UNIT_WIDTH
+        tiles.append(room_bottom)
 
         self.__hallways = {}
         if north_hallway is not None and not north_hallway.connects_horizontally():
-            self.__tiles[0][Room.MID_X] = Floor()
+            tiles[0][Area.MID_X] = Floor()
             self.__hallways[Direction.North] = north_hallway
             # this room is to the south of north_hallway and therefore its second room
             north_hallway.set_room(self, False)
+
         if east_hallway is not None and east_hallway.connects_horizontally():
-            self.__tiles[Room.MID_Y][Room.ROOM_WIDTH-1] = Floor()
+            tiles[Area.MID_Y][Area.UNIT_WIDTH-1] = Floor()
             self.__hallways[Direction.East] = east_hallway
             # this room is to the west of east_hallway and therefore its first room
             east_hallway.set_room(self, True)
+
         if south_hallway is not None and not south_hallway.connects_horizontally():
-            self.__tiles[Room.ROOM_HEIGHT-1][Room.MID_X] = Floor()
+            tiles[Area.UNIT_HEIGHT-1][Area.MID_X] = Floor()
             self.__hallways[Direction.South] = south_hallway
             # this room is to the north of south_hallway and therefore its first room
             south_hallway.set_room(self, True)
+
         if west_hallway is not None and west_hallway.connects_horizontally():
-            self.__tiles[Room.MID_Y][0] = Floor()
+            tiles[Area.MID_Y][0] = Floor()
             self.__hallways[Direction.West] = west_hallway
             # this room is to the east of west_hallway and therefore its second room
             west_hallway.set_room(self, False)
 
-        super(Room, self).__init__(self.__tiles)
+        super(Room, self).__init__(tiles)
 
-    def _set_tile(self, tile: Tile, x: int, y: int) -> bool:
-        """
+    def get_hallway(self, direction: Direction, throw_error: bool = True) -> Hallway:
+        if direction in self.__hallways:
+            return self.__hallways[direction]
+        elif throw_error:
+            dic = [(str(self.__hallways[k]) + "\n") for k in self.__hallways]
+            Logger.instance().error(f"Invalid hallway access for {self}:\n{direction} not in {dic}")
+            return None
 
-        :param tile: the Tile we want to place
-        :param x: horizontal position of the Tile
-        :param y: vertical position of the Tile
-        :return: whether we could place the Tile at the given position or not
-        """
-        if 0 <= x < Room.OUTER_WIDTH and 0 <= y < Room.OUTER_HEIGHT:
-            self.__tiles[y][x] = tile
-            return True
-        return False
-
-    def get_hallway(self, direction: Direction) -> Hallway:
-        try:
-            return self.__hallways[direction]   # todo what if direction is no valid key?
-        except KeyError:
-            dic = [str(self.__hallways[k]) for k in self.__hallways]
-            print(f"{direction} not in {dic}")
-            for key in self.__hallways:
-                return self.__hallways[key]
-
-    def enter(self, direction: Direction):
-        super(Room, self).enter(direction)
+    def make_visible(self):
+        super(Room, self).make_visible()
         for key in self.__hallways:
             hallway = self.__hallways[key]
             hallway.in_sight()
@@ -326,7 +376,7 @@ class GateRoom(SpecialRoom):
     def __init__(self, hallway: Hallway, first: bool, tile_dic: "dic of Coordinate and Tile" = None):
         super().__init__(hallway, first, tile_dic)
         factory = GateFactories.standard_factory()
-        self._set_tile(Collectible(factory), x=Room.MID_X, y=Room.MID_Y)
+        self._set_tile(Collectible(factory), x=Area.MID_X, y=Area.MID_Y)
 
     def abbreviation(self) -> str:
         return "GR"
@@ -336,7 +386,7 @@ class RiddleRoom(SpecialRoom):
     def __init__(self, hallway: Hallway, first: bool, riddle: Riddle, open_riddle_callback: "void(Player, Riddle)",
                  tile_dic: "dic of Coordinate and Tile" = None):
         super().__init__(hallway, first, tile_dic)
-        self._set_tile(Riddler(open_riddle_callback, riddle), Room.MID_X, Room.MID_Y)
+        self._set_tile(Riddler(open_riddle_callback, riddle), Area.MID_X, Area.MID_Y)
 
     def abbreviation(self):
         return "RR"
@@ -346,7 +396,7 @@ class ShopRoom(SpecialRoom):
     def __init__(self, hallway: Hallway, first: bool, inventory: "list of ShopItems",
                  visit_shop_callback: "void(Player, list of ShopItems)", tile_dic: "dic of Coordinate and Tile" = None):
         super().__init__(hallway, first, tile_dic)
-        self._set_tile(ShopKeeper(visit_shop_callback, inventory), Room.MID_X, Room.MID_Y)
+        self._set_tile(ShopKeeper(visit_shop_callback, inventory), Area.MID_X, Area.MID_Y)
 
     def abbreviation(self):
         return "$R"
@@ -359,7 +409,7 @@ class TreasureRoom(SpecialRoom):
 class BossRoom(SpecialRoom):
     def __init__(self, hallway: Hallway, first: bool, boss: Boss, tile_dic: "dic of Coordinate and Tile" = None):
         super().__init__(hallway, first, tile_dic)
-        self._set_tile(boss, x=Room.MID_X, y=Room.MID_Y)
+        self._set_tile(boss, x=Area.MID_X, y=Area.MID_Y)
 
     def abbreviation(self) -> str:
         return "BR"
