@@ -9,6 +9,7 @@ class CollectibleType(Enum):
     PassiveItem = 4
     Coin = 5
     Key = 6
+    Heart = 7
 
 
 def type_str(type: CollectibleType) -> str:

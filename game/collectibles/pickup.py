@@ -1,15 +1,21 @@
+from abc import ABC
 
 from game.collectibles.collectible import Collectible, CollectibleType
 
 
-class Coin(Collectible):
-    def __init__(self, amount: int = 1):
-        super().__init__(CollectibleType.Coin)
-        self.__amount = amount
+class Pickup(Collectible, ABC):
+    def __init__(self, type: CollectibleType, amount: int):
+        super(Pickup, self).__init__(type)
+        self._amount = amount
 
     @property
     def amount(self):
-        return self.__amount
+        return self._amount
+
+
+class Coin(Pickup):
+    def __init__(self, amount: int = 1):
+        super().__init__(CollectibleType.Coin, amount)
 
     def name(self) -> str:
         return "Coin"
@@ -18,17 +24,12 @@ class Coin(Collectible):
         return "Coins are used to buy Collectibles from the Shop"
 
     def __str__(self):
-        return f"{self.__amount}$"
+        return f"{self.amount}$"
 
 
-class Key(Collectible):
+class Key(Pickup):
     def __init__(self, amount: int = 1):
-        super().__init__(CollectibleType.Key)
-        self.__amount = amount
-
-    @property
-    def amount(self):
-        return self.__amount
+        super().__init__(CollectibleType.Key, amount)
 
     def name(self) -> str:
         return "Key"
@@ -37,4 +38,18 @@ class Key(Collectible):
         return "A Key is useful for opening locked doors."
 
     def __str__(self):
-        return f"{self.__amount} key(s)"
+        return f"{self.amount} key(s)"
+
+
+class Heart(Pickup):
+    def __init__(self, amount: int = 1):
+        super().__init__(CollectibleType.Heart, amount)
+
+    def name(self) -> str:
+        return "Heart"
+
+    def description(self) -> str:
+        return "A Heart gives you back some of your HP."
+
+    def __str__(self) -> str:
+        return f"Heart ({self.amount} HP)"
