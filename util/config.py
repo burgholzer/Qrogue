@@ -395,7 +395,10 @@ class Config:
     @staticmethod
     def load():
         if not PathConfig.set_base_path():
-            return 1
+            Config.create()
+            if not PathConfig.set_base_path():
+                return 1
+
         config = PathConfig.read(Config.__FILE_NAME)
 
         gameplay_section = config.index(Config.__GAMEPLAY_HEAD) + len(Config.__GAMEPLAY_HEAD)
