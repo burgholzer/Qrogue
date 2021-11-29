@@ -21,6 +21,8 @@ class MyRandom:
         return min + int(self.get() * (max - min))
 
     def get_element(self, iterable, remove: bool = False):
+        if len(iterable) == 0:
+            return None
         index = self.get_int(min=0, max=len(iterable))
         if remove:
             elem = iterable[index]
