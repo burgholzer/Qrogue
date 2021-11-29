@@ -11,18 +11,29 @@ class PathConfig:
     __SCREEN_PRINTS_FOLDER = "screenprints"
 
     @staticmethod
+    def create_data_folder(base_path: str) -> None:
+        os.mkdir(os.path.join(base_path, PathConfig.__LOG_FOLDER))
+        os.mkdir(os.path.join(base_path, PathConfig.__KEY_LOG_FOLDER))
+        os.mkdir(os.path.join(base_path, PathConfig.__SCREEN_PRINTS_FOLDER))
+
+    @staticmethod
     def set_base_path() -> bool:
-        config_file_path = os.path.join(os.path.abspath("."), "installer", "qrogue.config")
+        config_file_path = os.path.join(os.path.dirname(__file__), "..", "installer", "qrogue.config")
         try:
             with open(config_file_path) as f:
                 content = f.readlines()
                 PathConfig.__BASE_PATH = ""
-                # remove the special characters so we get a "normal" path string (don't know why this is needed, but it is)
-                flag = False
-                for char in content[2]:
-                    if flag:
-                        PathConfig.__BASE_PATH += char
-                    flag = not flag
+
+                if os.name == "nt":
+                    # remove the special characters so we get a "normal" path string
+                    # (don't know why this is needed, but it is for Windows)
+                    flag = False
+                    for char in content[2]:
+                        if flag:
+                            PathConfig.__BASE_PATH += char
+                        flag = not flag
+                else:
+                    PathConfig.__BASE_PATH = content[1]
                 # remove the last character because it is \n
                 PathConfig.__BASE_PATH = PathConfig.__BASE_PATH[:-1]
             return os.path.exists(PathConfig.__BASE_PATH)
@@ -30,7 +41,7 @@ class PathConfig:
             return False
 
     @staticmethod
-    def __base_path(file_name: str = "") -> str:
+    def base_path(file_name: str = "") -> str:
         return os.path.join(PathConfig.__BASE_PATH, file_name)
 
     @staticmethod
@@ -51,7 +62,7 @@ class PathConfig:
 
     @staticmethod
     def write(file_name: str, text: str, may_exist: bool = True, append: bool = False):
-        path = PathConfig.__base_path(file_name)
+        path = PathConfig.base_path(file_name)
         mode = "x"
         if may_exist:
             if os.path.exists(path):
@@ -64,7 +75,7 @@ class PathConfig:
     @staticmethod
     def read_keylog_buffered(file_name: str, in_keylog_folder: bool = True, buffer_size: int = 1024) -> str:
         if in_keylog_folder:
-            path = PathConfig.__base_path(os.path.join(PathConfig.__KEY_LOG_FOLDER, file_name))
+            path = PathConfig.base_path(os.path.join(PathConfig.__KEY_LOG_FOLDER, file_name))
         else:
             path = file_name
         if os.path.exists(path):
@@ -76,12 +87,12 @@ class PathConfig:
         return None
 
     @staticmethod
-    def read(file_name: str, in_base_path: bool = True) -> [str]:
+    def read(file_name: str, in_base_path: bool = True) -> str:
         if in_base_path:
-            path = PathConfig.__base_path(file_name)
+            path = PathConfig.base_path(file_name)
         else:
             path = file_name
-        content = []
+        content = ""
         if os.path.exists(path):
             with open(path, "r") as file:
                 content = file.read()
@@ -89,7 +100,7 @@ class PathConfig:
 
     @staticmethod
     def delete(file_name):
-        path = PathConfig.__base_path(file_name)
+        path = PathConfig.base_path(file_name)
         if os.path.exists(path):
             os.remove(path)
 
@@ -385,24 +396,25 @@ class Config:
     __GAMEPLAY_HEAD = "[Gameplay]\n"
 
     @staticmethod
-    def __create():
+    def create():
         text = ""
         text += Config.__GAMEPLAY_HEAD
         text += GameplayConfig.to_file_text()
 
-        file_path = os.path.join(os.path.realpath(__file__), "..", "installer", "qrogue.config")
-        config_content = PathConfig.read(file_path)
-        print(config_content)
-        path = config_content[1]
+        file_path = os.path.join(os.path.dirname(__file__), "..", "installer", "qrogue.config")
+        config_content = PathConfig.read(file_path, False).splitlines()
+        PathConfig.create_data_folder(config_content[1])
+        path = os.path.join(config_content[1], Config.__GAME_CONFIG)
         with open(path, "x") as file:
             file.write(text)
 
     @staticmethod
     def load():
         if not PathConfig.set_base_path():
-            Config.__create()
-            if not PathConfig.set_base_path():
-                return 1
+            return 1
+
+        if not os.path.exists(os.path.join(PathConfig.base_path(), Config.__GAME_CONFIG)):
+            Config.create()
 
         config = PathConfig.read(Config.__GAME_CONFIG)
 

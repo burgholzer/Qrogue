@@ -21,10 +21,14 @@ if [ $? ]; then
 
 		if [ $? ]; then
 			echo "[Qrogue] Creating config files..."
-			mkdir -p ${DATA_PATH}
+
 			touch qrogue.config
 			realpath "${ENV_PATH}" > qrogue.config
 			realpath "${DATA_PATH}" >> qrogue.config
+			mkdir -p "${DATA_PATH}"
+			#mkdir -p ${DATA_PATH}/logs
+			#mkdir -p ${DATA_PATH}/keylogs
+			#mkdir -p ${DATA_PATH}/screenprints
 
 			if [ $? ]; then
 				echo
