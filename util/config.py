@@ -392,6 +392,7 @@ class Config:
 
         file_path = os.path.join(os.path.realpath(__file__), "..", "installer", "qrogue.config")
         config_content = PathConfig.read(file_path)
+        print(config_content)
         path = config_content[1]
         with open(path, "x") as file:
             file.write(text)
