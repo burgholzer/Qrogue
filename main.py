@@ -1,5 +1,8 @@
 #D:\Programs\anaconda3\envs\Qrogue
 # This is a sample Python script.
+import random
+import sys
+
 from game.game import GameHandler
 from util.config import Config
 from util.key_logger import KeyLogger
@@ -14,7 +17,8 @@ turn back time so we can "stop" the climate crisis and live on a healthy planet?
 
 return_code = Config.load()
 if return_code == 0:
-    game = GameHandler(7)
+    seed = random.randint(0, sys.maxsize)
+    game = GameHandler(seed)
     game.start()
     # flush after the player stopped playing
     Logger.instance().flush()

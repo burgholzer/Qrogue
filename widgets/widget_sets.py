@@ -128,22 +128,34 @@ class MenuWidgetSet(MyWidgetSet):
     def __init__(self, render: "()", logger, root: py_cui.PyCUI, cbp: CallbackPack, stop_callback: "()",
                  start_simulation_callback: "(str,)"):
         super().__init__(logger, root, render)
-        self.__seed = 7
+        self.__seed = 0
         self.__cbp = cbp
         self.__stop = stop_callback
         self.__start_simulation = start_simulation_callback
 
     def init_widgets(self) -> None:
-        title = self.add_block_label("Qrogue", 0, 3, row_span=MyWidgetSet.NUM_OF_ROWS-1, column_span=6, center=True)
-        self.__title = SimpleWidget(title)
-        self.__title.set_data(_ascii_art)
-
-        selection = self.add_block_label("", 2, 0, row_span=5, column_span=3, center=True)
+        height = 5
+        width = 3
+        selection = self.add_block_label("", 2, 0, row_span=height, column_span=width, center=True)
         self.__selection = SelectionWidget(selection, 1)
         self.__selection.set_data(data=(
             ["PLAY\n", "TUTORIAL\n", "SIMULATOR\n", "OPTIONS\n", "EXIT\n"],
             [self.__play, self.__tutorial, self.__simulate, self.__options, self.__exit]
         ))
+
+        seed = self.add_block_label("Seed", MyWidgetSet.NUM_OF_ROWS-1, 0, row_span=1, column_span=width, center=False)
+        self.__seed_widget = SimpleWidget(seed)
+
+        title = self.add_block_label("Qrogue", 0, width, row_span=MyWidgetSet.NUM_OF_ROWS-1,
+                                     column_span=MyWidgetSet.NUM_OF_COLS-width, center=True)
+        self.__title = SimpleWidget(title)
+        self.__title.set_data(_ascii_art)
+
+    def new_seed(self) -> None:
+        self.__seed = RandomManager.instance().get_int()
+        print(self.__seed)
+        self.__seed_widget.set_data(f"Seed: {self.__seed}")
+        self.__seed_widget.render()
 
     def get_widget_list(self) -> "list of Widgets":
         return [
@@ -163,8 +175,7 @@ class MenuWidgetSet(MyWidgetSet):
 
     def __play(self) -> None:
         player = DummyPlayer()   # todo use real player
-        seed = MapConfig.tutorial_seed() # todo and real seed
-        map = Map(seed, self.__MAP_WIDTH, self.__MAP_HEIGHT, player, self.__cbp)
+        map = Map(self.__seed, self.__MAP_WIDTH, self.__MAP_HEIGHT, player, self.__cbp)
         self.__cbp.start_gameplay(map)
 
     def __tutorial(self) -> None:

@@ -206,6 +206,7 @@ class QrogueCUI(py_cui.PyCUI):
         self.__state_machine.change_state(self.__state_machine.prev_state, None)
 
     def switch_to_menu(self, data=None) -> None:
+        self.__menu.new_seed()
         self.apply_widget_set(self.__menu)
 
     def __start_gameplay(self, map: Map) -> None:
