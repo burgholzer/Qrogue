@@ -157,7 +157,7 @@ class CustomWildRoom2(WildRoom):
                f"the {doors} behave the exact {opposite} - if you {open} one of them the other will be {closed}. " \
                f"But in this Dungeon it is not obligatory to go into one of the rooms behind these {doors}...\n" \
                f"...because the {boss} is already waiting for you in the North."
-        self._set_tile(tiles.Message(Popup("Tutorial: Entangled Doors", text)), 0, Room.MID_Y)
+        self._set_tile(tiles.Message(Popup("Tutorial: Entangled Doors", text, show=False)), 0, Room.MID_Y)
 
     def abbreviation(self) -> str:
         return "cWR2"
