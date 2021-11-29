@@ -58,9 +58,8 @@ class PathConfig:
                 mode = "w"
                 if append:
                     mode = "a"
-        file = open(path, mode)
-        file.write(text)
-        file.close()
+        with open(path, mode) as file:
+            file.write(text)
 
     @staticmethod
     def read_keylog_buffered(file_name: str, in_keylog_folder: bool = True, buffer_size: int = 1024) -> str:
@@ -382,24 +381,29 @@ class GameplayConfig:
 
 
 class Config:
-    __FILE_NAME = "qrogue_game.config"
+    __GAME_CONFIG = "qrogue_game.config"
     __GAMEPLAY_HEAD = "[Gameplay]\n"
 
     @staticmethod
-    def create():
+    def __create():
         text = ""
         text += Config.__GAMEPLAY_HEAD
         text += GameplayConfig.to_file_text()
-        PathConfig.write(Config.__FILE_NAME, text)
+
+        file_path = os.path.join(os.path.realpath(__file__), "..", "installer", "qrogue.config")
+        config_content = PathConfig.read(file_path).splitlines()
+        path = config_content[1]
+        with open(path, "x") as file:
+            file.write(text)
 
     @staticmethod
     def load():
         if not PathConfig.set_base_path():
-            Config.create()
+            Config.__create()
             if not PathConfig.set_base_path():
                 return 1
 
-        config = PathConfig.read(Config.__FILE_NAME)
+        config = PathConfig.read(Config.__GAME_CONFIG)
 
         gameplay_section = config.index(Config.__GAMEPLAY_HEAD) + len(Config.__GAMEPLAY_HEAD)
         gameplay_section = (gameplay_section, len(config))
