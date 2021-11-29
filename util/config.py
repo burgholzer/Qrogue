@@ -76,7 +76,7 @@ class PathConfig:
         return None
 
     @staticmethod
-    def read(file_name: str, in_base_path: bool = True) -> str:
+    def read(file_name: str, in_base_path: bool = True) -> [str]:
         if in_base_path:
             path = PathConfig.__base_path(file_name)
         else:
@@ -391,7 +391,7 @@ class Config:
         text += GameplayConfig.to_file_text()
 
         file_path = os.path.join(os.path.realpath(__file__), "..", "installer", "qrogue.config")
-        config_content = PathConfig.read(file_path).splitlines()
+        config_content = PathConfig.read(file_path)
         path = config_content[1]
         with open(path, "x") as file:
             file.write(text)
