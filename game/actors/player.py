@@ -46,7 +46,7 @@ class Backpack:
     """
     Stores the Instructions for the player to use.
     """
-    __CAPACITY = 4
+    __CAPACITY = 5  # increased capacity for tutorial purposes
 
     def __init__(self, capacity: int = __CAPACITY, content: "list of Instructions" = []):
         """

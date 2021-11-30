@@ -118,7 +118,7 @@ class HGate(SingleQubitGate):
         super().__init__(gates.HGate())
 
     def description(self) -> str:
-        return "The Hadamard Gate is often used to get Qubits into Superposition."
+        return "The Hadamard Gate is often used to bring Qubits to Superposition."
 
     def short_name(self) -> str:
         return "Hadamard"

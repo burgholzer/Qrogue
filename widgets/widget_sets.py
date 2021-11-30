@@ -186,7 +186,9 @@ class MenuWidgetSet(MyWidgetSet):
         Popup.message("Welcome to Qrogue! (scroll with arrow keys)", HelpText.get(HelpTextType.Welcome))
 
     def __simulate(self) -> None:
-        self.__start_simulation()
+        Popup.message("Developer Tools", "Simulation is currently only for debugging. Please play the Tutorial in the "
+                                         "meanwhile!")
+        #self.__start_simulation()
 
     def __options(self) -> None:
         Popup.message("TODO", "The options are not implemented yet!")

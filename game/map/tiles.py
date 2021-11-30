@@ -157,6 +157,8 @@ class Message(WalkTriggerTile):
     def __init__(self, popup: Popup, popup_times: int = 1):
         super().__init__(TileCode.Message)
         self.__popup = popup
+        if popup_times < 0:
+            popup_times = 99999     # display "everytime" the player steps on it
         self.__times = popup_times
 
     def get_img(self):

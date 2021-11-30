@@ -70,7 +70,7 @@ class QrogueCUI(py_cui.PyCUI):
             self.__simulator = GameSimulator(self.__controls, path, in_keylog_folder=True)
             # go back to the original position of the cursor and start the game
             super(QrogueCUI, self)._handle_key_presses(self.__controls.selection_left)
-            super(QrogueCUI, self)._handle_key_presses(self.__controls.selection_left)
+            #super(QrogueCUI, self)._handle_key_presses(self.__controls.selection_left)
             super(QrogueCUI, self)._handle_key_presses(self.__controls.action)
         except FileNotFoundError:
             Logger.instance().error(f"File \"{path}\" could not be found!", only_popup=True)

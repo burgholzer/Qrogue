@@ -37,7 +37,7 @@ class TutorialEnemy(EnemyActor):
 
 class TutorialRiddle(Riddle):
     def __init__(self):
-        target = StateVector([1, 0, 0, 0])
+        target = StateVector([0.5, -0.5, 0.5, -0.5])
         reward = CXGate()
         super().__init__(target, reward, attempts=7)
 
@@ -84,7 +84,7 @@ class TutorialTile(tiles.Message):
 
     def get_img(self):
         if self.is_active():
-                return super(TutorialTile, self).get_img()
+            return super(TutorialTile, self).get_img()
         else:
             if self.__blocks:
                 return "X"
@@ -103,7 +103,7 @@ class TutorialTile(tiles.Message):
     def on_walk(self, direction: Direction, player: PlayerActor) -> None:
         if self.is_active():
             super(TutorialTile, self).on_walk(direction, player)
-            self.__blocks = False # TutorialTiles should no longer affect the Player after they were activated
+            self.__blocks = False  # TutorialTiles should no longer affect the Player after they were activated
             if self.__progress is not None:
                 self.__progress()
 
@@ -169,6 +169,20 @@ class TutorialGateRoom(GateRoom):
             Coordinate(Room.MID_X - 1, 0): tutorial_tile
         }
         super().__init__(hallway, False, tile_dic)
+
+
+class TutorialBossRoom(BossRoom):
+    def __init__(self, hallway: Hallway, start_boss_fight: "(Player, Boss, Direction)"):
+        riddle = CC.highlight_object("Riddle")
+        gate = CC.highlight_object("Gate")
+        shop = CC.highlight_object("Shop")
+        helpful = CC.highlight_word("helpful")
+        boss = CC.highlight_object("Boss")
+        hint = tiles.Message(Popup("Hint:", f"Solving the {riddle} or buying the {gate} from the {shop} might be pretty"
+                                            f" {helpful} in defeating the {boss}. Of course you can try it nonetheless "
+                                            "but if I were you I'd better use every help I can get.", show=False), -1)
+        super().__init__(hallway, True, tiles.Boss(TutorialBoss(), start_boss_fight),
+                         tile_dic={Coordinate(1, Room.INNER_HEIGHT - 2): hint})
 
 
 class Tutorial:
@@ -252,8 +266,9 @@ class Tutorial:
 
             f"Alright, now comes a room with real {w[3]}. Remember what you were told about the {w[13]} if you want "
             f"to survive!\n"
-            f"To the West of the next room waits the {w[14]}, in the South is the {w[15]} and "
-            f"North a {w[16]} that gives you a nice reward if you can solve it.\n"
+            f"To the South of it is the {w[15]} and "
+            f"North a {w[16]} that gives you a nice reward if you can solve it. Going West takes you one step closer "
+            f"to the {w[14]}\n"
             "Good Luck!",
         ]
         popups = [Popup(f"Tutorial #{i + 1}", messages[i], show=False)
@@ -274,9 +289,10 @@ class Tutorial:
         cwr2_hallway_south = Hallway(entangled_south)
 
         spawn_dic = {
-            Coordinate(Room.MID_X - 1, Room.INNER_HEIGHT - 1): TutorialTile(popups[0], 0, self.is_active, self.progress),
+            Coordinate(Room.MID_X - 1, Room.INNER_HEIGHT - 1): TutorialTile(popups[0], 0, self.is_active,
+                                                                            self.progress),
             Coordinate(Room.INNER_WIDTH - 1, Room.MID_Y - 1): TutorialTile(popups[1], 1, self.is_active, self.progress,
-                                                                            blocks=True)
+                                                                           blocks=True)
         }
         spawn = SpawnRoom(player, spawn_dic, east_hallway=spawn_hallway_east, south_hallway=spawn_hallway_south)
         spawn_x = 0
@@ -294,11 +310,12 @@ class Tutorial:
         rooms[1][2] = WildRoom(factory, chance=0.8, west_hallway=cwr_hallway_east, north_hallway=riddle_hallway,
                                south_hallway=shop_hallway, east_hallway=cwr2_hallway_west)
         rooms[0][2] = RiddleRoom(riddle_hallway, True, TutorialRiddle(), self.riddle)
-        rooms[2][2] = ShopRoom(shop_hallway, False, [ShopItem(Key(2), 3), ShopItem(Key(1), 2)], self.shop)
+        rooms[2][2] = ShopRoom(shop_hallway, False, [ShopItem(Key(2), 3), ShopItem(Key(1), 2), ShopItem(CXGate(), 15)],
+                               self.shop)
         rooms[1][3] = CustomWildRoom2(factory, chance=0.7, north_hallway=cwr2_hallway_north,
                                       east_hallway=cwr2_hallway_east, south_hallway=cwr2_hallway_south,
                                       west_hallway=cwr2_hallway_west)
-        rooms[0][3] = BossRoom(cwr2_hallway_north, True, tiles.Boss(TutorialBoss(), self.boss_fight))
+        rooms[0][3] = TutorialBossRoom(cwr2_hallway_north, self.boss_fight)
         rooms[1][4] = WildRoom(factory, chance=0.5, west_hallway=cwr2_hallway_east)
         rooms[2][3] = WildRoom(factory, chance=0.6, north_hallway=cwr2_hallway_south)
 

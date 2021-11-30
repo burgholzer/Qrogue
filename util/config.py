@@ -257,7 +257,7 @@ class PopupConfig:
 
 
 class CheatConfig:
-    INPUT_CHEAT_KEY = py_cui.keys.KEY_CTRL_Q
+    INPUT_CHEAT_KEY = py_cui.keys.KEY_CTRL_I
     CHEAT_LIST_KEY = py_cui.keys.KEY_CTRL_L
     __ALL = "aLL"
     __GOD_MODE = "Qod-Mode"
@@ -392,8 +392,13 @@ class GameplayConfig:
 
 
 class Config:
+    __VERSION = "v0.0.1"
     __GAME_CONFIG = "qrogue_game.config"
     __GAMEPLAY_HEAD = "[Gameplay]\n"
+
+    @staticmethod
+    def version() -> str:
+        return Config.__VERSION
 
     @staticmethod
     def create():
