@@ -11,7 +11,7 @@ from game.callbacks import CallbackPack
 from game.controls import Controls, Pausing, Keys
 from game.map.map import Map
 from game.map.navigation import Direction
-from util.config import PathConfig, ColorConfig, CheatConfig, GameplayConfig
+from util.config import PathConfig, ColorConfig, CheatConfig, GameplayConfig, Config
 from util.game_simulator import GameSimulator
 from util.key_logger import KeyLogger
 from util.logger import Logger
@@ -24,6 +24,7 @@ from widgets.widget_sets import ExploreWidgetSet, FightWidgetSet, MyWidgetSet, M
 class QrogueCUI(py_cui.PyCUI):
     def __init__(self, seed: int, controls: Controls, width: int = 8, height: int = 9):
         super().__init__(width, height)
+        self.set_title(f"Qrogue {Config.version()}")
         Logger.instance().set_popup(self.show_message_popup, self.show_error_popup)
         Popup.update_popup_functions(self.__show_popup)
         CheatConfig.init(self.__show_popup, self.__show_input_popup)
