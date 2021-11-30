@@ -174,9 +174,11 @@ class MenuWidgetSet(MyWidgetSet):
         return self.__selection
 
     def __play(self) -> None:
-        player = DummyPlayer()   # todo use real player
-        map = Map(self.__seed, self.__MAP_WIDTH, self.__MAP_HEIGHT, player, self.__cbp)
-        self.__cbp.start_gameplay(map)
+        Popup.message("TODO", "The normal game mode is not implemented yet. Please wait for the next Release and "
+                              "play the Tutorial in the meanwhile!")
+        #player = DummyPlayer()   # todo use real player
+        #map = Map(self.__seed, self.__MAP_WIDTH, self.__MAP_HEIGHT, player, self.__cbp)
+        #self.__cbp.start_gameplay(map)
 
     def __tutorial(self) -> None:
         map = Map(MapConfig.tutorial_seed(), self.__MAP_WIDTH, self.__MAP_HEIGHT, DummyPlayer(), self.__cbp)
