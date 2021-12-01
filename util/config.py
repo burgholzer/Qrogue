@@ -12,9 +12,15 @@ class PathConfig:
 
     @staticmethod
     def create_data_folder(base_path: str) -> None:
-        os.mkdir(os.path.join(base_path, PathConfig.__LOG_FOLDER))
-        os.mkdir(os.path.join(base_path, PathConfig.__KEY_LOG_FOLDER))
-        os.mkdir(os.path.join(base_path, PathConfig.__SCREEN_PRINTS_FOLDER))
+        log_path = os.path.join(base_path, PathConfig.__LOG_FOLDER)
+        key_log_path = os.path.join(base_path, PathConfig.__KEY_LOG_FOLDER)
+        screen_prints_path = os.path.join(base_path, PathConfig.__SCREEN_PRINTS_FOLDER)
+        if not os.path.exists(log_path):
+            os.mkdir(log_path)
+        if not os.path.exists(key_log_path):
+            os.mkdir(key_log_path)
+        if not os.path.exists(screen_prints_path):
+            os.mkdir(screen_prints_path)
 
     @staticmethod
     def set_base_path() -> bool:
@@ -22,20 +28,8 @@ class PathConfig:
         try:
             with open(config_file_path) as f:
                 content = f.readlines()
-                PathConfig.__BASE_PATH = ""
-
-                if os.name == "nt":
-                    # remove the special characters so we get a "normal" path string
-                    # (don't know why this is needed, but it is for Windows)
-                    flag = False
-                    for char in content[2]:
-                        if flag:
-                            PathConfig.__BASE_PATH += char
-                        flag = not flag
-                else:
-                    PathConfig.__BASE_PATH = content[1]
-                # remove the last character because it is \n
-                PathConfig.__BASE_PATH = PathConfig.__BASE_PATH[:-1]
+                # ignore the last character because it is \n
+                PathConfig.__BASE_PATH = content[1][:-1]
             return os.path.exists(PathConfig.__BASE_PATH)
         except:
             return False

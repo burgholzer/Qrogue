@@ -51,19 +51,19 @@ Afterwards just run `play_qrogue.sh` to play the game.
 
 For Windows there is currently no script available that 
 automatically installs everything you need. The best way is to 
-create a new virtual environment with Anaconda (Python 3.8). 
-Then open your Anaconda Powershell and execute 
-`qrogue_folder_path\installer\install.ps1`. You will be asked to 
-provide the path to your newly created environment as parameter. 
+create a new virtual environment with Anaconda Navigator (Python 3.8). 
+Then open a terminal (e.g. Windows Powershell) and execute 
+`installer\install.ps1`. You will be asked to provide the name of your 
+newly created environment as well as the location you want to store your 
+game data (e.g. save files, config) as parameter. 
 This will install the required Packages in the virtual 
-environment and setup configuration files in your Qrogue folder.
+environment and setup a QrogueData folder in the specified location.
 
 It is recommended to play the game in 
 [Windows Terminal](https://www.microsoft.com/store/productId/9N0DX20HK701) 
 for the best experience (a corresponding profile will be provided 
 in the future!). However, every other console should also be fine. 
-Simply execute 
-`play_qrogue.ps1`
+Simply execute `play_qrogue.ps1`
 
 ## Notes ##
 
