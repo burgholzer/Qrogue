@@ -11,10 +11,11 @@ class GameSimulator:
         self.__controls = controls
 
         self.__reader = PathConfig.read_keylog_buffered(path, in_keylog_folder, buffer_size=GameSimulator.__BUFFER_SIZE)
-        if self.__reader is None:
+        self.__cur_chunk = self.__next_chunk()
+        # due to yield we don't immediately return None so self.__reader will not be None but self.__cur_chunk instead
+        if self.__cur_chunk is None:
             Logger.instance().error("invalid path!")
             return
-        self.__cur_chunk = self.__next_chunk()
         self.__cur_index = -1
 
         # change the config so we can reproduce the run (e.g. different auto reset would destroy the simulation)
