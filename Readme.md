@@ -1,3 +1,6 @@
+# Note #
+This branch exists only for documentation purposes of all the un-squashed commits to have a look at the history if needed.
+
 >           _______           
 >          / _____ \          
 >         | |     | |         
