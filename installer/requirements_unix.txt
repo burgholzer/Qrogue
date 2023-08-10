@@ -40,7 +40,7 @@ requests==2.26.0
 requests-ntlm==1.1.0
 retworkx==0.10.2
 scikit-learn==1.0.1
-scipy==1.7.2
+scipy==1.10.0
 six==1.16.0
 symengine==0.8.1
 sympy==1.9
