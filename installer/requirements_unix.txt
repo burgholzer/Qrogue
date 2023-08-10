@@ -36,7 +36,7 @@ qiskit-ibmq-provider==0.18.0
 qiskit-ignis==0.6.0
 qiskit-terra==0.18.3
 Quandl==3.7.0
-requests==2.26.0
+requests==2.31.0
 requests-ntlm==1.1.0
 retworkx==0.10.2
 scikit-learn==1.0.1
