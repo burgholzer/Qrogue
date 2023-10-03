@@ -46,7 +46,7 @@ symengine==0.8.1
 sympy==1.9
 threadpoolctl==3.0.0
 tweedledum==1.1.1
-urllib3==1.26.7
+urllib3==1.26.17
 websocket-client==1.2.1
 yfinance==0.1.66
 zipp==3.6.0
